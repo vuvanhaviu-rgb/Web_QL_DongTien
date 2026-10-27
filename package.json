@@ -1,0 +1,10 @@
+{
+  "name": "web-ql-dongtien",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Web quản lý dòng tiền dự án quảng cáo",
+  "scripts": {
+    "build": "node scripts/build.js"
+  },
+  "engines": { "node": ">=18" }
+}
