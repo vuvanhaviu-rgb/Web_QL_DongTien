@@ -167,6 +167,13 @@ table.ledger td.act{padding:4px 2px}
 table.ledger td.act .btn{padding:3px 6px;font-size:11px}
 table.ledger tr.mh td{background:var(--surface-2);font-weight:700;border-top:2px solid var(--line);font-variant-numeric:tabular-nums}
 table.ledger tr.mh td:first-child{color:var(--accent)}
+table.ledger tr.mh{cursor:pointer}table.ledger tr.mh:hover td{filter:brightness(.97)}
+table.ledger tr.hid{display:none}
+table.ledger tr.blank td{color:var(--muted)}
+table.ledger tr.blank.we td{background:var(--surface-2)}
+table.ledger tr.today td{box-shadow:inset 0 2px 0 var(--accent),inset 0 -2px 0 var(--accent)}
+table.ledger td.dcell{white-space:nowrap}table.ledger td.dcell small{color:var(--muted);font-weight:600;margin-left:2px}
+table.ledger td.dash{color:var(--muted)}
 .row .l .link{display:block}
 td.net,th.net{color:var(--accent);font-weight:700}
 .kpi.net b{color:var(--accent)}
@@ -219,7 +226,7 @@ var DEFAULT_FEE=10;
 var BANK_FEE=1.1;
 function defaultRate(cid){var c=(S.customers.filter(function(x){return x.id===cid})[0]);return c&&c.feeRate!=null&&c.feeRate!==""?Number(c.feeRate):DEFAULT_FEE}
 var db=null,localMode=false,seq=0;
-var ui={view:"tong-quan",q:"",pf:"all",pc:"",cid:"",ap:"month",anchor:todayStr(),delArm:"",pendingFocus:null};
+var ui={view:"tong-quan",q:"",pf:"all",pc:"",cid:"",ap:"month",anchor:todayStr(),delArm:"",pendingFocus:null,mopen:{},pend:{}};
 var num=function(n){return (Number(n)||0).toLocaleString("vi-VN")};
 var nz=function(n){return n?num(n):"—"};
 var rendering=false,restoring=false,pointerDown=false,pendingRender=false;
@@ -467,8 +474,29 @@ function parseMoney(s){var d=String(s).replace(/[^\d]/g,"");return d?Number(d):0
 function parseRate(s){var n=parseFloat(String(s).replace(",",".").replace(/[^\d.]/g,""));return isNaN(n)?0:Math.min(100,Math.round(n*100)/100)}
 function rateOf(r){return r.feeRate!=null&&r.feeRate!==""?Number(r.feeRate):defaultRate(r.customerId)}
 function moneyCell(id,col,v,label){return '<td class="cell"><input class="cin n" type="text" inputmode="numeric" autocomplete="off" data-cell="1" data-row="'+esc(id)+'" data-col="'+col+'" value="'+(v?num(v):"")+'" aria-label="'+esc(label)+'"></td>'}
+function saveNewCell(el){
+  var date=el.dataset.row.slice(4),col=el.dataset.col;
+  var ex=S.spend.filter(function(x){return x.customerId===ui.cid&&x.date===date})[0];
+  if(ex){el.dataset.row=ex.id;saveCell(el);return}
+  var tr=el.closest("tr");if(!tr)return;
+  var g=function(c){return tr.querySelector('[data-col="'+c+'"]')};
+  var data={customerId:ui.cid,date:date,adLive:parseMoney(g("adLive").value),adPost:parseMoney(g("adPost").value),feeRate:parseRate(g("feeRate").value),transfer:parseMoney(g("transfer").value),paid:false};
+  if(!data.adLive&&!data.adPost&&!data.transfer&&data.feeRate===defaultRate(ui.cid))return;
+  if(ui.pend[date]){
+    var v=data[col];ui.pend[date].p.then(function(){var u={};u[col]=v;save("spend",ui.pend[date]&&ui.pend[date].id||ex&&ex.id,u)}).catch(function(){});
+    return;
+  }
+  if(localMode){S.spend.push(Object.assign({id:"l"+(++seq),createdAt:Date.now()},data));render();return}
+  var ref=db.collection("spend").doc();
+  var pr=ref.set(Object.assign({createdAt:Date.now()},data));
+  ui.pend[date]={id:ref.id,p:pr};
+  pr.catch(function(e){delete ui.pend[date];toast("Không lưu được: "+((e&&(e.message||e.code))||"lỗi không rõ"))});
+  setTimeout(function(){delete ui.pend[date]},6000);
+}
 function saveCell(el){
-  var id=el.dataset.row,col=el.dataset.col,r=S.spend.filter(function(x){return x.id===id})[0];
+  var id=el.dataset.row,col=el.dataset.col;
+  if(id.indexOf("new:")===0){saveNewCell(el);return}
+  var r=S.spend.filter(function(x){return x.id===id})[0];
   if(!r)return;
   var upd={},v;
   if(col==="date"){
@@ -496,10 +524,21 @@ async function addSpendRow(){
 }
 
 function monthLabel(k){return /^\d{4}-\d{2}$/.test(k)?"Tháng "+Number(k.slice(5))+"/"+k.slice(0,4):"Chưa có ngày"}
-function monthHead(k,m){
+function monthOpen(k){return ui.mopen[k]!==undefined?ui.mopen[k]:k===todayStr().slice(0,7)}
+var WD=["CN","T2","T3","T4","T5","T6","T7"];
+function monthHead(k,m,open){
   var c=function(f,v){return '<td class="num" data-m="'+k+'" data-k="'+f+'">'+num(v)+'</td>'};
-  return '<tr class="mh"><td>'+monthLabel(k)+'</td>'+c("live",m.live)+c("post",m.post)+'<td></td>'+c("fee",m.fee)+c("tot",m.tot)
+  return '<tr class="mh" data-act="mtog" data-m="'+k+'" title="Bấm để '+(open?"thu gọn":"mở rộng")+'"><td><span class="car">'+(open?"▾":"▸")+'</span> '+monthLabel(k)+'</td>'+c("live",m.live)+c("post",m.post)+'<td></td>'+c("fee",m.fee)+c("tot",m.tot)
     +'<td data-m="'+k+'" data-k="n">'+m.n+' dòng</td>'+c("xf",m.xf)+'<td></td></tr>';
+}
+function blankRow(ds,c,hid){
+  var id="new:"+ds,dt=new Date(+ds.slice(0,4),+ds.slice(5,7)-1,+ds.slice(8,10)),wd=dt.getDay();
+  var cls=(hid?"hid ":"")+"blank"+(wd===0||wd===6?" we":"")+(ds===todayStr()?" today":"");
+  return '<tr class="'+cls+'" data-date="'+ds+'" data-month="'+ds.slice(0,7)+'"><td class="dcell">'+ds.slice(8)+"/"+ds.slice(5,7)+"/"+ds.slice(0,4)+' <small>'+WD[wd]+'</small></td>'
+    +moneyCell(id,"adLive",0,"Quảng cáo Live")+moneyCell(id,"adPost",0,"Quảng cáo Bài viết")
+    +'<td class="cell"><div class="pc"><input class="cin n" type="text" inputmode="decimal" autocomplete="off" data-cell="1" data-row="'+id+'" data-col="feeRate" value="'+esc(String(defaultRate(c.id)).replace(".",","))+'" aria-label="Phí dịch vụ phần trăm"><span>%</span></div></td>'
+    +'<td class="calc" data-calc="fee">—</td><td class="calc" data-calc="tot">—</td><td class="dash">—</td>'
+    +moneyCell(id,"transfer",0,"Khách chuyển khoản")+'<td class="act"></td></tr>';
 }
 function recalcLedger(){
   var trs=document.querySelectorAll("table.ledger tbody tr");
@@ -511,11 +550,11 @@ function recalcLedger(){
     var live=parseMoney(g("adLive").value),post=parseMoney(g("adPost").value),rate=parseRate(g("feeRate").value),xf=parseMoney(g("transfer").value);
     var fee=Math.round((live+post)*rate/100),tot=live+post+fee;
     bal+=tot-xf;tl+=live;tp+=post;tf+=fee;tt+=tot;tx+=xf;
-    var mk=String(g("date").value||"").slice(0,7),m=MS[mk]||(MS[mk]={live:0,post:0,fee:0,tot:0,xf:0,n:0});
-    m.live+=live;m.post+=post;m.fee+=fee;m.tot+=tot;m.xf+=xf;m.n++;
+    var dv=g("date"),mk=String(dv?dv.value:(tr.dataset.month||"")).slice(0,7),m=MS[mk]||(MS[mk]={live:0,post:0,fee:0,tot:0,xf:0,n:0});
+    m.live+=live;m.post+=post;m.fee+=fee;m.tot+=tot;m.xf+=xf;if(dv)m.n++;
     var cf=tr.querySelector('[data-calc="fee"]'),ct=tr.querySelector('[data-calc="tot"]'),cb=tr.querySelector('[data-calc="bal"]');
     if(cf)cf.textContent=nz(fee);
-    if(ct)ct.innerHTML="<b>"+num(tot)+"</b>";
+    if(ct)ct.innerHTML=tot?"<b>"+num(tot)+"</b>":"—";
     if(cb){cb.textContent=num(bal);cb.className="calc "+(bal>0?"owe":"clear")}
   });
   var set=function(sel,txt){var el=document.querySelector(sel);if(el)el.textContent=txt};
@@ -547,13 +586,10 @@ function vCustomerDetail(){
   var bal=0,tl=0,tp=0,tf=0,tt=0,tx=0;
   var MS={};
   rows.forEach(function(r){var k=String(r.date||"").slice(0,7),x=spendRow(r),m=MS[k]||(MS[k]={live:0,post:0,fee:0,tot:0,xf:0,n:0});m.live+=x.live;m.post+=x.post;m.fee+=x.fee;m.tot+=x.tot;m.xf+=x.xf;m.n++});
-  var lastM=null;
-  var body=rows.map(function(r){
+  function realRow(r,hid){
     var x=spendRow(r),rate=rateOf(r),paid=!!r.paid,id=r.id;
     bal+=x.tot-x.xf;tl+=x.live;tp+=x.post;tf+=x.fee;tt+=x.tot;tx+=x.xf;
-    var mk=String(r.date||"").slice(0,7),head="";
-    if(mk!==lastM){lastM=mk;head=monthHead(mk,MS[mk])}
-    return head+'<tr>'
+    return '<tr data-date="'+esc(r.date||"")+'" data-month="'+esc(String(r.date||"").slice(0,7))+'"'+(hid?' class="hid"':"")+'>'
       +'<td class="cell"><input class="cin" type="date" data-cell="1" data-row="'+esc(id)+'" data-col="date" value="'+esc(r.date||"")+'" aria-label="Ngày tháng"></td>'
       +moneyCell(id,"adLive",x.live,"Quảng cáo Live")+moneyCell(id,"adPost",x.post,"Quảng cáo Bài viết")
       +'<td class="cell"><div class="pc"><input class="cin n" type="text" inputmode="decimal" autocomplete="off" data-cell="1" data-row="'+esc(id)+'" data-col="feeRate" value="'+esc(String(rate).replace(".",","))+'" aria-label="Phí dịch vụ phần trăm"><span>%</span></div></td>'
@@ -562,14 +598,30 @@ function vCustomerDetail(){
       +moneyCell(id,"transfer",x.xf,"Khách chuyển khoản")
       
       +'<td class="act"><button class="btn small danger'+(ui.delArm===id?" armed":"")+'" tabindex="-1" data-act="sdel" data-id="'+esc(id)+'">'+(ui.delArm===id?"Xác nhận":"Xóa")+'</button></td></tr>';
-  }).join("");
+  }
+  var byDate={};rows.forEach(function(r){(byDate[r.date]=byDate[r.date]||[]).push(r)});
+  var curM=todayStr().slice(0,7),keys=Object.keys(MS).filter(function(k){return/^\d{4}-\d{2}$/.test(k)});
+  keys.push(curM);keys.sort();
+  var first=keys[0],last=keys[keys.length-1],allM=[],cy=+first.slice(0,4),cm=+first.slice(5);
+  while(cy+"-"+pad(cm)<=last){allM.push(cy+"-"+pad(cm));cm++;if(cm>12){cm=1;cy++}}
+  var body="";
+  if(MS[""]||MS["undefined"]){/* dòng cũ không có ngày */}
+  allM.forEach(function(mk){
+    var m=MS[mk]||{live:0,post:0,fee:0,tot:0,xf:0,n:0},open=monthOpen(mk),nd=lastDay(+mk.slice(0,4),+mk.slice(5));
+    body+=monthHead(mk,m,open);
+    for(var d=1;d<=nd;d++){
+      var ds=mk+"-"+pad(d),list=byDate[ds];
+      if(list&&list.length)list.forEach(function(r){body+=realRow(r,!open)});
+      else body+=blankRow(ds,c,!open);
+    }
+  });
+  if(byDate[""]||byDate["undefined"])(byDate[""]||byDate["undefined"]).forEach(function(r){body+=realRow(r,false)});
   var h='<div class="kpis">'
     +'<div class="kpi"><span>Chi phí quảng cáo</span><b data-kpi="qc">'+vnd(tl+tp)+'</b><small data-kpi="qcsub">Live '+num(tl)+' · Bài viết '+num(tp)+'</small></div>'
     +'<div class="kpi"><span>Phí dịch vụ</span><b data-kpi="fee">'+vnd(tf)+'</b><small data-kpi="feesub">Tổng cộng '+vnd(tt)+'</small></div>'
     +'<div class="kpi"><span>Khách đã chuyển khoản</span><b data-kpi="xf">'+vnd(tx)+'</b><small>'+rows.length+' dòng chi tiêu</small></div>'
     +'<div class="kpi '+(bal>0?"bad":"")+'" data-kpi-box="bal"><span>Dư nợ cuối</span><b data-kpi="bal">'+vnd(bal)+'</b><small data-kpi="balsub">'+(bal>0?"Khách còn nợ":bal<0?"Khách chuyển dư":"Đã tất toán")+'</small></div></div>';
-  if(!rows.length)h+='<div class="tablewrap">'+emptyBlock("Chưa có dòng chi tiêu","Thêm một dòng rồi nhập trực tiếp vào các ô, giống như bảng tính. Phí dịch vụ và tổng tự tính ngay khi bạn gõ.",'<button class="btn primary" data-act="sadd">Thêm dòng chi tiêu</button>')+'</div>';
-  else h+='<div class="tablewrap"><table class="ledger"><colgroup><col style="width:14%"><col style="width:12%"><col style="width:12%"><col style="width:7%"><col style="width:11%"><col style="width:12%"><col style="width:14%"><col style="width:11%"><col style="width:7%"></colgroup><thead><tr><th rowspan="2">Ngày tháng</th><th colspan="2" class="grp">Chi phí quảng cáo</th><th rowspan="2" class="num">Phí %</th><th rowspan="2" class="num">Phí dịch vụ</th><th rowspan="2" class="num">Tổng</th><th rowspan="2">Note</th><th rowspan="2" class="num">Khách chuyển khoản</th><th rowspan="2"></th></tr>'
+  h+='<div class="tablewrap"><table class="ledger"><colgroup><col style="width:14%"><col style="width:12%"><col style="width:12%"><col style="width:7%"><col style="width:11%"><col style="width:12%"><col style="width:14%"><col style="width:11%"><col style="width:7%"></colgroup><thead><tr><th rowspan="2">Ngày tháng</th><th colspan="2" class="grp">Chi phí quảng cáo</th><th rowspan="2" class="num">Phí %</th><th rowspan="2" class="num">Phí dịch vụ</th><th rowspan="2" class="num">Tổng</th><th rowspan="2">Note</th><th rowspan="2" class="num">Khách chuyển khoản</th><th rowspan="2"></th></tr>'
     +'<tr><th class="num">Quảng cáo Live</th><th class="num">Quảng cáo Bài viết</th></tr></thead><tbody>'+body+'</tbody>'
     +'<tfoot><tr><td>Tổng cộng</td><td class="num" data-foot="live">'+num(tl)+'</td><td class="num" data-foot="post">'+num(tp)+'</td><td></td><td class="num" data-foot="fee">'+num(tf)+'</td><td class="num" data-foot="tot">'+num(tt)+'</td><td></td><td class="num" data-foot="xf">'+num(tx)+'</td><td></td></tr></tfoot></table></div>'
     +'<div class="tools"><button class="btn" data-act="sadd">+ Thêm dòng</button></div>'
@@ -670,6 +722,7 @@ function render(){
   var want=ui.pendingFocus||cap;
   if(want){
     var tg=document.querySelector('[data-cell][data-row="'+CSS.escape(want.row)+'"][data-col="'+want.col+'"]');
+    if(!tg&&String(want.row).indexOf("new:")===0){tg=document.querySelector('tr[data-date="'+want.row.slice(4)+'"] [data-cell][data-col="'+want.col+'"]')}
     if(tg){
       restoring=true;
       if(ui.pendingFocus){tg.focus();ui.pendingFocus=null;try{tg.select()}catch(x){}}
@@ -775,6 +828,7 @@ document.addEventListener("click",function(e){
   else if(a==="back"){ui.cid="";render()}
   else if(a==="goc"){ui.pendingCid=el.dataset.id;if(location.hash==="#khach-hang"){route()}else{location.hash="#khach-hang"}window.scrollTo(0,0)}
   else if(a==="sadd")addSpendRow();
+  else if(a==="mtog"){var mk=el.dataset.m;ui.mopen[mk]=!monthOpen(mk);render()}
   else if(a==="sdel"){if(ui.delArm===el.dataset.id){ui.delArm="";remove("spend",el.dataset.id)}else{ui.delArm=el.dataset.id;render()}}
   else if(a==="apt"){ui.ap=el.dataset.v;render()}
   else if(a==="apshift"){ui.anchor=shiftAnchor(ui.ap,ui.anchor,+el.dataset.v);render()}
@@ -801,7 +855,7 @@ document.addEventListener("keydown",function(e){
   var t=e.target;
   if(e.key!=="Enter"||!(t.dataset&&t.dataset.cell))return;
   e.preventDefault();
-  var list=Array.prototype.slice.call(document.querySelectorAll('[data-cell][data-col="'+t.dataset.col+'"]')),i=list.indexOf(t);
+  var list=Array.prototype.slice.call(document.querySelectorAll('[data-cell][data-col="'+t.dataset.col+'"]')).filter(function(x){return x.offsetParent!==null}),i=list.indexOf(t);
   if(i>=0&&i<list.length-1)list[i+1].focus();else{t.blur();addSpendRow()}
 });
 document.addEventListener("input",function(e){
