@@ -493,6 +493,19 @@ function saveNewCell(el){
   pr.catch(function(e){delete ui.pend[date];toast("Không lưu được: "+((e&&(e.message||e.code))||"lỗi không rõ"))});
   setTimeout(function(){delete ui.pend[date]},6000);
 }
+function setPaidBlank(date,paid){
+  var ex=S.spend.filter(function(x){return x.customerId===ui.cid&&x.date===date})[0];
+  if(ex){save("spend",ex.id,{paid:paid});return}
+  if(ui.pend[date]){ui.pend[date].p.then(function(){save("spend",ui.pend[date]&&ui.pend[date].id,{paid:paid})}).catch(function(){});return}
+  var tr=document.querySelector('tr[data-date="'+date+'"]');if(!tr)return;
+  var g=function(c){return tr.querySelector('[data-col="'+c+'"]')};
+  var data={customerId:ui.cid,date:date,adLive:parseMoney(g("adLive").value),adPost:parseMoney(g("adPost").value),feeRate:parseRate(g("feeRate").value),transfer:parseMoney(g("transfer").value),paid:paid};
+  if(localMode){S.spend.push(Object.assign({id:"l"+(++seq),createdAt:Date.now()},data));render();return}
+  var ref=db.collection("spend").doc(),pr=ref.set(Object.assign({createdAt:Date.now()},data));
+  ui.pend[date]={id:ref.id,p:pr};
+  pr.catch(function(e){delete ui.pend[date];toast("Không lưu được: "+((e&&(e.message||e.code))||"lỗi không rõ"))});
+  setTimeout(function(){delete ui.pend[date]},6000);
+}
 function saveCell(el){
   var id=el.dataset.row,col=el.dataset.col;
   if(id.indexOf("new:")===0){saveNewCell(el);return}
@@ -537,7 +550,7 @@ function blankRow(ds,c,hid){
   return '<tr class="'+cls+'" data-date="'+ds+'" data-month="'+ds.slice(0,7)+'"><td class="dcell">'+ds.slice(8)+"/"+ds.slice(5,7)+"/"+ds.slice(0,4)+' <small>'+WD[wd]+'</small></td>'
     +moneyCell(id,"adLive",0,"Quảng cáo Live")+moneyCell(id,"adPost",0,"Quảng cáo Bài viết")
     +'<td class="cell"><div class="pc"><input class="cin n" type="text" inputmode="decimal" autocomplete="off" data-cell="1" data-row="'+id+'" data-col="feeRate" value="'+esc(String(defaultRate(c.id)).replace(".",","))+'" aria-label="Phí dịch vụ phần trăm"><span>%</span></div></td>'
-    +'<td class="calc" data-calc="fee">—</td><td class="calc" data-calc="tot">—</td><td class="dash">—</td>'
+    +'<td class="calc" data-calc="fee">—</td><td class="calc" data-calc="tot">—</td><td><button class="tog n" tabindex="-1" data-act="spaid" data-id="'+id+'" data-v="1" title="Bấm để đổi trạng thái" aria-label="Chưa thanh toán. Bấm để đổi trạng thái">Chưa thanh toán</button></td>'
     +moneyCell(id,"transfer",0,"Khách chuyển khoản")+'<td class="act"></td></tr>';
 }
 function recalcLedger(){
@@ -833,7 +846,7 @@ document.addEventListener("click",function(e){
   else if(a==="apt"){ui.ap=el.dataset.v;render()}
   else if(a==="apshift"){ui.anchor=shiftAnchor(ui.ap,ui.anchor,+el.dataset.v);render()}
   else if(a==="apnow"){ui.anchor=todayStr();render()}
-  else if(a==="spaid")save("spend",el.dataset.id,{paid:el.dataset.v==="1"});
+  else if(a==="spaid"){if(el.dataset.id.indexOf("new:")===0)setPaidBlank(el.dataset.id.slice(4),el.dataset.v==="1");else save("spend",el.dataset.id,{paid:el.dataset.v==="1"})}
 });
 function releasePointer(){pointerDown=false;if(pendingRender){pendingRender=false;render()}}
 document.addEventListener("pointerdown",function(){pointerDown=true},true);
