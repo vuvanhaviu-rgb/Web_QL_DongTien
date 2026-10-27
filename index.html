@@ -389,7 +389,7 @@ function viewerHtml(d){
   var bal=tt-tx,body="";
   order.sort().forEach(function(k){
     var m=M[k];
-    body+='<tr class="mh"><td>'+monthLabel(k)+'</td><td class="num">'+num(m.live)+'</td><td class="num">'+num(m.post)+'</td><td></td><td class="num">'+num(m.fee)+'</td><td class="num">'+num(m.tot)+'</td><td>'+m.rows.length+' dòng</td><td class="num">'+num(m.xf)+'</td></tr>';
+    body+='<tr class="mh"><td>'+monthLabel(k)+'</td><td class="num">'+num(m.live)+'</td><td class="num">'+num(m.post)+'</td><td></td><td class="num">'+num(m.fee)+'</td><td class="num">'+num(m.tot)+'</td><td></td><td class="num">'+num(m.xf)+'</td></tr>';
     m.rows.forEach(function(r){
       body+='<tr><td>'+fmtDate(r.date)+'</td><td class="num">'+nz(r.adLive)+'</td><td class="num">'+nz(r.adPost)+'</td><td>'+String(r.feeRate).replace(".",",")+'%</td><td class="num">'+nz(r._fee)+'</td><td class="num"><b>'+nz(r._tot)+'</b></td>'
         +'<td><span class="pill '+(r.paid?"ok":"wait")+'">'+(r.paid?"Đã thanh toán":"Chưa thanh toán")+'</span></td><td class="num">'+nz(r.transfer)+'</td></tr>';
@@ -719,7 +719,7 @@ var WD=["CN","T2","T3","T4","T5","T6","T7"];
 function monthHead(k,m,open,hc){
   var c=function(f,v){return '<td class="num" data-m="'+k+'" data-k="'+f+'">'+num(v)+'</td>'};
   return '<tr class="mh" data-act="mtog" data-m="'+k+'" title="Bấm để '+(open?"thu gọn":"mở rộng")+'"><td><span class="car">'+(open?"▾":"▸")+'</span> '+monthLabel(k)+(hc?' <button class="btn small unh" type="button" data-act="sunhide" data-m="'+k+'">Hiện lại '+hc+' ngày đã xóa</button>':"")+'</td>'+c("live",m.live)+c("post",m.post)+'<td></td>'+c("fee",m.fee)+c("tot",m.tot)
-    +'<td data-m="'+k+'" data-k="n">'+m.n+' dòng</td>'+c("xf",m.xf)+'<td></td></tr>';
+    +'<td></td>'+c("xf",m.xf)+'<td></td></tr>';
 }
 function blankRow(ds,c,hid){
   var id="new:"+ds,dt=new Date(+ds.slice(0,4),+ds.slice(5,7)-1,+ds.slice(8,10)),wd=dt.getDay();
