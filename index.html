@@ -169,6 +169,7 @@ table.ledger tr.mh td{background:var(--surface-2);font-weight:700;border-top:2px
 table.ledger tr.mh td:first-child{color:var(--accent)}
 table.ledger tr.mh{cursor:pointer}table.ledger tr.mh:hover td{filter:brightness(.97)}
 table.ledger tr.hid{display:none}
+table.ledger tr.mh .unh{margin-left:8px;padding:2px 8px;font-size:11px;font-weight:600}
 table.ledger tr.blank td{color:var(--muted)}
 table.ledger tr.blank.we td{background:var(--surface-2)}
 table.ledger tr.today td{box-shadow:inset 0 2px 0 var(--accent),inset 0 -2px 0 var(--accent)}
@@ -219,9 +220,9 @@ var sum=function(a){return a.reduce(function(t,p){return t+(Number(p.amount)||0)
 var short=function(n){if(n>=1e9)return +(n/1e9).toFixed(1)+" tỷ";if(n>=1e6)return +(n/1e6).toFixed(1)+" tr";if(n>=1e3)return +(n/1e3).toFixed(0)+"k";return String(n)};
 
 var VIEWS=[["tong-quan","Tổng quan"],["khach-hang","Khách hàng"],["cong-no","Thanh toán / công nợ"],["bang-gia","Bảng giá"],["thong-ke","Thống kê"]];
-var COLS=["customers","prices","payments","spend"];
-var S={customers:[],prices:[],payments:[],spend:[]};
-var loaded={customers:false,prices:false,payments:false,spend:false};
+var COLS=["customers","prices","payments","spend","hidden"];
+var S={customers:[],prices:[],payments:[],spend:[],hidden:[]};
+var loaded={customers:false,prices:false,payments:false,spend:false,hidden:false};
 var DEFAULT_FEE=10;
 var BANK_FEE=1.1;
 function defaultRate(cid){var c=(S.customers.filter(function(x){return x.id===cid})[0]);return c&&c.feeRate!=null&&c.feeRate!==""?Number(c.feeRate):DEFAULT_FEE}
@@ -493,6 +494,12 @@ function saveNewCell(el){
   pr.catch(function(e){delete ui.pend[date];toast("Không lưu được: "+((e&&(e.message||e.code))||"lỗi không rõ"))});
   setTimeout(function(){delete ui.pend[date]},6000);
 }
+function hideDay(date,exceptId){
+  if(!date||!ui.cid)return;
+  if(S.hidden.some(function(h){return h.customerId===ui.cid&&h.date===date}))return;
+  if(S.spend.some(function(x){return x.customerId===ui.cid&&x.date===date&&x.id!==exceptId}))return; // còn dòng khác trong ngày
+  save("hidden",null,{customerId:ui.cid,date:date});
+}
 function setPaidBlank(date,paid){
   var ex=S.spend.filter(function(x){return x.customerId===ui.cid&&x.date===date})[0];
   if(ex){save("spend",ex.id,{paid:paid});return}
@@ -539,9 +546,9 @@ async function addSpendRow(){
 function monthLabel(k){return /^\d{4}-\d{2}$/.test(k)?"Tháng "+Number(k.slice(5))+"/"+k.slice(0,4):"Chưa có ngày"}
 function monthOpen(k){return ui.mopen[k]!==undefined?ui.mopen[k]:k===todayStr().slice(0,7)}
 var WD=["CN","T2","T3","T4","T5","T6","T7"];
-function monthHead(k,m,open){
+function monthHead(k,m,open,hc){
   var c=function(f,v){return '<td class="num" data-m="'+k+'" data-k="'+f+'">'+num(v)+'</td>'};
-  return '<tr class="mh" data-act="mtog" data-m="'+k+'" title="Bấm để '+(open?"thu gọn":"mở rộng")+'"><td><span class="car">'+(open?"▾":"▸")+'</span> '+monthLabel(k)+'</td>'+c("live",m.live)+c("post",m.post)+'<td></td>'+c("fee",m.fee)+c("tot",m.tot)
+  return '<tr class="mh" data-act="mtog" data-m="'+k+'" title="Bấm để '+(open?"thu gọn":"mở rộng")+'"><td><span class="car">'+(open?"▾":"▸")+'</span> '+monthLabel(k)+(hc?' <button class="btn small unh" type="button" data-act="sunhide" data-m="'+k+'">Hiện lại '+hc+' ngày đã xóa</button>':"")+'</td>'+c("live",m.live)+c("post",m.post)+'<td></td>'+c("fee",m.fee)+c("tot",m.tot)
     +'<td data-m="'+k+'" data-k="n">'+m.n+' dòng</td>'+c("xf",m.xf)+'<td></td></tr>';
 }
 function blankRow(ds,c,hid){
@@ -551,7 +558,7 @@ function blankRow(ds,c,hid){
     +moneyCell(id,"adLive",0,"Quảng cáo Live")+moneyCell(id,"adPost",0,"Quảng cáo Bài viết")
     +'<td class="cell"><div class="pc"><input class="cin n" type="text" inputmode="decimal" autocomplete="off" data-cell="1" data-row="'+id+'" data-col="feeRate" value="'+esc(String(defaultRate(c.id)).replace(".",","))+'" aria-label="Phí dịch vụ phần trăm"><span>%</span></div></td>'
     +'<td class="calc" data-calc="fee">—</td><td class="calc" data-calc="tot">—</td><td><button class="tog n" tabindex="-1" data-act="spaid" data-id="'+id+'" data-v="1" title="Bấm để đổi trạng thái" aria-label="Chưa thanh toán. Bấm để đổi trạng thái">Chưa thanh toán</button></td>'
-    +moneyCell(id,"transfer",0,"Khách chuyển khoản")+'<td class="act"></td></tr>';
+    +moneyCell(id,"transfer",0,"Khách chuyển khoản")+'<td class="act"><button class="btn small danger" tabindex="-1" data-act="shide" data-date="'+ds+'" title="Xóa ngày này khỏi bảng">Xóa</button></td></tr>';
 }
 function recalcLedger(){
   var trs=document.querySelectorAll("table.ledger tbody tr");
@@ -617,15 +624,15 @@ function vCustomerDetail(){
   keys.push(curM);keys.sort();
   var first=keys[0],last=keys[keys.length-1],allM=[],cy=+first.slice(0,4),cm=+first.slice(5);
   while(cy+"-"+pad(cm)<=last){allM.push(cy+"-"+pad(cm));cm++;if(cm>12){cm=1;cy++}}
-  var body="";
-  if(MS[""]||MS["undefined"]){/* dòng cũ không có ngày */}
+  var body="",HID={},HC={};
+  S.hidden.forEach(function(h){if(h.customerId===c.id){HID[h.date]=1;var mm=String(h.date).slice(0,7);if(!byDate[h.date])HC[mm]=(HC[mm]||0)+1}});
   allM.forEach(function(mk){
     var m=MS[mk]||{live:0,post:0,fee:0,tot:0,xf:0,n:0},open=monthOpen(mk),nd=lastDay(+mk.slice(0,4),+mk.slice(5));
-    body+=monthHead(mk,m,open);
+    body+=monthHead(mk,m,open,HC[mk]||0);
     for(var d=1;d<=nd;d++){
       var ds=mk+"-"+pad(d),list=byDate[ds];
       if(list&&list.length)list.forEach(function(r){body+=realRow(r,!open)});
-      else body+=blankRow(ds,c,!open);
+      else if(!HID[ds])body+=blankRow(ds,c,!open);
     }
   });
   if(byDate[""]||byDate["undefined"])(byDate[""]||byDate["undefined"]).forEach(function(r){body+=realRow(r,false)});
@@ -842,7 +849,9 @@ document.addEventListener("click",function(e){
   else if(a==="goc"){ui.pendingCid=el.dataset.id;if(location.hash==="#khach-hang"){route()}else{location.hash="#khach-hang"}window.scrollTo(0,0)}
   else if(a==="sadd")addSpendRow();
   else if(a==="mtog"){var mk=el.dataset.m;ui.mopen[mk]=!monthOpen(mk);render()}
-  else if(a==="sdel"){if(ui.delArm===el.dataset.id){ui.delArm="";remove("spend",el.dataset.id)}else{ui.delArm=el.dataset.id;render()}}
+  else if(a==="sdel"){if(ui.delArm===el.dataset.id){ui.delArm="";var rr=S.spend.filter(function(x){return x.id===el.dataset.id})[0];remove("spend",el.dataset.id);if(rr)hideDay(rr.date,el.dataset.id)}else{ui.delArm=el.dataset.id;render()}}
+  else if(a==="shide")hideDay(el.dataset.date)
+  else if(a==="sunhide"){var mk2=el.dataset.m;S.hidden.filter(function(h){return h.customerId===ui.cid&&String(h.date).slice(0,7)===mk2}).forEach(function(h){remove("hidden",h.id)});toast("Đã hiện lại các ngày")}
   else if(a==="apt"){ui.ap=el.dataset.v;render()}
   else if(a==="apshift"){ui.anchor=shiftAnchor(ui.ap,ui.anchor,+el.dataset.v);render()}
   else if(a==="apnow"){ui.anchor=todayStr();render()}
