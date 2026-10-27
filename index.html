@@ -179,6 +179,31 @@ table.ledger td.dash{color:var(--muted)}
 .row .l .link{display:block}
 td.net,th.net{color:var(--accent);font-weight:700}
 .kpi.net b{color:var(--accent)}
+/* KPI dạng thẻ có biểu tượng */
+.kpi{position:relative;display:grid;grid-template-columns:40px 1fr;column-gap:12px;align-items:center;border:1px solid rgba(var(--kc),.25);border-bottom:3px solid rgb(var(--kc));background:linear-gradient(135deg,rgba(var(--kc),.10),rgba(var(--kc),.02) 70%),var(--surface);--kc:47,140,255}
+.kpi::before{content:"";grid-row:1/span 3;width:40px;height:40px;border-radius:10px;background:rgb(var(--kc)) center/22px no-repeat;box-shadow:0 4px 10px rgba(var(--kc),.35)}
+.kpi>*{grid-column:2}
+.kpi span{color:var(--fg)}
+.kpi b{color:rgb(var(--kc))}
+.kpi.bad{--kc:240,85,58}
+.kpi.bad b{color:rgb(var(--kc))}
+.kpis>.kpi:nth-child(7n+1){--kc:47,140,255}
+.kpis>.kpi:nth-child(7n+1)::before{background-image:url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22white%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22%3E%3Cpath d=%22M3 11v3a1 1 0 0 0 1 1h2l5 4V7L6 10H4a1 1 0 0 0-1 1z%22/%3E%3Cpath d=%22M15 9a4 4 0 0 1 0 6%22/%3E%3Cpath d=%22M18 6a8 8 0 0 1 0 12%22/%3E%3C/svg%3E")}
+.kpis>.kpi:nth-child(7n+2){--kc:76,193,111}
+.kpis>.kpi:nth-child(7n+2)::before{background-image:url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22white%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22%3E%3Crect x=%223%22 y=%227%22 width=%2218%22 height=%2213%22 rx=%222%22/%3E%3Cpath d=%22M9 7V5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2%22/%3E%3Cpath d=%22M3 13h18%22/%3E%3C/svg%3E")}
+.kpis>.kpi:nth-child(7n+3){--kc:163,95,224}
+.kpis>.kpi:nth-child(7n+3)::before{background-image:url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22white%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22%3E%3Cpath d=%22M20 7H5a2 2 0 0 1 0-4h13v4z%22/%3E%3Cpath d=%22M3 5v14a2 2 0 0 0 2 2h15V7%22/%3E%3Ccircle cx=%2216%22 cy=%2214%22 r=%221.2%22/%3E%3C/svg%3E")}
+.kpis>.kpi:nth-child(7n+4){--kc:236,72,153}
+.kpis>.kpi:nth-child(7n+4)::before{background-image:url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22white%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22%3E%3Cpath d=%22M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z%22/%3E%3Cpath d=%22M14 3v5h5%22/%3E%3Cpath d=%22M9 14h6%22/%3E%3C/svg%3E")}
+.kpis>.kpi:nth-child(7n+5){--kc:245,158,43}
+.kpis>.kpi:nth-child(7n+5)::before{background-image:url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22white%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22%3E%3Cpath d=%22M4 20V10%22/%3E%3Cpath d=%22M10 20V4%22/%3E%3Cpath d=%22M16 20v-8%22/%3E%3Cpath d=%22M22 20H2%22/%3E%3C/svg%3E")}
+.kpis>.kpi:nth-child(7n+6){--kc:20,184,166}
+.kpis>.kpi:nth-child(7n+6)::before{background-image:url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22white%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22%3E%3Ccircle cx=%229%22 cy=%228%22 r=%223.2%22/%3E%3Cpath d=%22M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6%22/%3E%3Cpath d=%22M16 5a3 3 0 0 1 0 6%22/%3E%3Cpath d=%22M18 14c2 .6 3 2.4 3 6%22/%3E%3C/svg%3E")}
+.kpis>.kpi:nth-child(7n+7){--kc:99,102,241}
+.kpis>.kpi:nth-child(7n+7)::before{background-image:url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22white%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22%3E%3Ccircle cx=%2212%22 cy=%2212%22 r=%229%22/%3E%3Cpath d=%22M14.5 9c-.5-1-1.5-1.5-2.5-1.5-1.4 0-2.5.8-2.5 2s1 1.7 2.5 2 2.5.8 2.5 2-1.1 2-2.5 2c-1 0-2-.5-2.5-1.5%22/%3E%3Cpath d=%22M12 6v1.5M12 16.5V18%22/%3E%3C/svg%3E")}
+.kpis>.kpi.bad{--kc:240,85,58}
+.kpi.net b{color:rgb(var(--kc))}
+.kpis.in .kpi{box-shadow:var(--shadow)}
 @media (max-width:820px){
   .app{grid-template-columns:minmax(0,1fr);gap:16px}
   .side{position:static;gap:12px}
