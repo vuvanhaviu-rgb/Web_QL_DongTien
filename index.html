@@ -211,6 +211,7 @@ table.ledger thead tr:first-child th{border-top:1px solid var(--line)}
 table.ledger tr.flash td{animation:flash 1.4s ease-out}
 @keyframes flash{0%{background:rgba(255,200,0,.45)}100%{background:transparent}}
 @media (max-width:700px){.daybar{flex-wrap:wrap}.daybar .dl{white-space:normal}}
+a.ext{color:var(--accent);text-decoration:underline;word-break:break-all}
 </style>
 
 <div class="app">
@@ -600,18 +601,21 @@ function vOverview(){
   return{title:"Tổng quan",sub:"Tình hình thu tiền tính đến hôm nay, "+fmtDate(todayStr()),html:h};
 }
 
+function nz2(n){return n?vnd(n):"—"}
 function vCustomers(){
   var q=ui.q.trim().toLowerCase();
   var owed={},billed={};
-  S.spend.forEach(function(r){var x=spendRow(r);billed[r.customerId]=(billed[r.customerId]||0)+x.tot});
+  var budget={},fees={};
+  S.spend.forEach(function(r){var x=spendRow(r);billed[r.customerId]=(billed[r.customerId]||0)+x.tot;budget[r.customerId]=(budget[r.customerId]||0)+x.live+x.post;fees[r.customerId]=(fees[r.customerId]||0)+x.fee});
   owed=custBalances();
-  var list=S.customers.filter(function(c){return!q||[c.name,c.contact,c.phone,c.note].join(" ").toLowerCase().indexOf(q)>=0})
+  var linkCell=function(u){u=String(u||"").trim();if(!u)return "—";var href=/^https?:\/\//i.test(u)?u:"https://"+u,txt=u.replace(/^https?:\/\/(www\.)?/i,"");if(txt.length>34)txt=txt.slice(0,32)+"…";return '<a class="ext" href="'+esc(href)+'" target="_blank" rel="noopener noreferrer">'+esc(txt)+'</a>'};
+  var list=S.customers.filter(function(c){return!q||[c.name,c.contact,c.phone,c.note,c.product,c.pageLink].join(" ").toLowerCase().indexOf(q)>=0})
     .sort(function(a,b){return String(a.name).localeCompare(String(b.name),"vi")});
   var h='<div class="tools"><input type="search" id="q" placeholder="Tìm theo tên, số điện thoại…" value="'+esc(ui.q)+'" aria-label="Tìm khách hàng"></div>';
   if(!S.customers.length)h+='<div class="tablewrap">'+emptyBlock("Chưa có khách hàng","Thêm khách hàng đầu tiên để bắt đầu ghi nhận công nợ.",'<button class="btn primary" data-act="add" data-type="customers">Thêm khách hàng</button>')+'</div>';
   else if(!list.length)h+='<div class="tablewrap">'+emptyBlock("Không tìm thấy","Thử từ khóa khác.")+'</div>';
-  else h+='<div class="tablewrap"><table><thead><tr><th>Khách hàng</th><th>Liên hệ</th><th class="num">Đã xuất</th><th class="num">Còn nợ</th><th></th></tr></thead><tbody>'
-    +list.map(function(c){return '<tr><td><button class="link" data-act="open" data-id="'+esc(c.id)+'">'+esc(c.name)+'</button>'+(c.note?'<span class="sub">'+esc(c.note)+'</span>':"")+'</td><td>'+esc(c.contact||"")+(c.phone?'<span class="sub">'+esc(c.phone)+'</span>':"")+'</td><td class="num">'+vnd(billed[c.id])+'</td><td class="num">'+(owed[c.id]?'<b>'+vnd(owed[c.id])+'</b>':"—")+'</td><td class="act"><button class="btn small" data-act="open" data-id="'+esc(c.id)+'">Bảng chi tiêu</button> <button class="btn small" data-act="edit" data-type="customers" data-id="'+esc(c.id)+'">Sửa</button></td></tr>'}).join("")
+  else h+='<div class="tablewrap"><table><thead><tr><th>Tên Khách</th><th>Link Page</th><th>Sản Phẩm</th><th class="num">Fee Dịch Vụ</th><th class="num">Tổng Ngân Sách</th><th class="num">Tổng Phí</th><th>Liên hệ</th><th class="num">Còn nợ</th><th></th></tr></thead><tbody>'
+    +list.map(function(c){return '<tr><td><button class="link" data-act="open" data-id="'+esc(c.id)+'">'+esc(c.name)+'</button>'+(c.note?'<span class="sub">'+esc(c.note)+'</span>':"")+'</td><td>'+linkCell(c.pageLink)+'</td><td>'+(esc(c.product||"")||"—")+'</td><td class="num">'+defaultRate(c.id)+'%</td><td class="num">'+nz2(budget[c.id])+'</td><td class="num">'+nz2(fees[c.id])+'</td><td>'+esc(c.contact||"")+(c.phone?'<span class="sub">'+esc(c.phone)+'</span>':"")+'</td><td class="num">'+(owed[c.id]?'<b>'+vnd(owed[c.id])+'</b>':"—")+'</td><td class="act"><button class="btn small" data-act="open" data-id="'+esc(c.id)+'">Bảng chi tiêu</button> <button class="btn small" data-act="edit" data-type="customers" data-id="'+esc(c.id)+'">Sửa</button></td></tr>'}).join("")
     +'</tbody></table></div>';
   return{title:"Khách hàng",sub:S.customers.length+" khách hàng",action:'<button class="btn primary" data-act="add" data-type="customers">Thêm khách hàng</button>',html:h};
 }
@@ -939,6 +943,8 @@ var FORMS={
     {k:"name",l:"Tên khách hàng",req:1,t:"text"},
     {k:"contact",l:"Người liên hệ",t:"text"},
     {k:"phone",l:"Điện thoại hoặc email",t:"text"},
+    {k:"pageLink",l:"Link Page",t:"text"},
+    {k:"product",l:"Sản phẩm",t:"text"},
     {k:"feeRate",l:"Phí dịch vụ mặc định (%)",req:1,t:"number",step:0.5,max:100},
     {k:"note",l:"Ghi chú",t:"textarea"}]},
   prices:{title:["Thêm dịch vụ","Sửa dịch vụ"],fields:[
