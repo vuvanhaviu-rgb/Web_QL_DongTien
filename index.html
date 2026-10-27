@@ -203,6 +203,25 @@ td.net,th.net{color:var(--accent);font-weight:700}
 .kpis>.kpi:nth-child(7n+7)::before{background-image:url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22white%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22%3E%3Ccircle cx=%2212%22 cy=%2212%22 r=%229%22/%3E%3Cpath d=%22M14.5 9c-.5-1-1.5-1.5-2.5-1.5-1.4 0-2.5.8-2.5 2s1 1.7 2.5 2 2.5.8 2.5 2-1.1 2-2.5 2c-1 0-2-.5-2.5-1.5%22/%3E%3Cpath d=%22M12 6v1.5M12 16.5V18%22/%3E%3C/svg%3E")}
 .kpis>.kpi.bad{--kc:240,85,58}
 .kpi.net b{color:rgb(var(--kc))}
+/* Tổng quan: thẻ lớn */
+.kpis.top{display:flex;flex-wrap:wrap;justify-content:center;gap:14px}
+.kpis.top .kpi{flex:0 1 calc(33.333% - 10px);min-width:220px;grid-template-columns:44px 1fr;grid-template-rows:auto auto auto;row-gap:6px;padding:18px 18px 16px;border-radius:14px;align-items:center}
+.kpis.top .kpi::before{grid-row:1/span 2;width:44px;height:44px;border-radius:11px;background-size:24px;align-self:start}
+.kpis.top .kpi span{font-size:11px;font-weight:600;align-self:end}
+.kpis.top .kpi b{font-size:22px;color:rgb(var(--kd));align-self:start}
+.kpis.top .kpi small{grid-column:1/-1;font-size:11px;margin-top:10px}
+.kpis.top .kpi.c-thu{--kc:37,99,235;--kd:30,64,175}
+.kpis.top .kpi.c-thu::before{background-image:url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 24 24%27 fill=%27none%27 stroke=%27white%27 stroke-width=%272%27 stroke-linecap=%27round%27 stroke-linejoin=%27round%27%3E%3Cpath d=%27M3 11v3a1 1 0 0 0 1 1h2l5 4V7L6 10H4a1 1 0 0 0-1 1z%27/%3E%3Cpath d=%27M15 9a4 4 0 0 1 0 6%27/%3E%3Cpath d=%27M18 6a8 8 0 0 1 0 12%27/%3E%3C/svg%3E")}
+.kpis.top .kpi.c-qh{--kc:239,68,68;--kd:185,28,28}
+.kpis.top .kpi.c-qh::before{background-image:url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 24 24%27 fill=%27none%27 stroke=%27white%27 stroke-width=%272%27 stroke-linecap=%27round%27 stroke-linejoin=%27round%27%3E%3Cpath d=%27M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z%27/%3E%3Cpath d=%27M12 9v4M12 17h.01%27/%3E%3C/svg%3E")}
+.kpis.top .kpi.c-net{--kc:13,148,136;--kd:15,110,104}
+.kpis.top .kpi.c-net::before{background-image:url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 24 24%27 fill=%27none%27 stroke=%27white%27 stroke-width=%272%27 stroke-linecap=%27round%27 stroke-linejoin=%27round%27%3E%3Cpath d=%27M9 3h6l-1.5 3h-3z%27/%3E%3Cpath d=%27M8.5 6C5 9 4 12 4 15a5 5 0 0 0 5 5h6a5 5 0 0 0 5-5c0-3-1-6-4.5-9%27/%3E%3Cpath d=%27M12 11v6M10 13c.5-.8 3.5-.8 4 0M10 16c.5.8 3.5.8 4 0%27/%3E%3C/svg%3E")}
+.kpis.top .kpi.c-da{--kc:76,175,80;--kd:46,110,52}
+.kpis.top .kpi.c-da::before{background-image:url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 24 24%27 fill=%27none%27 stroke=%27white%27 stroke-width=%272%27 stroke-linecap=%27round%27 stroke-linejoin=%27round%27%3E%3Ccircle cx=%2712%27 cy=%2712%27 r=%279%27/%3E%3Cpath d=%27m8 12 3 3 5-6%27/%3E%3C/svg%3E")}
+.kpis.top .kpi.c-kh{--kc:139,92,214;--kd:88,40,160}
+.kpis.top .kpi.c-kh::before{background-image:url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 24 24%27 fill=%27none%27 stroke=%27white%27 stroke-width=%272%27 stroke-linecap=%27round%27 stroke-linejoin=%27round%27%3E%3Ccircle cx=%279%27 cy=%278%27 r=%273.2%27/%3E%3Cpath d=%27M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6%27/%3E%3Cpath d=%27M16 5a3 3 0 0 1 0 6%27/%3E%3Cpath d=%27M18 14c2 .6 3 2.4 3 6%27/%3E%3C/svg%3E")}
+.kpis.top .kpi.c-qh:not(.bad){--kc:245,158,43;--kd:180,100,10}
+.kpis.top .kpi.c-qh.bad{--kc:239,68,68;--kd:185,28,28}
 .kpis.in .kpi{box-shadow:var(--shadow)}
 @media (max-width:820px){
   .app{grid-template-columns:minmax(0,1fr);gap:16px}
@@ -611,12 +630,12 @@ function vOverview(){
   S.spend.forEach(function(r){if(r.date&&r.date.slice(0,7)===m&&cust(r.customerId)){var x=spendRow(r);netM.fee+=x.fee;netM.bank+=x.bank;netM.net+=x.net}});
   var debt=bal;
   var top=Object.keys(debt).map(function(k){return[k,debt[k]]}).sort(function(a,b){return b[1]-a[1]}).slice(0,10);
-  var h='<div class="kpis">'
-   +'<div class="kpi"><span>Chưa thu</span><b>'+vnd(balSum)+'</b><small>(Quảng cáo + phí dịch vụ) − khách đã chuyển · '+balN+' khách</small></div>'
-   +'<div class="kpi '+(over.length?"bad":"")+'"><span>Quá hạn</span><b>'+vnd(overAmt)+'</b><small>'+(over.length?over.length+' khách từ 2 ngày không phát sinh chi phí':'Không có khách nào quá 2 ngày không phát sinh chi phí')+'</small></div>'
-   +'<div class="kpi net"><span>Phí thực nhận tháng này</span><b>'+vnd(netM.net)+'</b><small>Phí dịch vụ '+vnd(netM.fee)+' − phí ngân hàng '+vnd(netM.bank)+'</small></div>'
-   +'<div class="kpi"><span>Đã thu tháng này</span><b>'+vnd(recvM)+'</b><small>Khách chuyển khoản · '+recvN+' lần</small></div>'
-   +'<div class="kpi"><span>Khách hàng</span><b>'+S.customers.length+'</b><small>'+S.prices.length+' mục trong bảng giá</small></div>'
+  var h='<div class="kpis top">'
+   +'<div class="kpi c-thu"><span>Chưa thu</span><b>'+vnd(balSum)+'</b><small>(Quảng cáo + phí dịch vụ) − khách đã chuyển · '+balN+' khách</small></div>'
+   +'<div class="kpi c-qh '+(over.length?"bad":"")+'"><span>Quá hạn</span><b>'+vnd(overAmt)+'</b><small>'+(over.length?over.length+' khách từ 2 ngày không phát sinh chi phí':'Không có khách nào quá 2 ngày không phát sinh chi phí')+'</small></div>'
+   +'<div class="kpi c-net"><span>Phí thực nhận tháng này</span><b>'+vnd(netM.net)+'</b><small>Phí dịch vụ '+vnd(netM.fee)+' − phí ngân hàng '+vnd(netM.bank)+'</small></div>'
+   +'<div class="kpi c-da"><span>Đã thu tháng này</span><b>'+vnd(recvM)+'</b><small>Khách chuyển khoản · '+recvN+' lần</small></div>'
+   +'<div class="kpi c-kh"><span>Khách hàng</span><b>'+S.customers.length+'</b><small>'+S.prices.length+' mục trong bảng giá</small></div>'
    +'</div>'+adSection()+'<div class="grid2">';
   var late=dueSoon();
   h+='<section class="panel"><h2>Cần thu sớm <small>'+(late.length?late.length+" khách chưa thanh toán từ 3 ngày":"chưa thanh toán từ 3 ngày trở lên")+'</small></h2>';
