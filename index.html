@@ -165,6 +165,8 @@ table.ledger td.calc,table.ledger td.num,table.ledger th.num,table.ledger tfoot 
 table.ledger .pc{justify-content:center;padding-right:0;min-width:0;gap:2px}
 table.ledger td.act{padding:4px 2px}
 table.ledger td.act .btn{padding:3px 6px;font-size:11px}
+table.ledger tr.mh td{background:var(--surface-2);font-weight:700;border-top:2px solid var(--line);font-variant-numeric:tabular-nums}
+table.ledger tr.mh td:first-child{color:var(--accent)}
 .row .l .link{display:block}
 td.net,th.net{color:var(--accent);font-weight:700}
 .kpi.net b{color:var(--accent)}
@@ -493,21 +495,31 @@ async function addSpendRow(){
   }catch(e){ui.pendingFocus=null;toast("Không thêm được dòng: "+((e&&(e.message||e.code))||"lỗi không rõ"))}
 }
 
+function monthLabel(k){return /^\d{4}-\d{2}$/.test(k)?"Tháng "+Number(k.slice(5))+"/"+k.slice(0,4):"Chưa có ngày"}
+function monthHead(k,m){
+  var c=function(f,v){return '<td class="num" data-m="'+k+'" data-k="'+f+'">'+num(v)+'</td>'};
+  return '<tr class="mh"><td>'+monthLabel(k)+'</td>'+c("live",m.live)+c("post",m.post)+'<td></td>'+c("fee",m.fee)+c("tot",m.tot)
+    +'<td data-m="'+k+'" data-k="n">'+m.n+' dòng</td>'+c("xf",m.xf)+'<td></td></tr>';
+}
 function recalcLedger(){
   var trs=document.querySelectorAll("table.ledger tbody tr");
   if(!trs.length)return;
-  var bal=0,tl=0,tp=0,tf=0,tt=0,tx=0;
+  var bal=0,tl=0,tp=0,tf=0,tt=0,tx=0,MS={};
   trs.forEach(function(tr){
+    if(tr.classList.contains("mh"))return;
     var g=function(c){return tr.querySelector('[data-col="'+c+'"]')};
     var live=parseMoney(g("adLive").value),post=parseMoney(g("adPost").value),rate=parseRate(g("feeRate").value),xf=parseMoney(g("transfer").value);
     var fee=Math.round((live+post)*rate/100),tot=live+post+fee;
     bal+=tot-xf;tl+=live;tp+=post;tf+=fee;tt+=tot;tx+=xf;
+    var mk=String(g("date").value||"").slice(0,7),m=MS[mk]||(MS[mk]={live:0,post:0,fee:0,tot:0,xf:0,n:0});
+    m.live+=live;m.post+=post;m.fee+=fee;m.tot+=tot;m.xf+=xf;m.n++;
     var cf=tr.querySelector('[data-calc="fee"]'),ct=tr.querySelector('[data-calc="tot"]'),cb=tr.querySelector('[data-calc="bal"]');
     if(cf)cf.textContent=nz(fee);
     if(ct)ct.innerHTML="<b>"+num(tot)+"</b>";
     if(cb){cb.textContent=num(bal);cb.className="calc "+(bal>0?"owe":"clear")}
   });
   var set=function(sel,txt){var el=document.querySelector(sel);if(el)el.textContent=txt};
+  Object.keys(MS).forEach(function(k){var m=MS[k];["live","post","fee","tot","xf"].forEach(function(f){set('[data-m="'+k+'"][data-k="'+f+'"]',num(m[f]))});set('[data-m="'+k+'"][data-k="n"]',m.n+" dòng")});
   set('[data-foot="live"]',num(tl));set('[data-foot="post"]',num(tp));set('[data-foot="fee"]',num(tf));
   set('[data-foot="tot"]',num(tt));set('[data-foot="xf"]',num(tx));set('[data-foot="bal"]',num(bal));
   var fb=document.querySelector('[data-foot="bal"]');if(fb)fb.className="num "+(bal>0?"owe":"clear");
@@ -533,10 +545,15 @@ function vCustomerDetail(){
   var c=cust(ui.cid);
   var rows=S.spend.filter(function(x){return x.customerId===c.id}).sort(function(a,b){return String(a.date).localeCompare(String(b.date))||((a.createdAt||0)-(b.createdAt||0))});
   var bal=0,tl=0,tp=0,tf=0,tt=0,tx=0;
+  var MS={};
+  rows.forEach(function(r){var k=String(r.date||"").slice(0,7),x=spendRow(r),m=MS[k]||(MS[k]={live:0,post:0,fee:0,tot:0,xf:0,n:0});m.live+=x.live;m.post+=x.post;m.fee+=x.fee;m.tot+=x.tot;m.xf+=x.xf;m.n++});
+  var lastM=null;
   var body=rows.map(function(r){
     var x=spendRow(r),rate=rateOf(r),paid=!!r.paid,id=r.id;
     bal+=x.tot-x.xf;tl+=x.live;tp+=x.post;tf+=x.fee;tt+=x.tot;tx+=x.xf;
-    return '<tr>'
+    var mk=String(r.date||"").slice(0,7),head="";
+    if(mk!==lastM){lastM=mk;head=monthHead(mk,MS[mk])}
+    return head+'<tr>'
       +'<td class="cell"><input class="cin" type="date" data-cell="1" data-row="'+esc(id)+'" data-col="date" value="'+esc(r.date||"")+'" aria-label="Ngày tháng"></td>'
       +moneyCell(id,"adLive",x.live,"Quảng cáo Live")+moneyCell(id,"adPost",x.post,"Quảng cáo Bài viết")
       +'<td class="cell"><div class="pc"><input class="cin n" type="text" inputmode="decimal" autocomplete="off" data-cell="1" data-row="'+esc(id)+'" data-col="feeRate" value="'+esc(String(rate).replace(".",","))+'" aria-label="Phí dịch vụ phần trăm"><span>%</span></div></td>'
