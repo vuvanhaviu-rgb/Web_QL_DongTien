@@ -758,11 +758,11 @@ function recalcLedger(){
   var set=function(sel,txt){var el=document.querySelector(sel);if(el)el.textContent=txt};
   Object.keys(MS).forEach(function(k){var m=MS[k];["live","post","fee","tot","xf"].forEach(function(f){set('[data-m="'+k+'"][data-k="'+f+'"]',num(m[f]))});set('[data-m="'+k+'"][data-k="n"]',m.n+" dòng")});
   set('[data-foot="live"]',num(tl));set('[data-foot="post"]',num(tp));set('[data-foot="fee"]',num(tf));
-  set('[data-foot="tot"]',num(tt));set('[data-foot="xf"]',num(tx));set('[data-foot="bal"]',num(bal));
+  set('[data-foot="tot"]',num(tt));set('[data-foot="xf"]',num(tx));set('[data-foot="bal"]',num(-bal));
   var fb=document.querySelector('[data-foot="bal"]');if(fb)fb.className="num "+(bal>0?"owe":"clear");
   set('[data-kpi="qc"]',vnd(tl+tp));set('[data-kpi="qcsub"]',"Live "+num(tl)+" · Bài viết "+num(tp));
   set('[data-kpi="fee"]',vnd(tf));set('[data-kpi="feesub"]',"Tổng cộng "+vnd(tt));
-  set('[data-kpi="xf"]',vnd(tx));set('[data-kpi="bal"]',vnd(bal));
+  set('[data-kpi="xf"]',vnd(tx));set('[data-kpi="bal"]',vnd(-bal));
   set('[data-kpi="balsub"]',bal>0?"Khách còn nợ":bal<0?"Khách chuyển dư":"Đã tất toán");
   var box=document.querySelector('[data-kpi-box="bal"]');if(box)box.classList.toggle("bad",bal>0);
 }
@@ -818,7 +818,7 @@ function vCustomerDetail(){
     +'<div class="kpi"><span>Chi phí quảng cáo</span><b data-kpi="qc">'+vnd(tl+tp)+'</b><small data-kpi="qcsub">Live '+num(tl)+' · Bài viết '+num(tp)+'</small></div>'
     +'<div class="kpi"><span>Phí dịch vụ</span><b data-kpi="fee">'+vnd(tf)+'</b><small data-kpi="feesub">Tổng cộng '+vnd(tt)+'</small></div>'
     +'<div class="kpi"><span>Khách đã chuyển khoản</span><b data-kpi="xf">'+vnd(tx)+'</b><small>&nbsp;</small></div>'
-    +'<div class="kpi '+(bal>0?"bad":"")+'" data-kpi-box="bal"><span>Dư nợ cuối</span><b data-kpi="bal">'+vnd(bal)+'</b><small data-kpi="balsub">'+(bal>0?"Khách còn nợ":bal<0?"Khách chuyển dư":"Đã tất toán")+'</small></div></div>';
+    +'<div class="kpi '+(bal>0?"bad":"")+'" data-kpi-box="bal"><span>Dư nợ cuối</span><b data-kpi="bal">'+vnd(-bal)+'</b><small data-kpi="balsub">'+(bal>0?"Khách còn nợ":bal<0?"Khách chuyển dư":"Đã tất toán")+'</small></div></div>';
   h+='<div class="tablewrap ledscroll"><table class="ledger"><colgroup><col style="width:14%"><col style="width:12%"><col style="width:12%"><col style="width:7%"><col style="width:11%"><col style="width:12%"><col style="width:14%"><col style="width:11%"><col style="width:7%"></colgroup><thead><tr><th rowspan="2">Ngày tháng</th><th colspan="2" class="grp">Chi phí quảng cáo</th><th rowspan="2" class="num">Phí %</th><th rowspan="2" class="num">Phí dịch vụ</th><th rowspan="2" class="num">Tổng</th><th rowspan="2">Note</th><th rowspan="2" class="num">Khách chuyển khoản</th><th rowspan="2"></th></tr>'
     +'<tr><th class="num">Quảng cáo Live</th><th class="num">Quảng cáo Bài viết</th></tr></thead><tbody>'+body+'</tbody>'
     +'<tfoot><tr><td>Tổng cộng</td><td class="num" data-foot="live">'+num(tl)+'</td><td class="num" data-foot="post">'+num(tp)+'</td><td></td><td class="num" data-foot="fee">'+num(tf)+'</td><td class="num" data-foot="tot">'+num(tt)+'</td><td></td><td class="num" data-foot="xf">'+num(tx)+'</td><td></td></tr></tfoot></table></div>'
