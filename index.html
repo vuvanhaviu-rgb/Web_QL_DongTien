@@ -449,7 +449,7 @@ function custBalances(){
 function vOverview(){
   var bal=custBalances(),balSum=0,balN=Object.keys(bal).length;Object.keys(bal).forEach(function(k){balSum+=bal[k]});
   var unpaid=owedRows();
-  var over=unpaid.filter(function(o){return o.days>=3});
+  var over=unpaid; /* mọi dòng để "Chưa thanh toán", không xét số ngày */
   var m=todayStr().slice(0,7);
   var recvM=0,recvN=0;
   S.spend.forEach(function(r){if(r.date&&r.date.slice(0,7)===m&&cust(r.customerId)){var t=Number(r.transfer)||0;if(t>0){recvM+=t;recvN++}}});
@@ -460,7 +460,7 @@ function vOverview(){
   var top=Object.keys(debt).map(function(k){return[k,debt[k]]}).sort(function(a,b){return b[1]-a[1]}).slice(0,5);
   var h='<div class="kpis">'
    +'<div class="kpi"><span>Chưa thu</span><b>'+vnd(balSum)+'</b><small>(Quảng cáo + phí dịch vụ) − khách đã chuyển · '+balN+' khách</small></div>'
-   +'<div class="kpi '+(over.length?"bad":"")+'"><span>Quá hạn (từ 3 ngày)</span><b>'+vnd(sum2(over))+'</b><small>'+over.length+' dòng · '+custN(over)+' khách</small></div>'
+   +'<div class="kpi '+(over.length?"bad":"")+'"><span>Quá hạn</span><b>'+vnd(sum2(over))+'</b><small>Dòng để Note "Chưa thanh toán" · '+custN(over)+' khách</small></div>'
    +'<div class="kpi net"><span>Phí thực nhận tháng này</span><b>'+vnd(netM.net)+'</b><small>Phí dịch vụ '+vnd(netM.fee)+' − phí ngân hàng '+vnd(netM.bank)+'</small></div>'
    +'<div class="kpi"><span>Đã thu tháng này</span><b>'+vnd(recvM)+'</b><small>Khách chuyển khoản · '+recvN+' lần</small></div>'
    +'<div class="kpi"><span>Khách hàng</span><b>'+S.customers.length+'</b><small>'+S.prices.length+' mục trong bảng giá</small></div>'
