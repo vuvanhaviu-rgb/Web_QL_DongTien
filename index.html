@@ -195,6 +195,22 @@ td.net,th.net{color:var(--accent);font-weight:700}
 .sharebox input{flex:1 1 260px;min-width:0;width:auto;padding:6px 8px;border:1px solid var(--line);border-radius:8px;background:var(--surface-2);font-size:12px}
 .viewer .side{display:none}.viewer .app{grid-template-columns:minmax(0,1fr);max-width:1100px}
 table.ledger.vw th,table.ledger.vw td{text-align:center}table.ledger.vw td.num{text-align:center}
+.daybar{display:flex;align-items:center;gap:12px;margin:0 0 8px;padding:8px 12px;border:1px solid var(--line);border-radius:10px;background:var(--surface)}
+.daybar .dl{color:var(--muted);white-space:nowrap}
+.daybar input[type=range]{flex:1;min-width:0;width:auto;padding:0;border:0;background:none;accent-color:var(--accent);height:22px;cursor:pointer}
+.daybar b{min-width:64px;text-align:right;font-variant-numeric:tabular-nums}
+.ledscroll{max-height:68vh;overflow:auto;scrollbar-width:auto;scrollbar-color:var(--accent) var(--surface-2)}
+.ledscroll::-webkit-scrollbar{width:14px;height:14px}
+.ledscroll::-webkit-scrollbar-track{background:var(--surface-2)}
+.ledscroll::-webkit-scrollbar-thumb{background:var(--accent);border-radius:8px;border:3px solid var(--surface-2)}
+table.ledger{border-collapse:separate;border-spacing:0}
+table.ledger th,table.ledger td{border:0;border-right:1px solid var(--line);border-bottom:1px solid var(--line)}
+table.ledger th:first-child,table.ledger td:first-child{border-left:1px solid var(--line)}
+table.ledger thead tr:first-child th{border-top:1px solid var(--line)}
+.ledscroll thead th{position:sticky;top:0;z-index:3;background:var(--surface);box-shadow:0 1px 0 var(--line)}
+table.ledger tr.flash td{animation:flash 1.4s ease-out}
+@keyframes flash{0%{background:rgba(255,200,0,.45)}100%{background:transparent}}
+@media (max-width:700px){.daybar{flex-wrap:wrap}.daybar .dl{white-space:normal}}
 </style>
 
 <div class="app">
@@ -673,6 +689,30 @@ async function addSpendRow(){
   }catch(e){ui.pendingFocus=null;toast("Không thêm được dòng: "+((e&&(e.message||e.code))||"lỗi không rõ"))}
 }
 
+/* thanh kéo chọn ngày: kéo để cuộn bảng tới ngày đó, không cần lăn chuột */
+function slMonth(allM){
+  var open=allM.filter(monthOpen);
+  return open.length?open[open.length-1]:allM[allM.length-1];
+}
+function dayBar(allM){
+  var m=slMonth(allM),n=lastDay(+m.slice(0,4),+m.slice(5)),td=todayStr();
+  var v=ui.slday&&ui.slday.m===m?ui.slday.d:(td.slice(0,7)===m?+td.slice(8):1);
+  return '<div class="daybar"><span class="dl">Kéo để chọn ngày · '+monthLabel(m)+'</span><input type="range" id="daysl" min="1" max="'+n+'" step="1" value="'+v+'" data-m="'+m+'" aria-label="Kéo để chọn ngày"><b id="dayval">Ngày '+v+'</b></div>';
+}
+function jumpDay(m,d){
+  ui.slday={m:m,d:d};
+  var sc=document.querySelector(".ledscroll");if(!sc)return;
+  var ds=m+"-"+pad(d),tr=document.querySelector('table.ledger tr[data-date="'+ds+'"]');
+  if(!tr||tr.classList.contains("hid"))return;
+  var th=sc.querySelector("thead"),hh=th?th.offsetHeight:0;
+  sc.scrollTop+=tr.getBoundingClientRect().top-sc.getBoundingClientRect().top-hh-2;
+  var old=sc.querySelector("tr.flash");if(old)old.classList.remove("flash");
+  tr.classList.add("flash");
+}
+function stickyHead(){
+  var tb=document.querySelector("table.ledger thead");if(!tb||tb.rows.length<2)return;
+  var h1=tb.rows[0].offsetHeight;Array.prototype.forEach.call(tb.rows[1].cells,function(c){c.style.top=h1+"px"});
+}
 function monthLabel(k){return /^\d{4}-\d{2}$/.test(k)?"Tháng "+Number(k.slice(5))+"/"+k.slice(0,4):"Chưa có ngày"}
 function monthOpen(k){return ui.mopen[k]!==undefined?ui.mopen[k]:k===todayStr().slice(0,7)}
 var WD=["CN","T2","T3","T4","T5","T6","T7"];
@@ -771,7 +811,7 @@ function vCustomerDetail(){
     +'<div class="kpi"><span>Phí dịch vụ</span><b data-kpi="fee">'+vnd(tf)+'</b><small data-kpi="feesub">Tổng cộng '+vnd(tt)+'</small></div>'
     +'<div class="kpi"><span>Khách đã chuyển khoản</span><b data-kpi="xf">'+vnd(tx)+'</b><small>'+rows.length+' dòng chi tiêu</small></div>'
     +'<div class="kpi '+(bal>0?"bad":"")+'" data-kpi-box="bal"><span>Dư nợ cuối</span><b data-kpi="bal">'+vnd(bal)+'</b><small data-kpi="balsub">'+(bal>0?"Khách còn nợ":bal<0?"Khách chuyển dư":"Đã tất toán")+'</small></div></div>';
-  h+='<div class="tablewrap"><table class="ledger"><colgroup><col style="width:14%"><col style="width:12%"><col style="width:12%"><col style="width:7%"><col style="width:11%"><col style="width:12%"><col style="width:14%"><col style="width:11%"><col style="width:7%"></colgroup><thead><tr><th rowspan="2">Ngày tháng</th><th colspan="2" class="grp">Chi phí quảng cáo</th><th rowspan="2" class="num">Phí %</th><th rowspan="2" class="num">Phí dịch vụ</th><th rowspan="2" class="num">Tổng</th><th rowspan="2">Note</th><th rowspan="2" class="num">Khách chuyển khoản</th><th rowspan="2"></th></tr>'
+  h+=dayBar(allM)+'<div class="tablewrap ledscroll"><table class="ledger"><colgroup><col style="width:14%"><col style="width:12%"><col style="width:12%"><col style="width:7%"><col style="width:11%"><col style="width:12%"><col style="width:14%"><col style="width:11%"><col style="width:7%"></colgroup><thead><tr><th rowspan="2">Ngày tháng</th><th colspan="2" class="grp">Chi phí quảng cáo</th><th rowspan="2" class="num">Phí %</th><th rowspan="2" class="num">Phí dịch vụ</th><th rowspan="2" class="num">Tổng</th><th rowspan="2">Note</th><th rowspan="2" class="num">Khách chuyển khoản</th><th rowspan="2"></th></tr>'
     +'<tr><th class="num">Quảng cáo Live</th><th class="num">Quảng cáo Bài viết</th></tr></thead><tbody>'+body+'</tbody>'
     +'<tfoot><tr><td>Tổng cộng</td><td class="num" data-foot="live">'+num(tl)+'</td><td class="num" data-foot="post">'+num(tp)+'</td><td></td><td class="num" data-foot="fee">'+num(tf)+'</td><td class="num" data-foot="tot">'+num(tt)+'</td><td></td><td class="num" data-foot="xf">'+num(tx)+'</td><td></td></tr></tfoot></table></div>'
     +'<div class="tools"><button class="btn" data-act="sadd">+ Thêm dòng</button></div>'
@@ -865,9 +905,11 @@ function render(){
   var keep=document.activeElement&&document.activeElement.id==="q"?document.activeElement.selectionStart:null;
   var ae=document.activeElement,cap=null;
   if(ae&&ae.dataset&&ae.dataset.cell){cap={row:ae.dataset.row,col:ae.dataset.col,value:ae.value,ss:ae.selectionStart,se:ae.selectionEnd}}
+  var oldSc=document.querySelector(".ledscroll"),scTop=oldSc?oldSc.scrollTop:0;
   rendering=true;
   $("#main").innerHTML='<div class="head"><div><h1>'+esc(r.title)+'</h1>'+(r.sub?'<p>'+esc(r.sub)+'</p>':"")+'</div>'+(r.action||"")+'</div>'+banner+r.html;
   rendering=false;
+  var newSc=document.querySelector(".ledscroll");if(newSc){newSc.scrollTop=scTop;stickyHead()}
   if(keep!==null){var q=$("#q");if(q){q.focus();q.setSelectionRange(keep,keep)}}
   var want=ui.pendingFocus||cap;
   if(want){
@@ -1015,6 +1057,7 @@ document.addEventListener("keydown",function(e){
 });
 document.addEventListener("input",function(e){
   var t=e.target;
+  if(t.id==="daysl"){var d=+t.value,lb=document.getElementById("dayval");if(lb)lb.textContent="Ngày "+d;jumpDay(t.dataset.m,d);return}
   if(t.id==="q"){ui.q=t.value;render();return}
   if(t.dataset&&t.dataset.cell){liveFormat(t);recalcLedger()}
 });
