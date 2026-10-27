@@ -62,6 +62,29 @@ Trong Firebase: Firestore Database → tab **Disaster Recovery** → bật lịc
 ## Tóm tắt quy trình
 Tạo dự án Firebase → bật Firestore + đăng nhập → dán luật bảo mật → dán thông tin kết nối → đưa lên Netlify → (gắn tên miền) → tải bản sao lưu mỗi tuần.
 
+
+## Chia sẻ bảng chi tiêu cho khách xem (không cần đăng nhập)
+1. Vào Firebase, mở **Firestore Database → Rules**, thay toàn bộ luật bằng đoạn sau rồi bấm **Publish**:
+
+```
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /shares/{token} {
+      allow get: if true;
+      allow write: if request.auth != null;
+    }
+    match /{document=**} {
+      allow read, write: if request.auth != null;
+    }
+  }
+}
+```
+   Đoạn này chỉ cho phép người ngoài **đọc đúng một bảng khi có link**. Không ai xem được danh sách hay dữ liệu khác.
+2. Trong web, mở bảng chi tiêu của khách, bấm **Tạo link chia sẻ**, rồi **Sao chép** và gửi link cho khách.
+3. Link chỉ xem, không sửa được, không có phí ngân hàng và phí thực nhận. Số liệu tự cập nhật khi bạn sửa bảng.
+4. Muốn thu hồi, bấm **Tắt chia sẻ**. Link cũ sẽ không mở được nữa.
+
 ## Lưu ý
 - Dữ liệu ở trang Claude cũ **không tự chuyển sang** web mới. Web mới bắt đầu trống, sạch dữ liệu mẫu.
 - Muốn sửa giao diện hay thêm tính năng: nhắn cho Claude, nhận file mới, kéo thả lại lên Netlify.

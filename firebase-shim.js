@@ -55,6 +55,8 @@
       await load(B + "firebase-auth-compat.js");
       await load(B + "firebase-firestore-compat.js");
       firebase.initializeApp(cfg);
+      // Link chia sẻ (?v=...): chỉ đọc một tài liệu công khai, không cần đăng nhập.
+      if (new URLSearchParams(location.search).get("v")) return firebase.firestore();
       var auth = firebase.auth();
       var user = await new Promise(function (r) { var u = auth.onAuthStateChanged(function (x) { u(); r(x); }); });
       if (!user) await loginScreen(auth);

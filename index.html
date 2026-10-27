@@ -1,3 +1,4 @@
+<meta name="robots" content="noindex,nofollow">
 <title>Quản lý dòng tiền</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -189,6 +190,11 @@ td.net,th.net{color:var(--accent);font-weight:700}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 .bk{margin-top:20px;padding:12px;border:1px solid var(--line,#ddd);border-radius:10px;display:grid;gap:8px;font-size:13px}
 .bk small{opacity:.75;line-height:1.4}.bk small.warn{color:#c0392b;opacity:1;font-weight:600}
+.sharebox{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:0 0 12px;padding:10px 12px;border:1px dashed var(--line);border-radius:10px;color:var(--muted)}
+.sharebox.on{border-style:solid;background:var(--surface)}
+.sharebox input{flex:1 1 260px;min-width:0;width:auto;padding:6px 8px;border:1px solid var(--line);border-radius:8px;background:var(--surface-2);font-size:12px}
+.viewer .side{display:none}.viewer .app{grid-template-columns:minmax(0,1fr);max-width:1100px}
+table.ledger.vw th,table.ledger.vw td{text-align:center}table.ledger.vw td.num{text-align:center}
 </style>
 
 <div class="app">
@@ -227,7 +233,7 @@ var DEFAULT_FEE=10;
 var BANK_FEE=1.1;
 function defaultRate(cid){var c=(S.customers.filter(function(x){return x.id===cid})[0]);return c&&c.feeRate!=null&&c.feeRate!==""?Number(c.feeRate):DEFAULT_FEE}
 var db=null,localMode=false,seq=0;
-var ui={view:"tong-quan",q:"",pf:"all",pc:"",cid:"",ap:"month",anchor:todayStr(),delArm:"",pendingFocus:null,mopen:{},pend:{}};
+var ui={view:"tong-quan",q:"",pf:"all",pc:"",cid:"",ap:"month",anchor:todayStr(),delArm:"",pendingFocus:null,mopen:{},pend:{},shared:{}};
 var num=function(n){return (Number(n)||0).toLocaleString("vi-VN")};
 var nz=function(n){return n?num(n):"—"};
 var rendering=false,restoring=false,pointerDown=false,pendingRender=false;
@@ -253,6 +259,7 @@ async function save(col,id,data){
   }catch(e){toast("Không lưu được: "+((e&&(e.message||e.code))||"lỗi không rõ"))}
 }
 async function remove(col,id){
+  if(col==="customers"&&!localMode&&db){var cc=cust(id);if(cc&&cc.shareToken){try{await db.collection("shares").doc(cc.shareToken).delete()}catch(e){}}}
   if(localMode){S[col]=S[col].filter(function(x){return x.id!==id});render();return}
   try{await db.collection(col).doc(id).delete()}catch(e){toast("Không xóa được: "+((e&&(e.message||e.code))||"lỗi không rõ"))}
 }
@@ -310,7 +317,93 @@ document.addEventListener("change",function(e){
   if(e.target&&e.target.id==="bk-file"&&e.target.files[0]){bkRestore(e.target.files[0]);e.target.value=""}
 });
 
+/* ---------- chia sẻ link xem (không cần đăng nhập) ---------- */
+var VIEW_TOKEN=(function(){try{return new URLSearchParams(location.search).get("v")||""}catch(e){return ""}})();
+function newToken(){var a=new Uint8Array(18);crypto.getRandomValues(a);return Array.prototype.map.call(a,function(b){return ("0"+b.toString(36)).slice(-2)}).join("").slice(0,28)}
+function shareLink(t){return location.origin+location.pathname+"?v="+t}
+function sharePayload(c){
+  var rows=S.spend.filter(function(r){return r.customerId===c.id&&r.date}).sort(function(a,b){return String(a.date).localeCompare(String(b.date))||((a.createdAt||0)-(b.createdAt||0))})
+    .map(function(r){return{date:r.date,adLive:Number(r.adLive)||0,adPost:Number(r.adPost)||0,feeRate:rateOf(r),transfer:Number(r.transfer)||0,paid:!!r.paid}});
+  return{name:c.name,rows:rows};
+}
+function syncShares(force){
+  if(localMode||!db||!ready())return;
+  S.customers.forEach(function(c){
+    if(!c.shareToken)return;
+    var p=sharePayload(c),key=JSON.stringify(p);
+    if(!force&&ui.shared[c.shareToken]===key)return;
+    ui.shared[c.shareToken]=key;
+    db.collection("shares").doc(c.shareToken).set(Object.assign({},p,{updatedAt:Date.now()})).catch(function(e){delete ui.shared[c.shareToken];toast("Không cập nhật được link chia sẻ: "+((e&&(e.message||e.code))||"lỗi"))});
+  });
+}
+var shareTimer=null;
+function scheduleShare(){clearTimeout(shareTimer);shareTimer=setTimeout(function(){syncShares(false)},900)}
+async function startShare(){
+  var c=cust(ui.cid);if(!c)return;
+  if(localMode||!db){toast("Cần kết nối cơ sở dữ liệu để chia sẻ");return}
+  await save("customers",c.id,{shareToken:newToken()});
+  scheduleShare();
+}
+async function stopShare(){
+  var c=cust(ui.cid);if(!c||!c.shareToken)return;
+  if(!confirm("Tắt chia sẻ? Link đã gửi sẽ không mở được nữa."))return;
+  var t=c.shareToken;
+  try{await db.collection("shares").doc(t).delete()}catch(e){}
+  delete ui.shared[t];
+  await save("customers",c.id,{shareToken:null});
+}
+function copyShare(){
+  var inp=document.getElementById("share-url");if(!inp)return;
+  var done=function(){toast("Đã sao chép link")};
+  if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(inp.value).then(done,function(){inp.select();document.execCommand("copy");done()});
+  else{inp.select();document.execCommand("copy");done()}
+}
+function shareBox(c){
+  if(!c.shareToken)return '<div class="sharebox"><span>Gửi bảng chi tiêu này cho khách xem, không cần đăng nhập.</span><button class="btn small" data-act="share">Tạo link chia sẻ</button></div>';
+  return '<div class="sharebox on"><span>Link xem không cần đăng nhập (chỉ xem, không sửa được):</span><input id="share-url" readonly value="'+esc(shareLink(c.shareToken))+'" aria-label="Link chia sẻ"><button class="btn small" data-act="copyshare">Sao chép</button><button class="btn small danger" data-act="unshare">Tắt chia sẻ</button></div>';
+}
+function viewerHtml(d){
+  var rows=(d.rows||[]).slice(),tl=0,tp=0,tf=0,tt=0,tx=0,M={},order=[];
+  rows.forEach(function(r){
+    var ad=r.adLive+r.adPost,fee=Math.round(ad*r.feeRate/100),tot=ad+fee,k=String(r.date).slice(0,7);
+    r._fee=fee;r._tot=tot;tl+=r.adLive;tp+=r.adPost;tf+=fee;tt+=tot;tx+=r.transfer;
+    if(!M[k]){M[k]={live:0,post:0,fee:0,tot:0,xf:0,rows:[]};order.push(k)}
+    var m=M[k];m.live+=r.adLive;m.post+=r.adPost;m.fee+=fee;m.tot+=tot;m.xf+=r.transfer;m.rows.push(r);
+  });
+  var bal=tt-tx,body="";
+  order.sort().forEach(function(k){
+    var m=M[k];
+    body+='<tr class="mh"><td>'+monthLabel(k)+'</td><td class="num">'+num(m.live)+'</td><td class="num">'+num(m.post)+'</td><td></td><td class="num">'+num(m.fee)+'</td><td class="num">'+num(m.tot)+'</td><td>'+m.rows.length+' dòng</td><td class="num">'+num(m.xf)+'</td></tr>';
+    m.rows.forEach(function(r){
+      body+='<tr><td>'+fmtDate(r.date)+'</td><td class="num">'+nz(r.adLive)+'</td><td class="num">'+nz(r.adPost)+'</td><td>'+String(r.feeRate).replace(".",",")+'%</td><td class="num">'+nz(r._fee)+'</td><td class="num"><b>'+nz(r._tot)+'</b></td>'
+        +'<td><span class="pill '+(r.paid?"ok":"wait")+'">'+(r.paid?"Đã thanh toán":"Chưa thanh toán")+'</span></td><td class="num">'+nz(r.transfer)+'</td></tr>';
+    });
+  });
+  var upd=d.updatedAt?new Date(d.updatedAt).toLocaleString("vi-VN"):"";
+  return '<div class="head"><div><h1>'+esc(d.name||"Bảng chi tiêu")+'</h1><p>Bảng chi tiêu quảng cáo'+(upd?" · cập nhật "+esc(upd):"")+'</p></div></div>'
+    +'<div class="kpis"><div class="kpi"><span>Chi phí quảng cáo</span><b>'+vnd(tl+tp)+'</b><small>Live '+num(tl)+' · Bài viết '+num(tp)+'</small></div>'
+    +'<div class="kpi"><span>Phí dịch vụ</span><b>'+vnd(tf)+'</b><small>Tổng cộng '+vnd(tt)+'</small></div>'
+    +'<div class="kpi"><span>Đã chuyển khoản</span><b>'+vnd(tx)+'</b><small>&nbsp;</small></div>'
+    +'<div class="kpi '+(bal>0?"bad":"")+'"><span>Còn phải thanh toán</span><b>'+vnd(Math.max(0,bal))+'</b><small>'+(bal>0?"Tổng − đã chuyển khoản":bal<0?"Đã chuyển dư "+vnd(-bal):"Đã tất toán")+'</small></div></div>'
+    +(rows.length?'<div class="tablewrap"><table class="ledger vw"><thead><tr><th>Ngày</th><th>Quảng cáo Live</th><th>Quảng cáo Bài viết</th><th>Phí %</th><th>Phí dịch vụ</th><th>Tổng</th><th>Trạng thái</th><th>Đã chuyển khoản</th></tr></thead><tbody>'+body+'</tbody>'
+      +'<tfoot><tr><td>Tổng cộng</td><td class="num">'+num(tl)+'</td><td class="num">'+num(tp)+'</td><td></td><td class="num">'+num(tf)+'</td><td class="num">'+num(tt)+'</td><td></td><td class="num">'+num(tx)+'</td></tr></tfoot></table></div>'
+      :emptyBlock("Chưa có số liệu","Bảng chi tiêu sẽ hiện ở đây khi có dữ liệu."));
+}
+async function viewerInit(){
+  document.body.classList.add("viewer");
+  var main=$("#main");main.innerHTML=loadingBlock();
+  var cl=window.claude;
+  try{db=cl&&cl.use?await cl.use("db"):null}catch(e){db=null}
+  if(!db){main.innerHTML=emptyBlock("Chưa mở được trang","Trang chưa được kết nối.");return}
+  try{
+    var snap=await db.collection("shares").doc(VIEW_TOKEN).get();
+    if(!snap.exists){main.innerHTML=emptyBlock("Link không còn hiệu lực","Người gửi đã tắt chia sẻ hoặc link chưa đúng.");return}
+    main.innerHTML=viewerHtml(snap.data());
+  }catch(e){main.innerHTML=emptyBlock("Không mở được link","Chủ trang có thể chưa bật quyền xem công khai cho link chia sẻ.")}
+}
+
 async function init(){
+  if(VIEW_TOKEN){viewerInit();return}
   bkShow();
   render();
   var cl=window.claude;
@@ -319,7 +412,7 @@ async function init(){
   COLS.forEach(function(c){
     db.collection(c).onSnapshot(function(snap){
       S[c]=snap.docs.map(function(d){return Object.assign({id:d.id},d.data())});
-      loaded[c]=true;render();
+      loaded[c]=true;render();scheduleShare();
     },function(){loaded[c]=true;render()});
   });
 }
@@ -673,7 +766,7 @@ function vCustomerDetail(){
     }
   });
   if(byDate[""]||byDate["undefined"])(byDate[""]||byDate["undefined"]).forEach(function(r){body+=realRow(r,false)});
-  var h='<div class="kpis">'
+  var h=shareBox(c)+'<div class="kpis">'
     +'<div class="kpi"><span>Chi phí quảng cáo</span><b data-kpi="qc">'+vnd(tl+tp)+'</b><small data-kpi="qcsub">Live '+num(tl)+' · Bài viết '+num(tp)+'</small></div>'
     +'<div class="kpi"><span>Phí dịch vụ</span><b data-kpi="fee">'+vnd(tf)+'</b><small data-kpi="feesub">Tổng cộng '+vnd(tt)+'</small></div>'
     +'<div class="kpi"><span>Khách đã chuyển khoản</span><b data-kpi="xf">'+vnd(tx)+'</b><small>'+rows.length+' dòng chi tiêu</small></div>'
@@ -885,6 +978,9 @@ document.addEventListener("click",function(e){
   else if(a==="back"){ui.cid="";render()}
   else if(a==="goc"){ui.pendingCid=el.dataset.id;if(location.hash==="#khach-hang"){route()}else{location.hash="#khach-hang"}window.scrollTo(0,0)}
   else if(a==="sadd")addSpendRow();
+  else if(a==="share")startShare();
+  else if(a==="unshare")stopShare();
+  else if(a==="copyshare")copyShare();
   else if(a==="mtog"){var mk=el.dataset.m;ui.mopen[mk]=!monthOpen(mk);render()}
   else if(a==="sdel"){if(ui.delArm===el.dataset.id){ui.delArm="";var rr=S.spend.filter(function(x){return x.id===el.dataset.id})[0];remove("spend",el.dataset.id);if(rr)hideDay(rr.date,el.dataset.id)}else{ui.delArm=el.dataset.id;render()}}
   else if(a==="shide")hideDay(el.dataset.date)
