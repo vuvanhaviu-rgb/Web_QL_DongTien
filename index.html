@@ -472,7 +472,7 @@ function vOverview(){
   var netM={fee:0,bank:0,net:0};
   S.spend.forEach(function(r){if(r.date&&r.date.slice(0,7)===m&&cust(r.customerId)){var x=spendRow(r);netM.fee+=x.fee;netM.bank+=x.bank;netM.net+=x.net}});
   var debt=bal;
-  var top=Object.keys(debt).map(function(k){return[k,debt[k]]}).sort(function(a,b){return b[1]-a[1]}).slice(0,5);
+  var top=Object.keys(debt).map(function(k){return[k,debt[k]]}).sort(function(a,b){return b[1]-a[1]}).slice(0,10);
   var h='<div class="kpis">'
    +'<div class="kpi"><span>Chưa thu</span><b>'+vnd(balSum)+'</b><small>(Quảng cáo + phí dịch vụ) − khách đã chuyển · '+balN+' khách</small></div>'
    +'<div class="kpi '+(over.length?"bad":"")+'"><span>Quá hạn</span><b>'+vnd(overAmt)+'</b><small>'+(over.length?over.length+' khách từ 2 ngày không phát sinh chi phí':'Không có khách nào quá 2 ngày không phát sinh chi phí')+'</small></div>'
@@ -484,8 +484,8 @@ function vOverview(){
   h+='<section class="panel"><h2>Cần thu sớm <small>'+(late.length?late.length+" khách chưa thanh toán từ 3 ngày":"chưa thanh toán từ 3 ngày trở lên")+'</small></h2>';
   if(!late.length)h+=emptyBlock("Không có khách nào quá 3 ngày","Khách có dòng chi tiêu để ở “Chưa thanh toán” từ 3 ngày trở lên sẽ hiện ở đây.");
   else h+='<div class="list">'+late.map(function(l){return '<div class="row"><div class="l"><button class="link" data-act="goc" data-id="'+esc(l.id)+'">'+esc(custName(l.id))+'</button><span>'+l.n+' dòng chi tiêu · từ '+fmtDate(l.oldest)+'</span></div><div class="r">'+vnd(l.owe)+'<br><span class="pill '+(l.days>=7?"bad":"wait")+'">'+l.days+' ngày</span></div></div>'}).join("")+'</div>';
-  h+='</section><section class="panel"><h2>Khách hàng còn nợ nhiều nhất</h2>';
-  if(!top.length)h+=emptyBlock("Chưa có công nợ","Các khoản chưa thu sẽ được cộng lại theo từng khách hàng.");
+  h+='</section><section class="panel"><h2>Công nợ <small>so sánh số tiền khách chưa thanh toán</small></h2>';
+  if(!top.length)h+=emptyBlock("Chưa có công nợ","Số tiền mỗi khách còn phải chuyển (quảng cáo + phí dịch vụ − đã chuyển khoản) sẽ hiện ở đây để so sánh.");
   else{var mx=top[0][1];h+=top.map(function(t){return '<div class="hbar"><div class="t"><span>'+esc(custName(t[0]))+'</span><span>'+vnd(t[1])+'</span></div><div class="track"><i style="width:'+Math.max(3,t[1]/mx*100)+'%"></i></div></div>'}).join("")}
   h+='</section></div>';
   return{title:"Tổng quan",sub:"Tình hình thu tiền tính đến hôm nay, "+fmtDate(todayStr()),html:h};
