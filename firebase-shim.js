@@ -30,9 +30,27 @@
       });
     });
   }
+  function lockScreen(msg) {
+    var o = document.createElement("div");
+    o.style.cssText = "position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;background:var(--bg,#f6f7f9);color:var(--text,#111);font-family:inherit;padding:16px;text-align:center";
+    o.innerHTML = '<div style="max-width:380px"><h1 style="font-size:20px;margin:0 0 8px">Quản lý dòng tiền</h1><p style="margin:0;opacity:.75;line-height:1.5">' + msg + '</p></div>';
+    document.body.appendChild(o);
+    return new Promise(function () {}); // không bao giờ mở khóa
+  }
+  function logoutButton(auth) {
+    var box = document.getElementById("bk"); if (!box) return;
+    var b = document.createElement("button");
+    b.type = "button"; b.className = "btn small"; b.textContent = "Đăng xuất";
+    b.addEventListener("click", function () { auth.signOut().then(function () { location.reload(); }); });
+    box.parentNode.insertBefore(b, box.nextSibling);
+    b.style.marginTop = "10px";
+  }
   window.claude = {
     use: async function (name) {
-      if (name !== "db" || !configured) return null; // chưa cấu hình: chạy thử ở chế độ tạm
+      if (name !== "db") return null;
+      if (!configured) {
+        await lockScreen("Trang chưa được kết nối cơ sở dữ liệu nên chưa thể sử dụng. Chủ trang cần hoàn thành phần cài đặt Firebase (file firebase-config.js).");
+      }
       await load(B + "firebase-app-compat.js");
       await load(B + "firebase-auth-compat.js");
       await load(B + "firebase-firestore-compat.js");
@@ -40,6 +58,7 @@
       var auth = firebase.auth();
       var user = await new Promise(function (r) { var u = auth.onAuthStateChanged(function (x) { u(); r(x); }); });
       if (!user) await loginScreen(auth);
+      logoutButton(auth);
       return firebase.firestore();
     }
   };
