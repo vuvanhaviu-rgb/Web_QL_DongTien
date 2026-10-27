@@ -423,7 +423,8 @@ function dueSoon(){
     b.n++;b.owe+=Math.max(0,x.tot-x.xf);
     if(days>b.days){b.days=days;b.oldest=r.date}
   });
-  return Object.keys(by).map(function(id){return{id:id,n:by[id].n,owe:by[id].owe,days:by[id].days,oldest:by[id].oldest}})
+  var bal=custBalances();
+  return Object.keys(by).filter(function(id){return bal[id]>0}).map(function(id){return{id:id,n:by[id].n,owe:bal[id],days:by[id].days,oldest:by[id].oldest}})
     .sort(function(a,b){return b.days-a.days||b.owe-a.owe});
 }
 
