@@ -727,7 +727,7 @@ function blankRow(ds,c,hid){
   return '<tr class="'+cls+'" data-date="'+ds+'" data-month="'+ds.slice(0,7)+'"><td class="dcell">'+ds.slice(8)+"/"+ds.slice(5,7)+"/"+ds.slice(0,4)+' <small>'+WD[wd]+'</small></td>'
     +moneyCell(id,"adLive",0,"Quảng cáo Live")+moneyCell(id,"adPost",0,"Quảng cáo Bài viết")
     +'<td class="cell"><div class="pc"><input class="cin n" type="text" inputmode="decimal" autocomplete="off" data-cell="1" data-row="'+id+'" data-col="feeRate" value="'+esc(String(defaultRate(c.id)).replace(".",","))+'" aria-label="Phí dịch vụ phần trăm"><span>%</span></div></td>'
-    +'<td class="calc" data-calc="fee">—</td><td class="calc" data-calc="tot">—</td><td><button class="tog n" tabindex="-1" data-act="spaid" data-id="'+id+'" data-v="1" title="Bấm để đổi trạng thái" aria-label="Chưa thanh toán. Bấm để đổi trạng thái">Chưa thanh toán</button></td>'
+    +'<td class="calc" data-calc="fee">—</td><td class="calc" data-calc="tot">—</td><td class="dash"></td>'
     +moneyCell(id,"transfer",0,"Khách chuyển khoản")+'<td class="act"><button class="btn small danger" tabindex="-1" data-act="shide" data-date="'+ds+'" title="Xóa ngày này khỏi bảng">Xóa</button></td></tr>';
 }
 function recalcLedger(){
