@@ -446,10 +446,23 @@ function custBalances(){
   Object.keys(b).forEach(function(k){if(b[k]<=0)delete b[k]});
   return b;
 }
+/* khách có phát sinh chi phí quảng cáo nhưng từ ngày cập nhật gần nhất đến nay đã từ 2 ngày trở lên không có chi phí mới */
+function idleCustomers(){
+  var now=new Date(),t0=new Date(now.getFullYear(),now.getMonth(),now.getDate()).getTime(),last={};
+  S.spend.forEach(function(r){
+    if(!r.date||!cust(r.customerId))return;
+    var x=spendRow(r);if(!(x.live+x.post>0))return;
+    if(!last[r.customerId]||r.date>last[r.customerId])last[r.customerId]=r.date;
+  });
+  return Object.keys(last).map(function(id){
+    var d=last[id],t=new Date(+d.slice(0,4),+d.slice(5,7)-1,+d.slice(8,10)).getTime();
+    return{id:id,last:d,days:Math.round((t0-t)/86400000)};
+  }).filter(function(o){return o.days>=2}).sort(function(a,b){return b.days-a.days});
+}
 function vOverview(){
   var bal=custBalances(),balSum=0,balN=Object.keys(bal).length;Object.keys(bal).forEach(function(k){balSum+=bal[k]});
   var unpaid=owedRows();
-  var over=unpaid; /* mọi dòng để "Chưa thanh toán", không xét số ngày */
+  var over=idleCustomers();
   var m=todayStr().slice(0,7);
   var recvM=0,recvN=0;
   S.spend.forEach(function(r){if(r.date&&r.date.slice(0,7)===m&&cust(r.customerId)){var t=Number(r.transfer)||0;if(t>0){recvM+=t;recvN++}}});
@@ -460,7 +473,7 @@ function vOverview(){
   var top=Object.keys(debt).map(function(k){return[k,debt[k]]}).sort(function(a,b){return b[1]-a[1]}).slice(0,5);
   var h='<div class="kpis">'
    +'<div class="kpi"><span>Chưa thu</span><b>'+vnd(balSum)+'</b><small>(Quảng cáo + phí dịch vụ) − khách đã chuyển · '+balN+' khách</small></div>'
-   +'<div class="kpi '+(over.length?"bad":"")+'"><span>Quá hạn</span><b>'+vnd(sum2(over))+'</b><small>Dòng để Note "Chưa thanh toán" · '+custN(over)+' khách</small></div>'
+   +'<div class="kpi '+(over.length?"bad":"")+'"><span>Quá hạn</span><b>'+over.length+' khách</b><small>'+(over.length?over.slice(0,3).map(function(o){return esc(custName(o.id))+" ("+o.days+" ngày)"}).join(", ")+(over.length>3?"…":""):"Không có khách nào quá 2 ngày không phát sinh chi phí")+'</small></div>'
    +'<div class="kpi net"><span>Phí thực nhận tháng này</span><b>'+vnd(netM.net)+'</b><small>Phí dịch vụ '+vnd(netM.fee)+' − phí ngân hàng '+vnd(netM.bank)+'</small></div>'
    +'<div class="kpi"><span>Đã thu tháng này</span><b>'+vnd(recvM)+'</b><small>Khách chuyển khoản · '+recvN+' lần</small></div>'
    +'<div class="kpi"><span>Khách hàng</span><b>'+S.customers.length+'</b><small>'+S.prices.length+' mục trong bảng giá</small></div>'
