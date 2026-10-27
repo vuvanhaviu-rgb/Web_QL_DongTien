@@ -713,6 +713,7 @@ function stickyHead(){
   var tb=document.querySelector("table.ledger thead");if(!tb||tb.rows.length<2)return;
   var h1=tb.rows[0].offsetHeight;Array.prototype.forEach.call(tb.rows[1].cells,function(c){c.style.top=h1+"px"});
 }
+function nextMonth(k){var y=+k.slice(0,4),m=+k.slice(5)+1;if(m>12){m=1;y++}return y+"-"+pad(m)}
 function monthLabel(k){return /^\d{4}-\d{2}$/.test(k)?"Tháng "+Number(k.slice(5))+"/"+k.slice(0,4):"Chưa có ngày"}
 function monthOpen(k){return ui.mopen[k]!==undefined?ui.mopen[k]:k===todayStr().slice(0,7)}
 var WD=["CN","T2","T3","T4","T5","T6","T7"];
@@ -791,7 +792,7 @@ function vCustomerDetail(){
   }
   var byDate={};rows.forEach(function(r){(byDate[r.date]=byDate[r.date]||[]).push(r)});
   var curM=todayStr().slice(0,7),keys=Object.keys(MS).filter(function(k){return/^\d{4}-\d{2}$/.test(k)});
-  keys.push(curM);keys.sort();
+  keys.push(curM);if(/^\d{4}-\d{2}$/.test(c.lastMonth||""))keys.push(c.lastMonth);keys.sort();
   var first=keys[0],last=keys[keys.length-1],allM=[],cy=+first.slice(0,4),cm=+first.slice(5);
   while(cy+"-"+pad(cm)<=last){allM.push(cy+"-"+pad(cm));cm++;if(cm>12){cm=1;cy++}}
   var body="",HID={},HC={};
@@ -814,7 +815,7 @@ function vCustomerDetail(){
   h+='<div class="tablewrap ledscroll"><table class="ledger"><colgroup><col style="width:14%"><col style="width:12%"><col style="width:12%"><col style="width:7%"><col style="width:11%"><col style="width:12%"><col style="width:14%"><col style="width:11%"><col style="width:7%"></colgroup><thead><tr><th rowspan="2">Ngày tháng</th><th colspan="2" class="grp">Chi phí quảng cáo</th><th rowspan="2" class="num">Phí %</th><th rowspan="2" class="num">Phí dịch vụ</th><th rowspan="2" class="num">Tổng</th><th rowspan="2">Note</th><th rowspan="2" class="num">Khách chuyển khoản</th><th rowspan="2"></th></tr>'
     +'<tr><th class="num">Quảng cáo Live</th><th class="num">Quảng cáo Bài viết</th></tr></thead><tbody>'+body+'</tbody>'
     +'<tfoot><tr><td>Tổng cộng</td><td class="num" data-foot="live">'+num(tl)+'</td><td class="num" data-foot="post">'+num(tp)+'</td><td></td><td class="num" data-foot="fee">'+num(tf)+'</td><td class="num" data-foot="tot">'+num(tt)+'</td><td></td><td class="num" data-foot="xf">'+num(tx)+'</td><td></td></tr></tfoot></table></div>'
-    +'<div class="tools"><button class="btn" data-act="sadd">+ Thêm dòng</button></div>'
+    +'<div class="tools"><button class="btn" data-act="sadd">+ Thêm dòng</button><button class="btn" data-act="newmonth" data-m="'+nextMonth(last)+'">+ Tạo bảng '+monthLabel(nextMonth(last)).toLowerCase()+'</button></div>'
     +'<p class="hint">Bấm vào ô trắng để nhập. Tab sang ô kế bên, Enter xuống dòng dưới (ở dòng cuối sẽ thêm dòng mới). Ô xám tự tính: phí dịch vụ = chi phí quảng cáo × phí %, tổng = quảng cáo + phí dịch vụ. Tỉ lệ phí mặc định của khách là '+defaultRate(c.id)+'%, sửa riêng được từng dòng. Số tiền tính bằng ₫.</p>';
   return{title:c.name,sub:[c.contact,c.phone,"Phí dịch vụ mặc định "+defaultRate(c.id)+"%"].filter(Boolean).join(" · "),
     action:'<div class="tools"><button class="btn" data-act="back">← Danh sách khách hàng</button><button class="btn primary" data-act="sadd">Thêm dòng chi tiêu</button></div>',html:h};
@@ -910,6 +911,7 @@ function render(){
   $("#main").innerHTML='<div class="head"><div><h1>'+esc(r.title)+'</h1>'+(r.sub?'<p>'+esc(r.sub)+'</p>':"")+'</div>'+(r.action||"")+'</div>'+banner+r.html;
   rendering=false;
   var newSc=document.querySelector(".ledscroll");if(newSc){newSc.scrollTop=scTop;stickyHead()}
+  if(ui.scrollMonth){var mh=document.querySelector('tr.mh[data-m="'+ui.scrollMonth+'"]');if(mh&&newSc){var hh=newSc.querySelector("thead").offsetHeight;newSc.scrollTop+=mh.getBoundingClientRect().top-newSc.getBoundingClientRect().top-hh-1;ui.scrollMonth=""}}
   if(keep!==null){var q=$("#q");if(q){q.focus();q.setSelectionRange(keep,keep)}}
   var want=ui.pendingFocus||cap;
   if(want){
@@ -1020,6 +1022,7 @@ document.addEventListener("click",function(e){
   else if(a==="back"){ui.cid="";render()}
   else if(a==="goc"){ui.pendingCid=el.dataset.id;if(location.hash==="#khach-hang"){route()}else{location.hash="#khach-hang"}window.scrollTo(0,0)}
   else if(a==="sadd")addSpendRow();
+  else if(a==="newmonth"){var nm=el.dataset.m;ui.mopen[nm]=true;ui.scrollMonth=nm;save("customers",ui.cid,{lastMonth:nm})}
   else if(a==="share")startShare();
   else if(a==="unshare")stopShare();
   else if(a==="copyshare")copyShare();
