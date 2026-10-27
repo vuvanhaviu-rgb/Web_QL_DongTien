@@ -427,21 +427,34 @@ function dueSoon(){
     .sort(function(a,b){return b.days-a.days||b.owe-a.owe});
 }
 
+/* các dòng chi tiêu đang để "Chưa thanh toán" và khách còn phải chuyển (tổng − đã chuyển) */
+function sum2(a){return a.reduce(function(t,o){return t+o.owe},0)}
+function owedRows(){
+  var now=new Date(),t0=new Date(now.getFullYear(),now.getMonth(),now.getDate()).getTime(),out=[];
+  S.spend.forEach(function(r){
+    if(r.paid||!r.date||!cust(r.customerId))return;
+    var x=spendRow(r),owe=Math.max(0,x.tot-x.xf);if(!owe)return;
+    var d=new Date(+r.date.slice(0,4),+r.date.slice(5,7)-1,+r.date.slice(8,10)).getTime();
+    out.push({cid:r.customerId,owe:owe,days:Math.round((t0-d)/86400000)});
+  });
+  return out;
+}
 function vOverview(){
-  var unpaid=S.payments.filter(function(p){return!p.paidDate});
-  var over=unpaid.filter(function(p){return status(p)==="overdue"});
+  var unpaid=owedRows();
+  var over=unpaid.filter(function(o){return o.days>=3});
   var m=todayStr().slice(0,7);
-  var paidM=S.payments.filter(function(p){return p.paidDate&&p.paidDate.slice(0,7)===m});
+  var recvM=0,recvN=0;
+  S.spend.forEach(function(r){if(r.date&&r.date.slice(0,7)===m&&cust(r.customerId)){var t=Number(r.transfer)||0;if(t>0){recvM+=t;recvN++}}});
+  var custN=function(a){var o={};a.forEach(function(x){o[x.cid]=1});return Object.keys(o).length};
   var netM={fee:0,bank:0,net:0};
   S.spend.forEach(function(r){if(r.date&&r.date.slice(0,7)===m&&cust(r.customerId)){var x=spendRow(r);netM.fee+=x.fee;netM.bank+=x.bank;netM.net+=x.net}});
-  var soon=unpaid.slice().sort(function(a,b){return (a.dueDate||"9999").localeCompare(b.dueDate||"9999")}).slice(0,6);
-  var debt={};unpaid.forEach(function(p){debt[p.customerId]=(debt[p.customerId]||0)+(Number(p.amount)||0)});
+  var debt={};unpaid.forEach(function(o){debt[o.cid]=(debt[o.cid]||0)+o.owe});
   var top=Object.keys(debt).map(function(k){return[k,debt[k]]}).sort(function(a,b){return b[1]-a[1]}).slice(0,5);
   var h='<div class="kpis">'
-   +'<div class="kpi"><span>Chưa thu</span><b>'+vnd(sum(unpaid))+'</b><small>'+unpaid.length+' khoản</small></div>'
-   +'<div class="kpi '+(over.length?"bad":"")+'"><span>Quá hạn</span><b>'+vnd(sum(over))+'</b><small>'+over.length+' khoản</small></div>'
+   +'<div class="kpi"><span>Chưa thu</span><b>'+vnd(sum2(unpaid))+'</b><small>'+unpaid.length+' dòng · '+custN(unpaid)+' khách</small></div>'
+   +'<div class="kpi '+(over.length?"bad":"")+'"><span>Quá hạn (từ 3 ngày)</span><b>'+vnd(sum2(over))+'</b><small>'+over.length+' dòng · '+custN(over)+' khách</small></div>'
    +'<div class="kpi net"><span>Phí thực nhận tháng này</span><b>'+vnd(netM.net)+'</b><small>Phí dịch vụ '+vnd(netM.fee)+' − phí ngân hàng '+vnd(netM.bank)+'</small></div>'
-   +'<div class="kpi"><span>Đã thu tháng này</span><b>'+vnd(sum(paidM))+'</b><small>'+paidM.length+' khoản</small></div>'
+   +'<div class="kpi"><span>Đã thu tháng này</span><b>'+vnd(recvM)+'</b><small>Khách chuyển khoản · '+recvN+' lần</small></div>'
    +'<div class="kpi"><span>Khách hàng</span><b>'+S.customers.length+'</b><small>'+S.prices.length+' mục trong bảng giá</small></div>'
    +'</div>'+adSection()+'<div class="grid2">';
   var late=dueSoon();
@@ -458,7 +471,8 @@ function vOverview(){
 function vCustomers(){
   var q=ui.q.trim().toLowerCase();
   var owed={},billed={};
-  S.payments.forEach(function(p){var a=Number(p.amount)||0;billed[p.customerId]=(billed[p.customerId]||0)+a;if(!p.paidDate)owed[p.customerId]=(owed[p.customerId]||0)+a});
+  S.spend.forEach(function(r){var x=spendRow(r);billed[r.customerId]=(billed[r.customerId]||0)+x.tot});
+  owedRows().forEach(function(o){owed[o.cid]=(owed[o.cid]||0)+o.owe});
   var list=S.customers.filter(function(c){return!q||[c.name,c.contact,c.phone,c.note].join(" ").toLowerCase().indexOf(q)>=0})
     .sort(function(a,b){return String(a.name).localeCompare(String(b.name),"vi")});
   var h='<div class="tools"><input type="search" id="q" placeholder="Tìm theo tên, số điện thoại…" value="'+esc(ui.q)+'" aria-label="Tìm khách hàng"></div>';
