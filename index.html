@@ -895,6 +895,15 @@ function vPayments(){
   return{title:"Thanh toán / công nợ",sub:"Còn phải thu "+vnd(sum(unpaid)),action:'<button class="btn primary" data-act="add" data-type="payments">Ghi khoản thu</button>',html:h};
 }
 
+var PLANS=[
+  {name:"Quảng cáo Bài viết",kind:"Chạy theo ngày",min:300000,unit:"1 ngày",rate:10},
+  {name:"Quảng cáo Live",kind:"Chạy theo phiên",min:1000000,unit:"1 phiên",rate:10}
+];
+function plansHtml(){
+  return '<section class="panel"><h2>Bảng báo giá <small>2 chiến dịch riêng lẻ</small></h2><div class="tablewrap"><table style="min-width:0"><thead><tr><th>Chiến dịch</th><th>Hình thức</th><th class="num">Ngân sách thấp nhất</th><th class="num">Phí dịch vụ</th><th class="num">Phí tối thiểu</th><th class="num">Tổng thanh toán tối thiểu</th></tr></thead><tbody>'
+  +PLANS.map(function(p){var f=Math.round(p.min*p.rate/100);return '<tr><td><b>'+esc(p.name)+'</b></td><td>'+esc(p.kind)+'</td><td class="num"><b>'+vnd(p.min)+'</b> / '+p.unit+'</td><td class="num">'+p.rate+'%</td><td class="num">'+vnd(f)+'</td><td class="num"><b>'+vnd(p.min+f)+'</b></td></tr>'}).join("")
+  +'</tbody></table></div><p class="hint" style="margin-top:8px">Phí dịch vụ tính trên ngân sách quảng cáo. Ngân sách cao hơn mức thấp nhất thì phí vẫn là '+PLANS[0].rate+'%.</p></section>';
+}
 function vPrices(){
   var list=S.prices.slice().sort(function(a,b){return String(a.channel||"").localeCompare(String(b.channel||""),"vi")||String(a.name).localeCompare(String(b.name),"vi")});
   var h;
@@ -902,7 +911,7 @@ function vPrices(){
   else h='<div class="tablewrap"><table><thead><tr><th>Dịch vụ</th><th>Kênh</th><th>Đơn vị</th><th class="num">Đơn giá</th><th></th></tr></thead><tbody>'
     +list.map(function(p){return '<tr><td><b>'+esc(p.name)+'</b>'+(p.note?'<span class="sub">'+esc(p.note)+'</span>':"")+'</td><td>'+esc(p.channel||"—")+'</td><td>'+esc(p.unit||"—")+'</td><td class="num"><b>'+vnd(p.price)+'</b></td><td class="act"><button class="btn small" data-act="edit" data-type="prices" data-id="'+esc(p.id)+'">Sửa</button></td></tr>'}).join("")
     +'</tbody></table></div>';
-  return{title:"Bảng giá",sub:S.prices.length+" dịch vụ",action:'<button class="btn primary" data-act="add" data-type="prices">Thêm dịch vụ</button>',html:h};
+  return{title:"Bảng giá",sub:S.prices.length+" dịch vụ",action:'<button class="btn primary" data-act="add" data-type="prices">Thêm dịch vụ</button>',html:plansHtml()+h};
 }
 
 function niceMax(v){var p=Math.pow(10,Math.floor(Math.log10(v)));var c=[1,2,4,5,10];for(var i=0;i<c.length;i++){if(c[i]*p>=v)return c[i]*p}return 10*p}
