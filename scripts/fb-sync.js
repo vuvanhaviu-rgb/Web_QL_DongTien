@@ -4,7 +4,7 @@ const admin = require("firebase-admin");
 
 const TOKEN = process.env.FB_TOKEN;
 const SA = process.env.FIREBASE_SA;
-const DAYS = Number(process.env.SYNC_DAYS || 3);       // quét lại N ngày gần nhất để bắt số điều chỉnh
+const DAYS = Number(process.env.SYNC_DAYS || 40);       // quét lại N ngày gần nhất (đủ cho tab Tháng này và số Facebook điều chỉnh)
 const LIVE_WORD = (process.env.LIVE_WORD || "live").toLowerCase(); // tên chiến dịch có chữ này => Live
 const API = "https://graph.facebook.com/v21.0";
 
@@ -43,6 +43,10 @@ function split(rows) {
   const now = new Date(), from = new Date(now.getTime() - (DAYS - 1) * 864e5);
   const since = ymd(from), until = ymd(now);
   const snap = await db.collection("customers").get();
+  // dọn các dòng Facebook đã lỡ ghi vào bảng chi tiêu từ trước (chỉ xóa dòng chưa có chuyển khoản/chưa đánh dấu thanh toán)
+  const old = await db.collection("spend").where("fromFb", "==", true).get();
+  for (const d of old.docs) { const x = d.data(); if (!x.transfer && !x.paid) await d.ref.delete(); }
+  if (old.size) console.log(`Đã dọn ${old.size} dòng Facebook cũ khỏi bảng chi tiêu.`);
   let ok = 0, fail = 0;
   for (const c of snap.docs) {
     const d = c.data(), acct = String(d.adAccountId || "").replace(/\D/g, "");
@@ -50,11 +54,8 @@ function split(rows) {
     try {
       const by = split(await insights(acct, since, until));
       for (const day of Object.keys(by)) {
-        const ref = db.collection("spend").doc(`fb_${c.id}_${day}`);
-        const ex = await ref.get();
-        const data = { customerId: c.id, date: day, adLive: by[day].live, adPost: by[day].post, fromFb: true };
-        if (!ex.exists) Object.assign(data, { feeRate: d.feeRate != null && d.feeRate !== "" ? Number(d.feeRate) : 10, transfer: 0, paid: false, createdAt: Date.now() });
-        await ref.set(data, { merge: true });
+        await db.collection("fbspend").doc(`${c.id}_${day}`).set(
+          { customerId: c.id, date: day, live: by[day].live, post: by[day].post, updatedAt: Date.now() }, { merge: true });
       }
       console.log(`OK  ${d.name}: ${Object.keys(by).length} ngày`);
       ok++;
