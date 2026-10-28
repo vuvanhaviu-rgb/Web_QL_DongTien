@@ -130,7 +130,7 @@ function split(rows, liveKeys, postKeys, nameKey) {
   const accs = {};
   for (const c of snap.docs) for (const a of String(c.data().adAccountId || "").split(/[^0-9]+/).filter(x => x.length >= 5)) (accs[a] = accs[a] || []).push(c.data().name || "");
   for (const a of Object.keys(accs)) {
-    try { const info = await accountInfo(a); info.customers = accs[a]; await db.collection("fbaccounts").doc(a).set(info);
+    try { const info = await accountInfo(a); info.customers = accs[a]; await db.collection("fbaccounts").doc(a).set(info, { merge: true });
       console.log(`TK ${a}: dư nợ ${info.balance}, ngưỡng ${info.threshold === null ? "không đọc được" : info.threshold}, thẻ ${info.cardLast4 || "?"}, hạn ${info.nextBill || "chưa xác định"}`);
     } catch (e) { console.error(`LỖI tài khoản ${a}: ${e.message}`); }
   }
