@@ -12,7 +12,9 @@ if (!TOKEN || !SA) { console.error("Thiếu FB_TOKEN hoặc FIREBASE_SA trong Gi
 admin.initializeApp({ credential: admin.credential.cert(JSON.parse(SA)) });
 const db = admin.firestore();
 
-const ymd = d => d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+// Giờ Việt Nam (UTC+7), vì máy chạy GitHub dùng giờ UTC
+const VN = ms => new Date(ms + 7 * 3600e3);
+const ymd = d => d.getUTCFullYear() + "-" + String(d.getUTCMonth() + 1).padStart(2, "0") + "-" + String(d.getUTCDate()).padStart(2, "0");
 
 async function insights(acct, since, until) {
   let url = `${API}/act_${acct}/insights?level=campaign&fields=campaign_name,spend&time_increment=1`
@@ -53,13 +55,10 @@ function split(rows, liveKeys, postKeys, nameKey) {
 }
 
 (async () => {
-  const now = new Date(), from = new Date(now.getTime() - (DAYS - 1) * 864e5);
-  const since = ymd(from), until = ymd(now);
+  const nowVN = VN(Date.now()), now = nowVN, from = VN(Date.now() - (DAYS - 1) * 864e5);
+  const since = ymd(from), until = ymd(now), yesterday = ymd(VN(Date.now() - 864e5));
+  const pastTen = nowVN.getUTCHours() >= 10; // từ 10h sáng giờ Việt Nam: chốt chi phí hôm qua vào bảng chi tiêu
   const snap = await db.collection("customers").get();
-  // dọn các dòng Facebook đã lỡ ghi vào bảng chi tiêu từ trước (chỉ xóa dòng chưa có chuyển khoản/chưa đánh dấu thanh toán)
-  const old = await db.collection("spend").where("fromFb", "==", true).get();
-  for (const d of old.docs) { const x = d.data(); if (!x.transfer && !x.paid) await d.ref.delete(); }
-  if (old.size) console.log(`Đã dọn ${old.size} dòng Facebook cũ khỏi bảng chi tiêu.`);
   let ok = 0, fail = 0;
   for (const c of snap.docs) {
     const d = c.data(), accts = String(d.adAccountId || "").split(/[^0-9]+/).filter(x => x.length >= 5); // nhiều ID: cách nhau bằng dấu phẩy, cách hoặc xuống dòng
@@ -86,6 +85,17 @@ function split(rows, liveKeys, postKeys, nameKey) {
       for (const day of Object.keys(by)) {
         await db.collection("fbspend").doc(`${c.id}_${day}`).set(
           { customerId: c.id, date: day, live: by[day].live, post: by[day].post, updatedAt: Date.now() }, { merge: true });
+      }
+      // Từ 10h sáng: ghi chi phí HÔM QUA vào bảng chi tiêu của khách (chỉ tạo mới, không đè dòng đã có / đã sửa tay)
+      if (pastTen && by[yesterday] && by[yesterday].live + by[yesterday].post > 0) {
+        const ex = await db.collection("spend").where("customerId", "==", c.id).where("date", "==", yesterday).limit(1).get();
+        if (ex.empty) {
+          await db.collection("spend").doc(`fb_${c.id}_${yesterday}`).set({
+            customerId: c.id, date: yesterday, adLive: by[yesterday].live, adPost: by[yesterday].post,
+            feeRate: d.feeRate != null && d.feeRate !== "" ? Number(d.feeRate) : 10, transfer: 0, paid: false, fromFb: true, createdAt: Date.now()
+          });
+          console.log(`    -> đã ghi ${yesterday} vào bảng chi tiêu của ${d.name}`);
+        }
       }
       console.log(`OK  ${d.name}: ${Object.keys(by).length} ngày`);
       ok++;
