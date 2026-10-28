@@ -21,3 +21,4 @@ jobs:
         env:
           FB_TOKEN: ${{ secrets.FB_TOKEN }}
           FIREBASE_SA: ${{ secrets.FIREBASE_SA }}
+          LIVE_WORD: ${{ vars.LIVE_WORD }}
