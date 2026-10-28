@@ -242,6 +242,76 @@ td.net,th.net{color:var(--accent);font-weight:700}
   .head h1{font-size:18px}
   .two{grid-template-columns:1fr}
 }
+
+/* ===== Giao diện điện thoại (≤700px) ===== */
+@media (max-width:700px){
+  body{padding:10px 10px 84px}
+  .app{display:flex;flex-direction:column;gap:12px}
+  .side{display:contents}
+  .brand{order:0;flex-direction:row;align-items:baseline;gap:8px;padding:2px 2px 0}
+  .brand span{display:none}
+  main{order:1}
+  .bk{order:2;margin-top:8px}
+  .side>.btn{order:3}
+  .nav{position:fixed;left:0;right:0;bottom:0;z-index:15;flex-direction:row;gap:0;padding:6px 6px calc(6px + env(safe-area-inset-bottom,0px));background:var(--surface);border-top:1px solid var(--line);overflow:visible;box-shadow:0 -4px 14px rgba(0,0,0,.08)}
+  .nav a{flex:1 1 0;min-width:0;flex-direction:column;justify-content:center;text-align:center;white-space:normal;padding:6px 2px;font-size:9px;line-height:1.2;border-radius:8px;gap:2px;position:relative}
+  .nav a::before{content:"";width:20px;height:20px;border-radius:6px;background:var(--line)}
+  .nav a[aria-current="page"]::before{background:var(--accent)}
+  .nav a .badge{position:absolute;top:0;right:12%}
+  .head{gap:8px}.head h1{font-size:16px}
+  .head .btn,.head .tools{width:100%}.head .tools .btn{flex:1}
+  .kpis{grid-template-columns:1fr 1fr;gap:8px}
+  .kpis.top{display:grid;grid-template-columns:1fr;gap:8px}
+  .kpis.top .kpi{min-width:0;flex:none;padding:12px}
+  .kpi{padding:10px;column-gap:8px;grid-template-columns:34px 1fr}
+  .kpi::before{width:34px;height:34px;background-size:18px}
+  .kpis.top .kpi::before{width:38px;height:38px}
+  .kpi b{font-size:14px}.kpis.top .kpi b{font-size:18px}
+  .grid2{grid-template-columns:1fr}
+  .panel{padding:12px}
+  .tools input[type=search],.tools select{min-width:0;width:100%;flex:1}
+  .ph{flex-direction:column;align-items:stretch}
+  .pick{flex-wrap:wrap}
+  input,select,textarea{font-size:14px}
+  /* bảng -> thẻ */
+  .tablewrap{border:0;background:none;overflow:visible}
+  .tablewrap table{min-width:0!important;width:100%;display:block;table-layout:auto}
+  .tablewrap thead,.tablewrap colgroup{display:none}
+  .tablewrap tbody,.tablewrap tfoot{display:block}
+  .tablewrap tr{display:grid;grid-template-columns:1fr 1fr;gap:4px 10px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px;margin-bottom:8px;box-shadow:var(--shadow)}
+  .tablewrap td{display:flex;flex-direction:column;align-items:flex-start;gap:1px;border:0!important;padding:2px 0!important;text-align:left!important;min-width:0;white-space:normal!important;font-size:10px}
+  .tablewrap td::before{content:attr(data-label);font-size:9px;color:var(--muted);font-weight:600}
+  .tablewrap td[data-label=""]::before,.tablewrap td:not([data-label])::before{display:none}
+  .tablewrap td:first-child{grid-column:1/-1;font-size:12px;font-weight:700}
+  .tablewrap td.act{grid-column:1/-1;flex-direction:row;gap:6px;flex-wrap:wrap}
+  .tablewrap td.act .btn{flex:1}
+  .tablewrap td:empty{display:none}
+  table.ledger td.cell{padding:0!important}
+  table.ledger input.cin,table.ledger input.cin.n{text-align:left;width:100%;border:1px solid var(--line);border-radius:8px;padding:8px;background:var(--surface-2);font-size:14px}
+  table.ledger .pc{justify-content:flex-start;width:100%}
+  table.ledger input[type=date].cin{min-width:0}
+  table.ledger td.dcell{grid-column:1/-1;font-size:12px;font-weight:700}
+  table.ledger tr.mh{background:var(--accent-soft);border-color:transparent;display:flex}
+  table.ledger tr.mh td{background:none!important;display:none;border:0!important}
+  table.ledger tr.mh td:first-child{display:flex;flex:1;color:var(--accent);font-size:13px}
+  table.ledger tr.hid{display:none}
+  table.ledger tr.blank{opacity:.9}
+  table.ledger tr{grid-template-columns:1fr 1fr 1fr;padding:8px}
+  table.ledger td:first-child::before{display:none}
+  table.ledger td:nth-child(7){order:1;grid-column:span 2}
+  table.ledger td:nth-child(9){order:2;grid-column:span 1;align-self:end}
+  table.ledger td.act .btn{padding:6px;width:100%}
+  table.ledger td.cell input.cin{padding:6px}
+  table.ledger tr.mh td:first-child{grid-column:auto}
+  table.ledger tr.today{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-soft)}
+  table.ledger tfoot tr{background:var(--accent-soft)}
+  table.ledger td.calc{background:none;text-align:left}
+  .ledscroll{max-height:none;overflow:visible}
+  table.custlist td:first-child,table.custlist td:first-child .link{white-space:normal}
+  .tog{font-size:10px}
+  .modal{max-width:none;border-radius:14px}
+  .two{grid-template-columns:1fr}
+}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 .bk{margin-top:20px;padding:12px;border:1px solid var(--line,#ddd);border-radius:10px;display:grid;gap:8px;font-size:11px}
 .bk small{opacity:.75;line-height:1.4}.bk small.warn{color:#c0392b;opacity:1;font-weight:600}
@@ -995,6 +1065,18 @@ function render(){
   var oldSc=document.querySelector(".ledscroll"),scTop=oldSc?oldSc.scrollTop:0;
   rendering=true;
   $("#main").innerHTML='<div class="head"><div><h1>'+esc(r.title)+'</h1>'+(r.sub?'<p>'+esc(r.sub)+'</p>':"")+'</div>'+(r.action||"")+'</div>'+banner+r.html;
+
+  (function(){
+    var L=["Ngày","Quảng cáo Live","Quảng cáo Bài viết","Phí %","Phí dịch vụ","Tổng","Note","Khách chuyển khoản",""];
+    document.querySelectorAll("#main table").forEach(function(t){
+      var led=t.classList.contains("ledger"),ths=[];
+      if(!led)t.querySelectorAll("thead th").forEach(function(th){ths.push(th.textContent.trim())});
+      t.querySelectorAll("tbody tr, tfoot tr").forEach(function(tr){
+        if(tr.classList.contains("mh"))return;
+        Array.prototype.forEach.call(tr.children,function(td,i){td.setAttribute("data-label",(led?L:ths)[i]||"")});
+      });
+    });
+  })();
   rendering=false;
   var newSc=document.querySelector(".ledscroll");if(newSc){newSc.scrollTop=scTop;stickyHead()}
   if(ui.scrollMonth){var mh=document.querySelector('tr.mh[data-m="'+ui.scrollMonth+'"]');if(mh&&newSc){var hh=newSc.querySelector("thead").offsetHeight;newSc.scrollTop+=mh.getBoundingClientRect().top-newSc.getBoundingClientRect().top-hh-1;ui.scrollMonth=""}}
