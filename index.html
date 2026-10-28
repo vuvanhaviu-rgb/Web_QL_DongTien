@@ -1074,6 +1074,25 @@ function vCustomerDetail(){
     action:'<div class="tools"><button class="btn" data-act="back">← Danh sách khách hàng</button><button class="btn primary" data-act="sadd">Thêm dòng chi tiêu</button></div>',html:h};
 }
 
+function activeAccHtml(){
+  var t=ui.spt||"today",R=spRange(t),by={},T=0;
+  S.fbspend.forEach(function(r){
+    if(!r.date||r.date<R[0]||r.date>R[1]||!cust(r.customerId))return;
+    var v=(Number(r.live)||0)+(Number(r.post)||0);if(!(v>0))return;
+    var b=by[r.customerId]||(by[r.customerId]={live:0,post:0});b.live+=Number(r.live)||0;b.post+=Number(r.post)||0;T+=v;
+  });
+  var rows=Object.keys(by).map(function(id){var b=by[id];return{c:cust(id),live:b.live,post:b.post,tot:b.live+b.post}}).sort(function(a,b){return b.tot-a.tot});
+  var linked=S.customers.filter(function(c){return String(c.adAccountId||"").replace(/\D/g,"")}).length;
+  var h='<section class="panel"><div class="ph"><h2>Tài khoản quảng cáo đang hoạt động <small>có chi tiêu · '+esc(R[2])+'</small></h2><div class="tabs" role="group" aria-label="Khoảng thời gian">'+SPT.map(function(x){return '<button data-act="spt" data-v="'+x[0]+'" aria-pressed="'+(t===x[0])+'">'+x[1]+'</button>'}).join("")+'</div></div>'
+   +'<div class="kpis in"><div class="kpi"><span>Đang hoạt động có chi tiêu</span><b>'+rows.length+'</b><small>Trên '+linked+' tài khoản đã nối Facebook</small></div>'
+   +'<div class="kpi"><span>Tổng chi tiêu</span><b>'+vnd(T)+'</b><small>'+esc(R[2])+'</small></div>'
+   +'<div class="kpi"><span>Trung bình mỗi tài khoản</span><b>'+vnd(rows.length?Math.round(T/rows.length):0)+'</b><small>&nbsp;</small></div></div>';
+  if(!rows.length)h+=emptyBlock("Chưa có tài khoản nào phát sinh chi tiêu","Tài khoản quảng cáo có chi phí trong khoảng thời gian này sẽ hiện ở đây. Điền ID tài khoản cho khách ở mục Khách hàng để web lấy số từ Facebook.");
+  else h+='<div class="tablewrap"><table><thead><tr><th>Khách hàng</th><th>ID tài khoản</th><th class="num">Live</th><th class="num">Bài viết</th><th class="num">Tổng chi tiêu</th><th>Tỷ trọng</th></tr></thead><tbody>'
+   +rows.map(function(r){var pc=T?r.tot/T*100:0;return '<tr><td><button class="link" data-act="goc" data-id="'+esc(r.c.id)+'">'+esc(r.c.name)+'</button></td><td>'+esc(String(r.c.adAccountId||"").replace(/\s+/g," "))+'</td><td class="num">'+nz(r.live)+'</td><td class="num">'+nz(r.post)+'</td><td class="num"><b>'+num(r.tot)+'</b></td><td><div class="track"><i style="width:'+Math.max(3,pc)+'%"></i></div><span class="sub">'+String(Math.round(pc*10)/10).replace(".",",")+'%</span></td></tr>'}).join("")
+   +'</tbody><tfoot><tr><td>Tổng cộng</td><td></td><td class="num">'+num(rows.reduce(function(a,r){return a+r.live},0))+'</td><td class="num">'+num(rows.reduce(function(a,r){return a+r.post},0))+'</td><td class="num">'+num(T)+'</td><td></td></tr></tfoot></table></div>';
+  return h+'</section>';
+}
 function vPayments(){
   var f=ui.pf,pc=ui.pc;
   var all=S.payments.filter(function(p){return!pc||p.customerId===pc});
@@ -1092,7 +1111,7 @@ function vPayments(){
       +'<button class="btn small" data-act="edit" data-type="payments" data-id="'+esc(p.id)+'">Sửa</button></td></tr>'}).join("")
     +'</tbody></table></div>';
   var unpaid=S.payments.filter(function(p){return!p.paidDate});
-  return{title:"Thanh toán / công nợ",sub:"Còn phải thu "+vnd(sum(unpaid)),action:'<button class="btn primary" data-act="add" data-type="payments">Ghi khoản thu</button>',html:h};
+  return{title:"Thanh toán / công nợ",sub:"Còn phải thu "+vnd(sum(unpaid)),action:'<button class="btn primary" data-act="add" data-type="payments">Ghi khoản thu</button>',html:activeAccHtml()+h};
 }
 
 var PLANS=[
