@@ -49,10 +49,17 @@ function split(rows) {
   if (old.size) console.log(`Đã dọn ${old.size} dòng Facebook cũ khỏi bảng chi tiêu.`);
   let ok = 0, fail = 0;
   for (const c of snap.docs) {
-    const d = c.data(), acct = String(d.adAccountId || "").replace(/\D/g, "");
-    if (!acct) continue;
+    const d = c.data(), accts = String(d.adAccountId || "").split(/[^0-9]+/).filter(x => x.length >= 5); // nhiều ID: cách nhau bằng dấu phẩy, cách hoặc xuống dòng
+    if (!accts.length) continue;
     try {
-      const by = split(await insights(acct, since, until));
+      const by = {};
+      for (const acct of accts) {                       // cộng chi phí của tất cả tài khoản của khách
+        const one = split(await insights(acct, since, until));
+        for (const day of Object.keys(one)) {
+          const b = by[day] || (by[day] = { live: 0, post: 0 });
+          b.live += one[day].live; b.post += one[day].post;
+        }
+      }
       for (const day of Object.keys(by)) {
         await db.collection("fbspend").doc(`${c.id}_${day}`).set(
           { customerId: c.id, date: day, live: by[day].live, post: by[day].post, updatedAt: Date.now() }, { merge: true });
