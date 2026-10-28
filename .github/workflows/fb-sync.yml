@@ -1,0 +1,23 @@
+name: Kéo chi phí Facebook
+
+on:
+  schedule:
+    - cron: "0 */3 * * *"   # mỗi 3 giờ
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm install firebase-admin --no-save
+      - run: node scripts/fb-sync.js
+        env:
+          FB_TOKEN: ${{ secrets.FB_TOKEN }}
+          FIREBASE_SA: ${{ secrets.FIREBASE_SA }}
