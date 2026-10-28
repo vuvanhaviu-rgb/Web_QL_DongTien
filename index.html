@@ -1066,25 +1066,26 @@ function spRange(t){
   return[ymd(new Date(n.getFullYear(),n.getMonth(),1)),d0(0),"Tháng "+(n.getMonth()+1)+"/"+n.getFullYear()];
 }
 function vSpend(){
-  var t=ui.spt||"today",R=spRange(t),by={},upd=0,T={live:0,post:0};
+  var t=ui.spt||"today",R=spRange(t),by={},upd=0,T={live:0,post:0,fee:0,bank:0,net:0};
   S.fbspend.forEach(function(r){
     if(r.updatedAt>upd)upd=r.updatedAt;
     if(!r.date||r.date<R[0]||r.date>R[1]||!cust(r.customerId))return;
-    var b=by[r.customerId]||(by[r.customerId]={live:0,post:0});
-    b.live+=Number(r.live)||0;b.post+=Number(r.post)||0;T.live+=Number(r.live)||0;T.post+=Number(r.post)||0;
+    var b=by[r.customerId]||(by[r.customerId]={live:0,post:0,net:0}),lv=Number(r.live)||0,ps=Number(r.post)||0,ad=lv+ps,fee=Math.round(ad*defaultRate(r.customerId)/100),bank=Math.round(ad*BANK_FEE/100);
+    b.live+=lv;b.post+=ps;b.net+=fee-bank;T.live+=lv;T.post+=ps;T.fee+=fee;T.bank+=bank;T.net+=fee-bank;
   });
   var linked=S.customers.filter(function(c){return String(c.adAccountId||"").replace(/\D/g,"")});
-  var rows=linked.map(function(c){var b=by[c.id]||{live:0,post:0};return{c:c,live:b.live,post:b.post,tot:b.live+b.post}}).sort(function(a,b){return b.tot-a.tot||String(a.c.name).localeCompare(String(b.c.name),"vi")});
+  var rows=linked.map(function(c){var b=by[c.id]||{live:0,post:0,net:0};return{c:c,live:b.live,post:b.post,net:b.net,tot:b.live+b.post}}).sort(function(a,b){return b.tot-a.tot||String(a.c.name).localeCompare(String(b.c.name),"vi")});
   var h='<div class="tools"><div class="tabs" role="group" aria-label="Khoảng thời gian">'+SPT.map(function(x){return '<button data-act="spt" data-v="'+x[0]+'" aria-pressed="'+(t===x[0])+'">'+x[1]+'</button>'}).join("")+'</div></div>'
    +'<div class="kpis"><div class="kpi"><span>Tổng spend</span><b>'+vnd(T.live+T.post)+'</b><small>'+esc(R[2])+'</small></div>'
    +'<div class="kpi"><span>Quảng cáo Live</span><b>'+vnd(T.live)+'</b><small>&nbsp;</small></div>'
    +'<div class="kpi"><span>Quảng cáo Bài viết</span><b>'+vnd(T.post)+'</b><small>&nbsp;</small></div>'
+   +'<div class="kpi net"><span>Phí thực nhận</span><b>'+vnd(T.net)+'</b><small>Phí dịch vụ '+vnd(T.fee)+' − phí ngân hàng '+vnd(T.bank)+'</small></div>'
    +'<div class="kpi"><span>Khách đang chạy</span><b>'+rows.filter(function(r){return r.tot>0}).length+'</b><small>Trên '+linked.length+' khách đã nối Facebook</small></div></div>';
   if(!linked.length)h+='<div class="tablewrap">'+emptyBlock("Chưa nối tài khoản quảng cáo","Mở Khách hàng, bấm Sửa và điền ID tài khoản quảng cáo Facebook cho từng khách.")+'</div>';
-  else h+='<div class="tablewrap"><table><thead><tr><th>Khách hàng</th><th class="num">Live</th><th class="num">Bài viết</th><th class="num">Tổng spend</th></tr></thead><tbody>'
-   +rows.map(function(r){return '<tr><td><button class="link" data-act="goc" data-id="'+esc(r.c.id)+'">'+esc(r.c.name)+'</button></td><td class="num">'+nz(r.live)+'</td><td class="num">'+nz(r.post)+'</td><td class="num"><b>'+nz(r.tot)+'</b></td></tr>'}).join("")
-   +'</tbody><tfoot><tr><td>Tổng cộng</td><td class="num">'+num(T.live)+'</td><td class="num">'+num(T.post)+'</td><td class="num">'+num(T.live+T.post)+'</td></tr></tfoot></table></div>';
-  h+='<p class="hint">Dữ liệu lấy tự động từ Facebook mỗi giờ. '+(upd?'Cập nhật gần nhất: '+new Date(upd).toLocaleString("vi-VN")+'.':'Chưa có lần cập nhật nào.')+' Chiến dịch có chữ “live” trong tên được tính vào Live, còn lại là Bài viết. Số này chỉ để theo dõi, không tự ghi vào bảng chi tiêu của khách.</p>';
+  else h+='<div class="tablewrap"><table><thead><tr><th>Khách hàng</th><th class="num">Live</th><th class="num">Bài viết</th><th class="num">Tổng spend</th><th class="num net">Phí thực nhận</th></tr></thead><tbody>'
+   +rows.map(function(r){return '<tr><td><button class="link" data-act="goc" data-id="'+esc(r.c.id)+'">'+esc(r.c.name)+'</button></td><td class="num">'+nz(r.live)+'</td><td class="num">'+nz(r.post)+'</td><td class="num"><b>'+nz(r.tot)+'</b></td><td class="num net">'+nz(r.net)+'</td></tr>'}).join("")
+   +'</tbody><tfoot><tr><td>Tổng cộng</td><td class="num">'+num(T.live)+'</td><td class="num">'+num(T.post)+'</td><td class="num">'+num(T.live+T.post)+'</td><td class="num net">'+num(T.net)+'</td></tr></tfoot></table></div>';
+  h+='<p class="hint">Dữ liệu lấy tự động từ Facebook mỗi giờ. '+(upd?'Cập nhật gần nhất: '+new Date(upd).toLocaleString("vi-VN")+'.':'Chưa có lần cập nhật nào.')+' Chiến dịch có chữ “live” trong tên được tính vào Live, còn lại là Bài viết. Phí thực nhận = (spend × phí dịch vụ % của khách) − phí ngân hàng '+String(BANK_FEE).replace('.',',')+'%. Số này chỉ để theo dõi, không tự ghi vào bảng chi tiêu của khách.</p>';
   return{title:"Spend hiện tại",sub:"Chi phí quảng cáo đang chạy từ Facebook",html:h};
 }
 function newCustHtml(){
