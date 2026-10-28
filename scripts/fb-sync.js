@@ -28,6 +28,11 @@ async function insights(acct, since, until) {
   return rows;
 }
 
+// bỏ dấu tiếng Việt, chữ thường: "Ngân" khớp "ngan", "NGAN"
+const fold = t => String(t || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/đ/gi, "d").toLowerCase();
+const cache = {}; // mỗi tài khoản chỉ gọi Facebook một lần, dùng chung cho các khách cùng tài khoản
+async function rowsOf(acct, since, until) { return cache[acct] || (cache[acct] = await insights(acct, since, until)); }
+
 // gom theo ngày: {ngày: {live, post}}
 function split(rows) {
   const by = {};
@@ -51,10 +56,13 @@ function split(rows) {
   for (const c of snap.docs) {
     const d = c.data(), accts = String(d.adAccountId || "").split(/[^0-9]+/).filter(x => x.length >= 5); // nhiều ID: cách nhau bằng dấu phẩy, cách hoặc xuống dòng
     if (!accts.length) continue;
+    const keys = String(d.campaignKey || "").split(",").map(x => fold(x.trim())).filter(Boolean);
     try {
       const by = {};
       for (const acct of accts) {                       // cộng chi phí của tất cả tài khoản của khách
-        const one = split(await insights(acct, since, until));
+        let rows = await rowsOf(acct, since, until);
+        if (keys.length) rows = rows.filter(r => keys.some(k => fold(r.campaign_name).includes(k))); // tài khoản dùng chung: chỉ lấy chiến dịch của khách này
+        const one = split(rows);
         for (const day of Object.keys(one)) {
           const b = by[day] || (by[day] = { live: 0, post: 0 });
           b.live += one[day].live; b.post += one[day].post;
