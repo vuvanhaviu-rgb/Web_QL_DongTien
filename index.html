@@ -1086,7 +1086,7 @@ function adAccHtml(){
   h+='<div class="tablewrap"><table><thead><tr><th>Tài khoản quảng cáo</th><th class="num">Dư nợ hiện tại</th><th class="num">Ngưỡng thanh toán</th><th class="num">Còn lại trước ngưỡng</th><th>Ngày thanh toán dự kiến</th><th>Thẻ thanh toán</th></tr></thead><tbody>'
    +info.map(function(i){var a=i.a;var cls=i.lv==="hit"?"owe":(i.lv==="near"?"warn":"");
      var tag=i.lv==="hit"?'<span class="sub owe">Đã chạm ngưỡng</span>':(i.lv==="near"?'<span class="sub warn">Sắp chạm ngưỡng</span>':"");
-     return '<tr><td><b>'+esc(a.name||a.accountId)+'</b><span class="sub">'+esc(a.accountId)+' · '+esc((a.customers||[]).join(", "))+'</span></td>'
+     return '<tr><td><b>'+esc(a.name||a.accountId)+'</b><span class="sub">'+esc(a.accountId)+'</span></td>'
      +'<td class="num"><b>'+(a.balance==null?"—":vnd(a.balance))+'</b></td>'
      +'<td class="num">'+(a.threshold==null?"Chưa xác định":vnd(a.threshold))+'</td>'
      +'<td class="num '+cls+'">'+(i.left==null?"—":vnd(i.left))+tag+'</td>'
