@@ -56,8 +56,8 @@ function split(rows, liveKeys, postKeys, nameKey) {
 
 (async () => {
   const nowVN = VN(Date.now()), now = nowVN, from = VN(Date.now() - (DAYS - 1) * 864e5);
-  const since = ymd(from), until = ymd(now), yesterday = ymd(VN(Date.now() - 864e5));
-  const pastTen = nowVN.getUTCHours() >= 10; // từ 10h sáng giờ Việt Nam: chốt chi phí hôm qua vào bảng chi tiêu
+  const since = ymd(from), until = ymd(now), yesterday = /^\d{4}-\d{2}-\d{2}$/.test(process.env.FILL_DATE || "") ? process.env.FILL_DATE : ymd(VN(Date.now() - 864e5)); // FILL_DATE: điền tay một ngày cụ thể
+  const pastTen = !!process.env.FILL_DATE || nowVN.getUTCHours() >= 10; // từ 10h sáng giờ Việt Nam: chốt chi phí hôm qua vào bảng chi tiêu
   const snap = await db.collection("customers").get();
   let ok = 0, fail = 0;
   for (const c of snap.docs) {

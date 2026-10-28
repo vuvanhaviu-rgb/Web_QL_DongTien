@@ -4,6 +4,11 @@ on:
   schedule:
     - cron: "0 * * * *"   # mỗi 1 giờ
   workflow_dispatch:
+    inputs:
+      fill_date:
+        description: "Điền chi phí của ngày này vào bảng chi tiêu (định dạng 2026-10-27). Để trống = chạy bình thường"
+        required: false
+        default: ""
 
 permissions:
   contents: read
@@ -22,3 +27,4 @@ jobs:
           FB_TOKEN: ${{ secrets.FB_TOKEN }}
           FIREBASE_SA: ${{ secrets.FIREBASE_SA }}
           LIVE_WORD: ${{ vars.LIVE_WORD }}
+          FILL_DATE: ${{ github.event.inputs.fill_date }}
