@@ -12,6 +12,19 @@ if (!TOKEN || !SA) { console.error("Thiếu FB_TOKEN hoặc FIREBASE_SA trong Gi
 admin.initializeApp({ credential: admin.credential.cert(JSON.parse(SA)) });
 const db = admin.firestore();
 
+
+// Dư nợ (balance), đã tiêu, hạn mức và ngưỡng thanh toán của tài khoản quảng cáo
+const OFFSET1 = ["VND", "JPY", "KRW", "CLP", "ISK", "HUF", "PYG", "TWD", "UGX"]; // tiền không chia nhỏ: số Facebook trả là số thật
+const money = (v, cur) => (v === undefined || v === null || v === "") ? null : Math.round(Number(v) / (OFFSET1.includes(cur) ? 1 : 100));
+async function accountInfo(acct) {
+  const g = async path => { const j = await (await fetch(`${API}/${path}${path.includes("?") ? "&" : "?"}access_token=${TOKEN}`)).json(); if (j.error) throw new Error(j.error.message); return j; };
+  const a = await g(`act_${acct}?fields=name,currency,balance,amount_spent,spend_cap,account_status,is_prepay_account`);
+  let threshold = null;
+  try { const p = await g(`act_${acct}/adspaymentcycle?fields=threshold_value`); const t = p.data && p.data[0] && p.data[0].threshold_value; threshold = money(t, a.currency); } catch (e) { /* Facebook không cho đọc ngưỡng: bỏ qua */ }
+  return { accountId: acct, name: a.name || "", currency: a.currency || "", balance: money(a.balance, a.currency), amountSpent: money(a.amount_spent, a.currency),
+    spendCap: money(a.spend_cap, a.currency), threshold, status: a.account_status, prepay: !!a.is_prepay_account, updatedAt: Date.now() };
+}
+
 // Giờ Việt Nam (UTC+7), vì máy chạy GitHub dùng giờ UTC
 const VN = ms => new Date(ms + 7 * 3600e3);
 const ymd = d => d.getUTCFullYear() + "-" + String(d.getUTCMonth() + 1).padStart(2, "0") + "-" + String(d.getUTCDate()).padStart(2, "0");
@@ -112,6 +125,14 @@ function split(rows, liveKeys, postKeys, nameKey) {
       console.log(`OK  ${d.name}: ${Object.keys(by).length} ngày`);
       ok++;
     } catch (e) { console.error(`LỖI ${d.name}: ${e.message}`); fail++; }
+  }
+  // thông tin tài khoản quảng cáo (mỗi tài khoản một lần)
+  const accs = {};
+  for (const c of snap.docs) for (const a of String(c.data().adAccountId || "").split(/[^0-9]+/).filter(x => x.length >= 5)) (accs[a] = accs[a] || []).push(c.data().name || "");
+  for (const a of Object.keys(accs)) {
+    try { const info = await accountInfo(a); info.customers = accs[a]; await db.collection("fbaccounts").doc(a).set(info);
+      console.log(`TK ${a}: dư nợ ${info.balance}, ngưỡng ${info.threshold === null ? "không đọc được" : info.threshold}`);
+    } catch (e) { console.error(`LỖI tài khoản ${a}: ${e.message}`); }
   }
   console.log(`Xong. Thành công ${ok}, lỗi ${fail}.`);
   if (fail && !ok) process.exit(1);
