@@ -1081,13 +1081,14 @@ function adAccHtml(){
   info.sort(function(x,y){var o={hit:0,near:1,ok:2,"":3};return o[x.lv]-o[y.lv]||((y.a.balance||0)-(x.a.balance||0))});
   var bad=info.filter(function(i){return i.lv==="hit"||i.lv==="near"});
   var h='<section class="panel"><h2>Tài khoản quảng cáo <small>dư nợ và ngưỡng thanh toán với Facebook</small></h2>';
-  var tD=info.reduce(function(t,i){return t+(i.a.balance||0)},0),tT=info.reduce(function(t,i){return t+(i.th||0)},0),tL=info.reduce(function(t,i){return t+(i.left!=null?i.left:0)},0),fee=Math.round(tD*0.011),real=bank==null?null:bank-tD-fee;
+  var tD=info.reduce(function(t,i){return t+(i.a.balance||0)},0),tT=info.reduce(function(t,i){return t+(i.th||0)},0),tL=info.reduce(function(t,i){return t+(i.left!=null?i.left:0)},0),fee=Math.round(tD*0.011),cb=custBalances(),cDebt=0;Object.keys(cb).forEach(function(k){cDebt+=cb[k]});var real=bank==null?null:bank-tD-fee+cDebt;
   h+='<div class="kpis in"><div class="kpi"><span>Dư nợ hiện tại</span><b>'+vnd(tD)+'</b><small>Tổng '+info.length+' tài khoản</small></div>'
    +'<div class="kpi"><span>Tổng ngưỡng thanh toán</span><b>'+vnd(tT)+'</b><small>Không phải số dư thẻ</small></div>'
    +'<div class="kpi"><span>Tổng số dư ngưỡng còn lại</span><b>'+vnd(tL)+'</b><small>Ngưỡng − dư nợ</small></div>'
    +'<div class="kpi"><span>Số dư ngân hàng</span><input class="bank-in" inputmode="numeric" placeholder="Nhập số dư" value="'+(bank!=null?num(bank):"")+'" aria-label="Số dư ngân hàng"><small>Bạn tự nhập</small></div>'
    +'<div class="kpi"><span>Phí thanh toán</span><b>'+vnd(fee)+'</b><small>Dư nợ × 1,1%</small></div>'
-   +'<div class="kpi"><span>Số dư thực tế</span><b'+(real!=null&&real<0?' class="owe"':'')+'>'+(real==null?"Chưa nhập số dư":vnd(real))+'</b><small>Ngân hàng − dư nợ − phí</small></div></div>';
+   +'<div class="kpi"><span>Số dư thực tế</span><b'+(real!=null&&real<0?' class="owe"':'')+'>'+(real==null?"Chưa nhập số dư":vnd(real))+'</b><small>Ngân hàng − dư nợ − phí + dư nợ khách</small></div>'
+   +'<div class="kpi"><span>Tổng dư nợ khách hàng</span><b>'+vnd(cDebt)+'</b><small>Khách còn nợ bạn, đã cộng vào số dư thực tế</small></div></div>';
   if(bad.length)h+='<div class="notice warn" role="alert"><b>Cảnh báo:</b> '+bad.map(function(i){return esc(i.a.name||i.a.accountId)+(i.lv==="hit"?" đã chạm ngưỡng":" sắp chạm ngưỡng (còn "+vnd(i.left)+")")}).join("; ")+'.</div>';
   if(!AC.length)return h+emptyBlock("Chưa có dữ liệu tài khoản quảng cáo","Điền ID tài khoản quảng cáo cho khách ở mục Khách hàng, rồi chạy đồng bộ Facebook. Dữ liệu sẽ hiện ở đây.")+'</section>';
   h+='<div class="tablewrap"><table><thead><tr><th>Tài khoản quảng cáo</th><th class="num">Dư nợ hiện tại</th><th class="num">Ngưỡng thanh toán</th><th class="num">Còn lại trước ngưỡng</th><th>Ngày thanh toán dự kiến</th><th>Thẻ thanh toán</th></tr></thead><tbody>'
