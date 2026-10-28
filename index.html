@@ -1,6 +1,12 @@
 <meta name="robots" content="noindex,nofollow">
 <title>Quản lý dòng tiền</title>
 <meta name="claude:viewport-fit-sides" content="cover">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#0B66FF">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="VH Agency">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
 <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
 <link rel="icon" type="image/png" sizes="192x192" href="favicon-192.png">
 <link rel="shortcut icon" href="favicon.ico">
@@ -281,6 +287,7 @@ a.ext{color:var(--accent);text-decoration:underline;word-break:break-all}
 <div id="modal-root"></div>
 <div id="toast-root"></div>
 
+<script>if("serviceWorker" in navigator&&location.protocol.indexOf("http")===0){window.addEventListener("load",function(){navigator.serviceWorker.register("sw.js").catch(function(){})})}</script>
 <script src="firebase-config.js"></script>
 <script src="firebase-shim.js"></script>
 <script>

@@ -1,7 +1,7 @@
 // Gom các file của web vào thư mục dist/ để đưa lên GitHub Pages.
 const fs = require("fs");
 const path = require("path");
-const files = ["index.html", "firebase-config.js", "firebase-shim.js", "favicon.ico", "favicon-32.png", "favicon-192.png", "apple-touch-icon.png"];
+const files = ["index.html", "firebase-config.js", "firebase-shim.js", "favicon.ico", "favicon-32.png", "favicon-192.png", "apple-touch-icon.png", "icon-512.png", "manifest.webmanifest", "sw.js"];
 const out = path.join(__dirname, "..", "dist");
 fs.rmSync(out, { recursive: true, force: true });
 fs.mkdirSync(out, { recursive: true });
