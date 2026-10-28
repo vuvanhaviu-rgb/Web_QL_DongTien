@@ -143,7 +143,7 @@ table.ledger thead tr+tr th{font-weight:500}
 table.ledger tfoot td{font-weight:700;background:var(--surface-2);border-top:1px solid var(--line);border-bottom:0;font-variant-numeric:tabular-nums}
 td.owe{color:var(--bad);font-weight:700}
 td.clear{color:var(--ok);font-weight:700}
-.hint{margin:0;color:var(--muted);font-size:10px}
+.notice.warn{background:#fdecea;border:1px solid #f5c2bd;color:#9b1c10;border-radius:10px;padding:10px 12px;margin:0 0 12px;font-size:12px}.sub.warn,td.warn{color:#b26a00}.hint{margin:0;color:var(--muted);font-size:10px}
 input[type=month]{width:100%;background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:8px 10px}
 .ph{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:12px}
 .pick{gap:8px}
@@ -421,9 +421,9 @@ var sum=function(a){return a.reduce(function(t,p){return t+(Number(p.amount)||0)
 var short=function(n){if(n>=1e9)return +(n/1e9).toFixed(1)+" tỷ";if(n>=1e6)return +(n/1e6).toFixed(1)+" tr";if(n>=1e3)return +(n/1e3).toFixed(0)+"k";return String(n)};
 
 var VIEWS=[["tong-quan","Tổng quan"],["spend","Spend hiện tại"],["khach-hang","Khách hàng"],["cong-no","Thanh toán / công nợ"],["bang-gia","Bảng giá"],["thong-ke","Thống kê"]];
-var COLS=["customers","prices","payments","spend","hidden","fbspend"];
-var S={customers:[],prices:[],payments:[],spend:[],hidden:[],fbspend:[]};
-var loaded={customers:false,prices:false,payments:false,spend:false,hidden:false,fbspend:false};
+var COLS=["customers","prices","payments","spend","hidden","fbspend","fbaccounts"];
+var S={customers:[],prices:[],payments:[],spend:[],hidden:[],fbspend:[],fbaccounts:[]};
+var loaded={customers:false,prices:false,payments:false,spend:false,hidden:false,fbspend:false,fbaccounts:false};
 var DEFAULT_FEE=10;
 var BANK_FEE=1.1;
 function defaultRate(cid){var c=(S.customers.filter(function(x){return x.id===cid})[0]);return c&&c.feeRate!=null&&c.feeRate!==""?Number(c.feeRate):DEFAULT_FEE}
@@ -1074,6 +1074,27 @@ function vCustomerDetail(){
     action:'<div class="tools"><button class="btn" data-act="back">← Danh sách khách hàng</button><button class="btn primary" data-act="sadd">Thêm dòng chi tiêu</button></div>',html:h};
 }
 
+function adAccHtml(){
+  var AC=S.fbaccounts.slice();
+  var info=AC.map(function(a){var left=(a.threshold!=null&&a.balance!=null)?a.threshold-a.balance:null;var pct=(left!=null&&a.threshold>0)?left/a.threshold:null;
+    var lv=left==null?"":(left<=0?"hit":(pct<=0.2?"near":"ok"));return{a:a,left:left,lv:lv}});
+  info.sort(function(x,y){var o={hit:0,near:1,ok:2,"":3};return o[x.lv]-o[y.lv]||((y.a.balance||0)-(x.a.balance||0))});
+  var bad=info.filter(function(i){return i.lv==="hit"||i.lv==="near"});
+  var h='<section class="panel"><h2>Tài khoản quảng cáo <small>dư nợ và ngưỡng thanh toán với Facebook</small></h2>';
+  if(bad.length)h+='<div class="notice warn" role="alert"><b>Cảnh báo:</b> '+bad.map(function(i){return esc(i.a.name||i.a.accountId)+(i.lv==="hit"?" đã chạm ngưỡng":" sắp chạm ngưỡng (còn "+vnd(i.left)+")")}).join("; ")+'.</div>';
+  if(!AC.length)return h+emptyBlock("Chưa có dữ liệu tài khoản quảng cáo","Điền ID tài khoản quảng cáo cho khách ở mục Khách hàng, rồi chạy đồng bộ Facebook. Dữ liệu sẽ hiện ở đây.")+'</section>';
+  h+='<div class="tablewrap"><table><thead><tr><th>Tài khoản quảng cáo</th><th class="num">Dư nợ hiện tại</th><th class="num">Ngưỡng thanh toán</th><th class="num">Còn lại trước ngưỡng</th><th>Ngày thanh toán dự kiến</th><th>Thẻ thanh toán</th></tr></thead><tbody>'
+   +info.map(function(i){var a=i.a;var cls=i.lv==="hit"?"owe":(i.lv==="near"?"warn":"");
+     var tag=i.lv==="hit"?'<span class="sub owe">Đã chạm ngưỡng</span>':(i.lv==="near"?'<span class="sub warn">Sắp chạm ngưỡng</span>':"");
+     return '<tr><td><b>'+esc(a.name||a.accountId)+'</b><span class="sub">'+esc(a.accountId)+' · '+esc((a.customers||[]).join(", "))+'</span></td>'
+     +'<td class="num"><b>'+(a.balance==null?"—":vnd(a.balance))+'</b></td>'
+     +'<td class="num">'+(a.threshold==null?"Chưa xác định":vnd(a.threshold))+'</td>'
+     +'<td class="num '+cls+'">'+(i.left==null?"—":vnd(i.left))+tag+'</td>'
+     +'<td>'+(a.nextBill?esc(a.nextBill.split("-").reverse().join("/")):"Chưa xác định")+'</td>'
+     +'<td>'+(a.cardLast4?'•••• '+esc(a.cardLast4):"Chưa xác định")+'</td></tr>'}).join("")
+   +'</tbody></table></div><p class="hint">Ngưỡng thanh toán là mức dư nợ Facebook sẽ tự trừ tiền, không phải số dư thẻ ngân hàng. Còn lại = Ngưỡng − Dư nợ; cảnh báo khi còn dưới 20% ngưỡng. “Chưa xác định” nghĩa là Facebook chưa trả về dữ liệu đó. Cập nhật lần cuối: '+new Date(Math.max.apply(null,AC.map(function(a){return a.updatedAt||0}))).toLocaleString("vi-VN")+'.</p></section>';
+  return h;
+}
 function vPayments(){
   var f=ui.pf,pc=ui.pc;
   var all=S.payments.filter(function(p){return!pc||p.customerId===pc});
@@ -1092,7 +1113,7 @@ function vPayments(){
       +'<button class="btn small" data-act="edit" data-type="payments" data-id="'+esc(p.id)+'">Sửa</button></td></tr>'}).join("")
     +'</tbody></table></div>';
   var unpaid=S.payments.filter(function(p){return!p.paidDate});
-  return{title:"Thanh toán / công nợ",sub:"Còn phải thu "+vnd(sum(unpaid)),action:'<button class="btn primary" data-act="add" data-type="payments">Ghi khoản thu</button>',html:h};
+  return{title:"Thanh toán / công nợ",sub:"Còn phải thu "+vnd(sum(unpaid)),action:'<button class="btn primary" data-act="add" data-type="payments">Ghi khoản thu</button>',html:adAccHtml()+h};
 }
 
 var PLANS=[

@@ -12,6 +12,20 @@ if (!TOKEN || !SA) { console.error("Thiếu FB_TOKEN hoặc FIREBASE_SA trong Gi
 admin.initializeApp({ credential: admin.credential.cert(JSON.parse(SA)) });
 const db = admin.firestore();
 
+// Thông tin tài khoản quảng cáo: dư nợ, ngưỡng thanh toán, thẻ, ngày thanh toán (chỉ ghi khi Facebook trả về)
+const OFFSET1 = ["VND", "JPY", "KRW", "CLP", "ISK", "HUF", "PYG", "TWD", "UGX"];
+const money = (v, cur) => (v === undefined || v === null || v === "" || isNaN(Number(v))) ? null : Math.round(Number(v) / (OFFSET1.includes(cur) ? 1 : 100));
+async function accountInfo(acct) {
+  const g = async path => { const j = await (await fetch(`${API}/${path}${path.includes("?") ? "&" : "?"}access_token=${TOKEN}`)).json(); if (j.error) throw new Error(j.error.message); return j; };
+  const a = await g(`act_${acct}?fields=name,currency,balance,account_status,is_prepay_account`);
+  const info = { accountId: acct, name: a.name || "", currency: a.currency || "", balance: money(a.balance, a.currency), status: a.account_status, prepay: !!a.is_prepay_account,
+    threshold: null, cardLast4: "", cardText: "", nextBill: "", updatedAt: Date.now() };
+  try { const p = await g(`act_${acct}/adspaymentcycle?fields=threshold_amount`); const t = p.data && p.data[0] && p.data[0].threshold_amount; info.threshold = money(t, a.currency); } catch (e) { console.log(`  (${acct}: không đọc được ngưỡng: ${e.message})`); }
+  try { const f = await g(`act_${acct}?fields=funding_source_details`); const d = f.funding_source_details; if (d && d.display_string) { info.cardText = d.display_string; const m = d.display_string.match(/(\d{4})\s*$/); if (m) info.cardLast4 = m[1]; } } catch (e) { console.log(`  (${acct}: không đọc được thẻ: ${e.message})`); }
+  try { const n = await g(`act_${acct}?fields=next_bill_date`); if (n.next_bill_date) info.nextBill = String(n.next_bill_date).slice(0, 10); } catch (e) { /* chưa có dữ liệu: để trống */ }
+  return info;
+}
+
 // Giờ Việt Nam (UTC+7), vì máy chạy GitHub dùng giờ UTC
 const VN = ms => new Date(ms + 7 * 3600e3);
 const ymd = d => d.getUTCFullYear() + "-" + String(d.getUTCMonth() + 1).padStart(2, "0") + "-" + String(d.getUTCDate()).padStart(2, "0");
@@ -112,6 +126,13 @@ function split(rows, liveKeys, postKeys, nameKey) {
       console.log(`OK  ${d.name}: ${Object.keys(by).length} ngày`);
       ok++;
     } catch (e) { console.error(`LỖI ${d.name}: ${e.message}`); fail++; }
+  }
+  const accs = {};
+  for (const c of snap.docs) for (const a of String(c.data().adAccountId || "").split(/[^0-9]+/).filter(x => x.length >= 5)) (accs[a] = accs[a] || []).push(c.data().name || "");
+  for (const a of Object.keys(accs)) {
+    try { const info = await accountInfo(a); info.customers = accs[a]; await db.collection("fbaccounts").doc(a).set(info);
+      console.log(`TK ${a}: dư nợ ${info.balance}, ngưỡng ${info.threshold === null ? "không đọc được" : info.threshold}, thẻ ${info.cardLast4 || "?"}, hạn ${info.nextBill || "chưa xác định"}`);
+    } catch (e) { console.error(`LỖI tài khoản ${a}: ${e.message}`); }
   }
   console.log(`Xong. Thành công ${ok}, lỗi ${fail}.`);
   if (fail && !ok) process.exit(1);
