@@ -89,7 +89,8 @@ function split(rows, liveKeys, postKeys, nameKey) {
       // Từ 10h sáng: ghi chi phí HÔM QUA vào bảng chi tiêu của khách (chỉ tạo mới, không đè dòng đã có / đã sửa tay)
       if (pastTen && by[yesterday] && by[yesterday].live + by[yesterday].post > 0) {
         const ex = await db.collection("spend").where("customerId", "==", c.id).where("date", "==", yesterday).limit(1).get();
-        if (ex.empty) {
+        const hid = await db.collection("hidden").where("customerId", "==", c.id).where("date", "==", yesterday).limit(1).get();
+        if (ex.empty && hid.empty) { // ngày chưa có số và khách chưa xóa ngày đó khỏi bảng
           await db.collection("spend").doc(`fb_${c.id}_${yesterday}`).set({
             customerId: c.id, date: yesterday, adLive: by[yesterday].live, adPost: by[yesterday].post,
             feeRate: d.feeRate != null && d.feeRate !== "" ? Number(d.feeRate) : 10, transfer: 0, paid: false, fromFb: true, createdAt: Date.now()
