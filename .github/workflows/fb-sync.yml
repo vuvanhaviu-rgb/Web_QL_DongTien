@@ -2,7 +2,7 @@ name: Kéo chi phí Facebook
 
 on:
   schedule:
-    - cron: "0 */3 * * *"   # mỗi 3 giờ
+    - cron: "0 * * * *"   # mỗi 1 giờ
   workflow_dispatch:
 
 permissions:

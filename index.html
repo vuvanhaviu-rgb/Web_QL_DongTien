@@ -1084,7 +1084,7 @@ function vSpend(){
   else h+='<div class="tablewrap"><table><thead><tr><th>Khách hàng</th><th class="num">Live</th><th class="num">Bài viết</th><th class="num">Tổng spend</th></tr></thead><tbody>'
    +rows.map(function(r){return '<tr><td><button class="link" data-act="goc" data-id="'+esc(r.c.id)+'">'+esc(r.c.name)+'</button></td><td class="num">'+nz(r.live)+'</td><td class="num">'+nz(r.post)+'</td><td class="num"><b>'+nz(r.tot)+'</b></td></tr>'}).join("")
    +'</tbody><tfoot><tr><td>Tổng cộng</td><td class="num">'+num(T.live)+'</td><td class="num">'+num(T.post)+'</td><td class="num">'+num(T.live+T.post)+'</td></tr></tfoot></table></div>';
-  h+='<p class="hint">Dữ liệu lấy tự động từ Facebook mỗi 3 giờ. '+(upd?'Cập nhật gần nhất: '+new Date(upd).toLocaleString("vi-VN")+'.':'Chưa có lần cập nhật nào.')+' Chiến dịch có chữ “live” trong tên được tính vào Live, còn lại là Bài viết. Số này chỉ để theo dõi, không tự ghi vào bảng chi tiêu của khách.</p>';
+  h+='<p class="hint">Dữ liệu lấy tự động từ Facebook mỗi giờ. '+(upd?'Cập nhật gần nhất: '+new Date(upd).toLocaleString("vi-VN")+'.':'Chưa có lần cập nhật nào.')+' Chiến dịch có chữ “live” trong tên được tính vào Live, còn lại là Bài viết. Số này chỉ để theo dõi, không tự ghi vào bảng chi tiêu của khách.</p>';
   return{title:"Spend hiện tại",sub:"Chi phí quảng cáo đang chạy từ Facebook",html:h};
 }
 function newCustHtml(){
