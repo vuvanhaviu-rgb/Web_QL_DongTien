@@ -5,7 +5,7 @@ const admin = require("firebase-admin");
 const TOKEN = process.env.FB_TOKEN;
 const SA = process.env.FIREBASE_SA;
 const DAYS = Number(process.env.SYNC_DAYS || 40);       // quét lại N ngày gần nhất (đủ cho tab Tháng này và số Facebook điều chỉnh)
-const LIVE_WORDS = (process.env.LIVE_WORD || "live").toLowerCase().split(",").map(x => x.trim()).filter(Boolean); // tên chiến dịch có một trong các chữ này => Live
+const LIVE_WORDS = (process.env.LIVE_WORD || "live, livestream").toLowerCase().split(",").map(x => x.trim()).filter(Boolean); // tên chiến dịch có một trong các chữ này => Live
 const API = "https://graph.facebook.com/v21.0";
 
 if (!TOKEN || !SA) { console.error("Thiếu FB_TOKEN hoặc FIREBASE_SA trong GitHub Secrets."); process.exit(1); }
@@ -34,7 +34,7 @@ function split(rows) {
   for (const r of rows) {
     const day = r.date_start, amt = Math.round(Number(r.spend) || 0);
     const b = by[day] || (by[day] = { live: 0, post: 0 });
-    if (LIVE_WORDS.some(w => (r.campaign_name || "").toLowerCase().includes(w))) b.live += amt; else b.post += amt;
+    if (LIVE_WORDS.some(w => new RegExp("(?<!\\p{L})" + w.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "(?!\\p{L})", "u").test((r.campaign_name || "").toLowerCase()))) b.live += amt; else b.post += amt;
   }
   return by;
 }
