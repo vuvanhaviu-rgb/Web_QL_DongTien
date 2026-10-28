@@ -30,18 +30,20 @@ async function insights(acct, since, until) {
 
 // bỏ dấu tiếng Việt, chữ thường: "Ngân" khớp "ngan", "NGAN"
 const fold = t => String(t || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/đ/gi, "d").toLowerCase();
+const norm = t => fold(t).replace(/[^a-z0-9]+/g, " ").trim(); // "LIVE_ HOÀNG-NAM" => "live hoang nam"
 const cache = {}; // mỗi tài khoản chỉ gọi Facebook một lần, dùng chung cho các khách cùng tài khoản
 async function rowsOf(acct, since, until) { return cache[acct] || (cache[acct] = await insights(acct, since, until)); }
 
 // gom theo ngày: {ngày: {live, post}}
 // - Khách có điền từ khóa: chiến dịch khớp từ khóa Live => Live, khớp từ khóa Bài viết => Bài viết, không khớp => bỏ qua.
 // - Khách không điền từ khóa nào: lấy cả tài khoản, tên có chữ LIVE đứng riêng => Live, còn lại => Bài viết.
-function split(rows, liveKeys, postKeys) {
+function split(rows, liveKeys, postKeys, nameKey) {
   const by = {}, custom = liveKeys.length || postKeys.length;
   for (const r of rows) {
-    const name = fold(r.campaign_name), amt = Math.round(Number(r.spend) || 0);
+    const name = norm(r.campaign_name), amt = Math.round(Number(r.spend) || 0);
     let kind;
     if (custom) kind = liveKeys.some(k => name.includes(k)) ? "live" : postKeys.some(k => name.includes(k)) ? "post" : null;
+    else if (nameKey && !name.includes(nameKey)) kind = null;   // tài khoản dùng chung, khách không điền từ khóa: chỉ lấy chiến dịch có tên khách
     else kind = LIVE_WORDS.some(w => new RegExp("(?<!\\p{L})" + w.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "(?!\\p{L})", "u").test(name)) ? "live" : "post";
     if (!kind) continue;
     const b = by[r.date_start] || (by[r.date_start] = { live: 0, post: 0 });
@@ -62,13 +64,17 @@ function split(rows, liveKeys, postKeys) {
   for (const c of snap.docs) {
     const d = c.data(), accts = String(d.adAccountId || "").split(/[^0-9]+/).filter(x => x.length >= 5); // nhiều ID: cách nhau bằng dấu phẩy, cách hoặc xuống dòng
     if (!accts.length) continue;
-    const list = v => String(v || "").split(",").map(x => fold(x.trim())).filter(Boolean);
+    const list = v => String(v || "").split(",").map(x => norm(x)).filter(Boolean);
     const liveKeys = list(d.liveKey), postKeys = list(d.postKey);
     try {
       const by = {};
       for (const acct of accts) {                       // cộng chi phí của tất cả tài khoản của khách
         let rows = await rowsOf(acct, since, until);
-        const one = split(rows, liveKeys, postKeys);
+        // tài khoản này có khách khác dùng chung không?
+        const shared = snap.docs.some(o => o.id !== c.id && String(o.data().adAccountId || "").split(/[^0-9]+/).includes(acct));
+        const nk = norm(d.name), hit = nk && rows.some(r => norm(r.campaign_name).includes(nk));
+        // có chiến dịch mang tên khách => chỉ lấy các chiến dịch đó; tài khoản riêng của khách và không chiến dịch nào mang tên khách => lấy cả tài khoản
+        const one = split(rows, liveKeys, postKeys, (hit || shared) ? nk : "");
         for (const day of Object.keys(one)) {
           const b = by[day] || (by[day] = { live: 0, post: 0 });
           b.live += one[day].live; b.post += one[day].post;
