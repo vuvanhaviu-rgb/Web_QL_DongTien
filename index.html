@@ -143,7 +143,7 @@ table.ledger thead tr+tr th{font-weight:500}
 table.ledger tfoot td{font-weight:700;background:var(--surface-2);border-top:1px solid var(--line);border-bottom:0;font-variant-numeric:tabular-nums}
 td.owe{color:var(--bad);font-weight:700}
 td.clear{color:var(--ok);font-weight:700}
-.notice.warn{background:#fdecea;border:1px solid #f5c2bd;color:#9b1c10;border-radius:10px;padding:10px 12px;margin:0 0 12px;font-size:12px}.sub.warn,td.warn{color:#b26a00}.bill-in{font:inherit;font-size:10px;padding:4px 6px;border:1px solid var(--line,#ddd);border-radius:6px;background:transparent;color:inherit}.thr-in{width:110px;font:inherit;font-size:10px;text-align:right;padding:4px 6px;border:1px solid var(--line,#ddd);border-radius:6px;background:transparent;color:inherit}.hint{margin:0;color:var(--muted);font-size:10px}
+.notice.warn{background:#fdecea;border:1px solid #f5c2bd;color:#9b1c10;border-radius:10px;padding:10px 12px;margin:0 0 12px;font-size:12px}.sub.warn,td.warn{color:#b26a00}.bank-in{width:100%;font:inherit;font-size:16px;font-weight:700;padding:4px 6px;border:1px solid var(--line,#ddd);border-radius:6px;background:transparent;color:inherit;margin:4px 0}.bill-in{font:inherit;font-size:10px;padding:4px 6px;border:1px solid var(--line,#ddd);border-radius:6px;background:transparent;color:inherit}.thr-in{width:110px;font:inherit;font-size:10px;text-align:right;padding:4px 6px;border:1px solid var(--line,#ddd);border-radius:6px;background:transparent;color:inherit}.hint{margin:0;color:var(--muted);font-size:10px}
 input[type=month]{width:100%;background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:8px 10px}
 .ph{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:12px}
 .pick{gap:8px}
@@ -1075,12 +1075,19 @@ function vCustomerDetail(){
 }
 
 function adAccHtml(){
-  var AC=S.fbaccounts.slice();
+  var bankDoc=S.fbaccounts.filter(function(x){return x.id==="__bank"})[0],bank=bankDoc&&bankDoc.amount!=null?bankDoc.amount:null;var AC=S.fbaccounts.filter(function(x){return x.id!=="__bank"});
   var info=AC.map(function(a){var th=a.threshold!=null?a.threshold:(a.thresholdManual!=null?a.thresholdManual:null);var left=(th!=null&&a.balance!=null)?th-a.balance:null;var pct=(left!=null&&th>0)?left/th:null;
     var lv=left==null?"":(left<=0?"hit":(pct<=0.2?"near":"ok"));return{a:a,left:left,lv:lv,th:th}});
   info.sort(function(x,y){var o={hit:0,near:1,ok:2,"":3};return o[x.lv]-o[y.lv]||((y.a.balance||0)-(x.a.balance||0))});
   var bad=info.filter(function(i){return i.lv==="hit"||i.lv==="near"});
   var h='<section class="panel"><h2>Tài khoản quảng cáo <small>dư nợ và ngưỡng thanh toán với Facebook</small></h2>';
+  var tD=info.reduce(function(t,i){return t+(i.a.balance||0)},0),tT=info.reduce(function(t,i){return t+(i.th||0)},0),tL=info.reduce(function(t,i){return t+(i.left!=null?i.left:0)},0),fee=Math.round(tD*0.011),real=bank==null?null:bank-tD-fee;
+  h+='<div class="kpis in"><div class="kpi"><span>Dư nợ hiện tại</span><b>'+vnd(tD)+'</b><small>Tổng '+info.length+' tài khoản</small></div>'
+   +'<div class="kpi"><span>Tổng ngưỡng thanh toán</span><b>'+vnd(tT)+'</b><small>Không phải số dư thẻ</small></div>'
+   +'<div class="kpi"><span>Tổng số dư ngưỡng còn lại</span><b>'+vnd(tL)+'</b><small>Ngưỡng − dư nợ</small></div>'
+   +'<div class="kpi"><span>Số dư ngân hàng</span><input class="bank-in" inputmode="numeric" placeholder="Nhập số dư" value="'+(bank!=null?num(bank):"")+'" aria-label="Số dư ngân hàng"><small>Bạn tự nhập</small></div>'
+   +'<div class="kpi"><span>Phí thanh toán</span><b>'+vnd(fee)+'</b><small>Dư nợ × 1,1%</small></div>'
+   +'<div class="kpi"><span>Số dư thực tế</span><b'+(real!=null&&real<0?' class="owe"':'')+'>'+(real==null?"Chưa nhập số dư":vnd(real))+'</b><small>Ngân hàng − dư nợ − phí</small></div></div>';
   if(bad.length)h+='<div class="notice warn" role="alert"><b>Cảnh báo:</b> '+bad.map(function(i){return esc(i.a.name||i.a.accountId)+(i.lv==="hit"?" đã chạm ngưỡng":" sắp chạm ngưỡng (còn "+vnd(i.left)+")")}).join("; ")+'.</div>';
   if(!AC.length)return h+emptyBlock("Chưa có dữ liệu tài khoản quảng cáo","Điền ID tài khoản quảng cáo cho khách ở mục Khách hàng, rồi chạy đồng bộ Facebook. Dữ liệu sẽ hiện ở đây.")+'</section>';
   h+='<div class="tablewrap"><table><thead><tr><th>Tài khoản quảng cáo</th><th class="num">Dư nợ hiện tại</th><th class="num">Ngưỡng thanh toán</th><th class="num">Còn lại trước ngưỡng</th><th>Ngày thanh toán dự kiến</th><th>Thẻ thanh toán</th></tr></thead><tbody>'
@@ -1414,6 +1421,11 @@ document.addEventListener("input",function(e){
 });
 document.addEventListener("change",function(e){
   var id=e.target.id,v=e.target.value;
+  if(e.target.classList&&e.target.classList.contains("bank-in")){
+    var rb=String(v).replace(/\D/g,"");
+    db.collection("fbaccounts").doc("__bank").set({amount:rb?Number(rb):null},{merge:true}).catch(function(er){toast("Không lưu được số dư: "+((er&&(er.message||er.code))||"lỗi"))});
+    return;
+  }
   if(e.target.classList&&e.target.classList.contains("bill-in")){
     db.collection("fbaccounts").doc(e.target.dataset.id).set({billManual:v||null},{merge:true}).catch(function(er){toast("Không lưu được ngày: "+((er&&(er.message||er.code))||"lỗi"))});
     return;
