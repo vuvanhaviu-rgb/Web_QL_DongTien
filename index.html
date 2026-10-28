@@ -421,9 +421,9 @@ var sum=function(a){return a.reduce(function(t,p){return t+(Number(p.amount)||0)
 var short=function(n){if(n>=1e9)return +(n/1e9).toFixed(1)+" tỷ";if(n>=1e6)return +(n/1e6).toFixed(1)+" tr";if(n>=1e3)return +(n/1e3).toFixed(0)+"k";return String(n)};
 
 var VIEWS=[["tong-quan","Tổng quan"],["spend","Spend hiện tại"],["khach-hang","Khách hàng"],["cong-no","Thanh toán / công nợ"],["bang-gia","Bảng giá"],["thong-ke","Thống kê"]];
-var COLS=["customers","prices","payments","spend","hidden","fbspend","fbaccounts"];
-var S={customers:[],prices:[],payments:[],spend:[],hidden:[],fbspend:[],fbaccounts:[]};
-var loaded={customers:false,prices:false,payments:false,spend:false,hidden:false,fbspend:false,fbaccounts:false};
+var COLS=["customers","prices","payments","spend","hidden","fbspend"];
+var S={customers:[],prices:[],payments:[],spend:[],hidden:[],fbspend:[]};
+var loaded={customers:false,prices:false,payments:false,spend:false,hidden:false,fbspend:false};
 var DEFAULT_FEE=10;
 var BANK_FEE=1.1;
 function defaultRate(cid){var c=(S.customers.filter(function(x){return x.id===cid})[0]);return c&&c.feeRate!=null&&c.feeRate!==""?Number(c.feeRate):DEFAULT_FEE}
@@ -1160,12 +1160,6 @@ function vSpend(){
   else h+='<div class="tablewrap"><table><thead><tr><th>Khách hàng</th><th class="num">Live</th><th class="num">Bài viết</th><th class="num">Tổng spend</th><th class="num net">Phí thực nhận</th></tr></thead><tbody>'
    +rows.map(function(r){return '<tr><td><button class="link" data-act="goc" data-id="'+esc(r.c.id)+'">'+esc(r.c.name)+'</button></td><td class="num">'+nz(r.live)+'</td><td class="num">'+nz(r.post)+'</td><td class="num"><b>'+nz(r.tot)+'</b></td><td class="num net">'+nz(r.net)+'</td></tr>'}).join("")
    +'</tbody><tfoot><tr><td>Tổng cộng</td><td class="num">'+num(T.live)+'</td><td class="num">'+num(T.post)+'</td><td class="num">'+num(T.live+T.post)+'</td><td class="num net">'+num(T.net)+'</td></tr></tfoot></table></div>';
-  if(S.fbaccounts.length){
-    var AC=S.fbaccounts.slice().sort(function(a,b){return (b.balance||0)-(a.balance||0)});
-    h+='<section class="panel"><h2>Tài khoản quảng cáo <small>dư nợ và ngưỡng thanh toán với Facebook</small></h2><div class="tablewrap"><table><thead><tr><th>Tài khoản</th><th>Khách</th><th class="num">Dư nợ Facebook</th><th class="num">Ngưỡng thanh toán</th><th class="num">Còn đến ngưỡng</th><th class="num">Hạn mức chi</th></tr></thead><tbody>'
-     +AC.map(function(a){var left=(a.threshold!=null&&a.balance!=null)?a.threshold-a.balance:null;return '<tr><td><b>'+esc(a.name||a.accountId)+'</b><span class="sub">'+esc(a.accountId)+(a.prepay?' · trả trước':'')+'</span></td><td>'+esc((a.customers||[]).join(", "))+'</td><td class="num"><b>'+(a.balance==null?"—":vnd(a.balance))+'</b></td><td class="num">'+(a.threshold==null?"—":vnd(a.threshold))+'</td><td class="num '+(left!=null&&left<=0?"owe":"")+'">'+(left==null?"—":vnd(left))+'</td><td class="num">'+(a.spendCap?vnd(a.spendCap):"Không đặt")+'</td></tr>'}).join("")
-     +'</tbody></table></div><p class="hint">Dư nợ là số tài khoản đang nợ Facebook, ngưỡng là mức Facebook tự trừ tiền. “—” nghĩa là Facebook không trả về số liệu này. Cập nhật lần cuối: '+new Date(Math.max.apply(null,AC.map(function(a){return a.updatedAt||0}))).toLocaleString("vi-VN")+'.</p></section>';
-  }
   h+='<p class="hint">Dữ liệu lấy tự động từ Facebook mỗi 30 phút. '+(upd?'Cập nhật gần nhất: '+new Date(upd).toLocaleString("vi-VN")+'.':'Chưa có lần cập nhật nào.')+' Live và Bài viết được tách theo từ khóa trong tên chiến dịch mà bạn điền ở form khách hàng (không điền thì lấy cả tài khoản, chữ LIVE trong tên là Live, còn lại là Bài viết). Phí thực nhận = (spend × phí dịch vụ % của khách) − phí ngân hàng '+String(BANK_FEE).replace('.',',')+'%. Số này chỉ để theo dõi, không tự ghi vào bảng chi tiêu của khách.</p>';
   return{title:"Spend hiện tại",sub:"Chi phí quảng cáo đang chạy từ Facebook",html:h};
 }
