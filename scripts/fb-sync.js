@@ -56,8 +56,8 @@ function split(rows, liveKeys, postKeys, nameKey) {
 
 (async () => {
   const nowVN = VN(Date.now()), now = nowVN, from = VN(Date.now() - (DAYS - 1) * 864e5);
-  const since = ymd(from), until = ymd(now), yesterday = /^\d{4}-\d{2}-\d{2}$/.test(process.env.FILL_DATE || "") ? process.env.FILL_DATE : ymd(VN(Date.now() - 864e5)); // FILL_DATE: điền tay một ngày cụ thể
-  const pastTen = !!process.env.FILL_DATE || nowVN.getUTCHours() >= 10; // từ 10h sáng giờ Việt Nam: chốt chi phí hôm qua vào bảng chi tiêu
+  const since = ymd(from), until = ymd(now), yesterday = ymd(VN(Date.now() - 864e5));
+  const pastTen = nowVN.getUTCHours() >= 10; // từ 10h sáng giờ Việt Nam: chốt chi phí hôm qua // từ 10h sáng giờ Việt Nam: chốt chi phí hôm qua vào bảng chi tiêu
   const snap = await db.collection("customers").get();
   let ok = 0, fail = 0;
   for (const c of snap.docs) {
@@ -86,16 +86,27 @@ function split(rows, liveKeys, postKeys, nameKey) {
         await db.collection("fbspend").doc(`${c.id}_${day}`).set(
           { customerId: c.id, date: day, live: by[day].live, post: by[day].post, updatedAt: Date.now() }, { merge: true });
       }
-      // Từ 10h sáng: ghi chi phí HÔM QUA vào bảng chi tiêu của khách (chỉ tạo mới, không đè dòng đã có / đã sửa tay)
-      if (pastTen && by[yesterday] && by[yesterday].live + by[yesterday].post > 0) {
-        const ex = await db.collection("spend").where("customerId", "==", c.id).where("date", "==", yesterday).limit(1).get();
-        const hid = await db.collection("hidden").where("customerId", "==", c.id).where("date", "==", yesterday).limit(1).get();
-        if (ex.empty && hid.empty) { // ngày chưa có số và khách chưa xóa ngày đó khỏi bảng
-          await db.collection("spend").doc(`fb_${c.id}_${yesterday}`).set({
-            customerId: c.id, date: yesterday, adLive: by[yesterday].live, adPost: by[yesterday].post,
-            feeRate: d.feeRate != null && d.feeRate !== "" ? Number(d.feeRate) : 10, transfer: 0, paid: false, fromFb: true, createdAt: Date.now()
+      // Cập nhật bảng chi tiêu của khách: hôm nay (và hôm qua nếu chưa chốt) mỗi lần chạy; từ 10h sáng giờ VN chốt hôm qua một lần rồi khóa.
+      // Chỉ đụng vào dòng do Facebook tạo (fromFb). Dòng bạn tự nhập hoặc đã chốt thì không đè.
+      for (const day of [yesterday, until]) {
+        const v = by[day] || { live: 0, post: 0 };
+        const ex = await db.collection("spend").where("customerId", "==", c.id).where("date", "==", day).limit(1).get();
+        if (ex.empty) {
+          if (v.live + v.post <= 0) continue;
+          const hid = await db.collection("hidden").where("customerId", "==", c.id).where("date", "==", day).limit(1).get();
+          if (!hid.empty) continue; // khách đã xóa ngày này khỏi bảng
+          await db.collection("spend").doc(`fb_${c.id}_${day}`).set({
+            customerId: c.id, date: day, adLive: v.live, adPost: v.post,
+            feeRate: d.feeRate != null && d.feeRate !== "" ? Number(d.feeRate) : 10, transfer: 0, paid: false,
+            fromFb: true, finalized: day === yesterday && pastTen, createdAt: Date.now()
           });
-          console.log(`    -> đã ghi ${yesterday} vào bảng chi tiêu của ${d.name}`);
+          console.log(`    -> ghi ${day} vào bảng chi tiêu của ${d.name}`);
+        } else {
+          const row = ex.docs[0], x = row.data();
+          if (!x.fromFb || x.finalized) continue;
+          if (x.adLive === v.live && x.adPost === v.post && !(day === yesterday && pastTen)) continue;
+          await row.ref.update({ adLive: v.live, adPost: v.post, finalized: day === yesterday && pastTen });
+          console.log(`    -> cập nhật ${day}${day === yesterday && pastTen ? " (chốt)" : ""} cho ${d.name}`);
         }
       }
       console.log(`OK  ${d.name}: ${Object.keys(by).length} ngày`);
