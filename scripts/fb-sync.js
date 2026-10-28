@@ -80,6 +80,9 @@ function split(rows, liveKeys, postKeys, nameKey) {
           b.live += one[day].live; b.post += one[day].post;
         }
       }
+      // xóa số cũ của các ngày trong khoảng quét mà lần này không còn chiến dịch nào khớp khách (tránh còn sót số tính theo cách cũ)
+      const have = await db.collection("fbspend").where("customerId", "==", c.id).get();
+      for (const e of have.docs) { const dt = e.data().date; if (dt >= since && dt <= until && !by[dt]) await e.ref.delete(); }
       for (const day of Object.keys(by)) {
         await db.collection("fbspend").doc(`${c.id}_${day}`).set(
           { customerId: c.id, date: day, live: by[day].live, post: by[day].post, updatedAt: Date.now() }, { merge: true });
