@@ -143,7 +143,7 @@ table.ledger thead tr+tr th{font-weight:500}
 table.ledger tfoot td{font-weight:700;background:var(--surface-2);border-top:1px solid var(--line);border-bottom:0;font-variant-numeric:tabular-nums}
 td.owe{color:var(--bad);font-weight:700}
 td.clear{color:var(--ok);font-weight:700}
-.notice.warn{background:#fdecea;border:1px solid #f5c2bd;color:#9b1c10;border-radius:10px;padding:10px 12px;margin:0 0 12px;font-size:12px}.sub.warn,td.warn{color:#b26a00}.thr-in{width:110px;font:inherit;font-size:10px;text-align:right;padding:4px 6px;border:1px solid var(--line,#ddd);border-radius:6px;background:transparent;color:inherit}.hint{margin:0;color:var(--muted);font-size:10px}
+.notice.warn{background:#fdecea;border:1px solid #f5c2bd;color:#9b1c10;border-radius:10px;padding:10px 12px;margin:0 0 12px;font-size:12px}.sub.warn,td.warn{color:#b26a00}.bill-in{font:inherit;font-size:10px;padding:4px 6px;border:1px solid var(--line,#ddd);border-radius:6px;background:transparent;color:inherit}.thr-in{width:110px;font:inherit;font-size:10px;text-align:right;padding:4px 6px;border:1px solid var(--line,#ddd);border-radius:6px;background:transparent;color:inherit}.hint{margin:0;color:var(--muted);font-size:10px}
 input[type=month]{width:100%;background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:8px 10px}
 .ph{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:12px}
 .pick{gap:8px}
@@ -1090,9 +1090,9 @@ function adAccHtml(){
      +'<td class="num"><b>'+(a.balance==null?"—":vnd(a.balance))+'</b></td>'
      +'<td class="num">'+(a.threshold!=null?vnd(a.threshold):'<input class="thr-in" data-id="'+esc(a.id||a.accountId)+'" inputmode="numeric" placeholder="Nhập ngưỡng" value="'+(a.thresholdManual!=null?num(a.thresholdManual):"")+'" aria-label="Ngưỡng thanh toán">')+'</td>'
      +'<td class="num '+cls+'">'+(i.left==null?"—":vnd(i.left))+tag+'</td>'
-     +'<td>'+(a.nextBill?esc(a.nextBill.split("-").reverse().join("/")):"Chưa xác định")+'</td>'
+     +'<td>'+(a.nextBill?esc(a.nextBill.split("-").reverse().join("/")):'<input type="date" class="bill-in" data-id="'+esc(a.id||a.accountId)+'" value="'+esc(a.billManual||"")+'" aria-label="Ngày thanh toán dự kiến">')+'</td>'
      +'<td>'+(a.cardLast4?'•••• '+esc(a.cardLast4):"Chưa xác định")+'</td></tr>'}).join("")
-   +'</tbody></table></div><p class="hint">Ngưỡng thanh toán là mức dư nợ Facebook sẽ tự trừ tiền (nếu Facebook không trả về, bạn tự nhập vào ô, xem ở Ads Manager → Thanh toán), không phải số dư thẻ ngân hàng. Còn lại = Ngưỡng − Dư nợ; cảnh báo khi còn dưới 20% ngưỡng. “Chưa xác định” nghĩa là Facebook chưa trả về dữ liệu đó. Cập nhật lần cuối: '+new Date(Math.max.apply(null,AC.map(function(a){return a.updatedAt||0}))).toLocaleString("vi-VN")+'.</p></section>';
+   +'</tbody></table></div><p class="hint">Ngưỡng thanh toán là mức dư nợ Facebook sẽ tự trừ tiền (nếu Facebook không trả về, bạn tự nhập ngưỡng và ngày thanh toán vào ô, xem ở Ads Manager → Thanh toán), không phải số dư thẻ ngân hàng. Còn lại = Ngưỡng − Dư nợ; cảnh báo khi còn dưới 20% ngưỡng. “Chưa xác định” nghĩa là Facebook chưa trả về dữ liệu đó. Cập nhật lần cuối: '+new Date(Math.max.apply(null,AC.map(function(a){return a.updatedAt||0}))).toLocaleString("vi-VN")+'.</p></section>';
   return h;
 }
 function vPayments(){
@@ -1414,6 +1414,10 @@ document.addEventListener("input",function(e){
 });
 document.addEventListener("change",function(e){
   var id=e.target.id,v=e.target.value;
+  if(e.target.classList&&e.target.classList.contains("bill-in")){
+    db.collection("fbaccounts").doc(e.target.dataset.id).set({billManual:v||null},{merge:true}).catch(function(er){toast("Không lưu được ngày: "+((er&&(er.message||er.code))||"lỗi"))});
+    return;
+  }
   if(e.target.classList&&e.target.classList.contains("thr-in")){
     var raw=String(v).replace(/\D/g,""),aid=e.target.dataset.id;
     db.collection("fbaccounts").doc(aid).set({thresholdManual:raw?Number(raw):null},{merge:true}).catch(function(er){toast("Không lưu được ngưỡng: "+((er&&(er.message||er.code))||"lỗi"))});
