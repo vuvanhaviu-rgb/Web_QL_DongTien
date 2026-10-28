@@ -30,7 +30,7 @@ async function insights(acct, since, until) {
 
 // bỏ dấu tiếng Việt, chữ thường: "Ngân" khớp "ngan", "NGAN"
 const fold = t => String(t || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/đ/gi, "d").toLowerCase();
-const norm = t => fold(t).replace(/[^a-z0-9]+/g, " ").trim(); // "LIVE_ HOÀNG-NAM" => "live hoang nam"
+const norm = t => String(t || "").trim(); // GIỮ NGUYÊN: không bỏ dấu, không đổi hoa/thường, không bỏ ký tự
 const cache = {}; // mỗi tài khoản chỉ gọi Facebook một lần, dùng chung cho các khách cùng tài khoản
 async function rowsOf(acct, since, until) { return cache[acct] || (cache[acct] = await insights(acct, since, until)); }
 
@@ -43,8 +43,8 @@ function split(rows, liveKeys, postKeys, nameKey) {
     const name = norm(r.campaign_name), amt = Math.round(Number(r.spend) || 0);
     let kind;
     if (custom) kind = liveKeys.some(k => name.includes(k)) ? "live" : postKeys.some(k => name.includes(k)) ? "post" : null;
-    else if (nameKey && !name.includes(nameKey)) kind = null;   // tài khoản dùng chung, khách không điền từ khóa: chỉ lấy chiến dịch có tên khách
-    else kind = LIVE_WORDS.some(w => new RegExp("(?<!\\p{L})" + w.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "(?!\\p{L})", "u").test(name)) ? "live" : "post";
+    else if (nameKey && name !== nameKey) kind = null;   // tài khoản dùng chung, khách không điền từ khóa: chỉ lấy chiến dịch có tên khách
+    else kind = LIVE_WORDS.some(w => new RegExp("(?<!\\p{L})" + w.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "(?!\\p{L})", "u").test(name.toLowerCase())) ? "live" : "post";
     if (!kind) continue;
     const b = by[r.date_start] || (by[r.date_start] = { live: 0, post: 0 });
     b[kind] += amt;
@@ -72,7 +72,7 @@ function split(rows, liveKeys, postKeys, nameKey) {
         let rows = await rowsOf(acct, since, until);
         // tài khoản này có khách khác dùng chung không?
         const shared = snap.docs.some(o => o.id !== c.id && String(o.data().adAccountId || "").split(/[^0-9]+/).includes(acct));
-        const nk = norm(d.name), hit = nk && rows.some(r => norm(r.campaign_name).includes(nk));
+        const nk = norm(d.name), hit = nk && rows.some(r => norm(r.campaign_name) === nk);
         // có chiến dịch mang tên khách => chỉ lấy các chiến dịch đó; tài khoản riêng của khách và không chiến dịch nào mang tên khách => lấy cả tài khoản
         const one = split(rows, liveKeys, postKeys, (hit || shared) ? nk : "");
         for (const day of Object.keys(one)) {
