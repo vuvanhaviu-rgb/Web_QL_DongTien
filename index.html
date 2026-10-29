@@ -812,6 +812,16 @@ function ovChart(){
   }
   return h+'</section>';
 }
+var OVP=[["today","Hôm nay"],["3d","3 ngày"],["7d","7 ngày"],["month","Tháng này"],["year","Năm nay"],["all","Tất cả"]];
+function ovpRange(t){
+  var n=new Date(),d0=function(k){return ymd(new Date(n.getFullYear(),n.getMonth(),n.getDate()+k))};
+  if(t==="today")return[d0(0),d0(0),"Hôm nay "+fmtDate(d0(0))];
+  if(t==="3d")return[d0(-2),d0(0),"3 ngày gần nhất"];
+  if(t==="7d")return[d0(-6),d0(0),"7 ngày gần nhất"];
+  if(t==="month")return[ymd(new Date(n.getFullYear(),n.getMonth(),1)),d0(0),"Tháng "+(n.getMonth()+1)+"/"+n.getFullYear()];
+  if(t==="year")return[ymd(new Date(n.getFullYear(),0,1)),d0(0),"Năm "+n.getFullYear()];
+  return["0000-01-01","9999-12-31","Toàn bộ thời gian"];
+}
 function vOverview(){
   var bal=custBalances(),balSum=0,balN=Object.keys(bal).length;Object.keys(bal).forEach(function(k){balSum+=bal[k]});
   var unpaid=owedRows();
@@ -831,13 +841,18 @@ function vOverview(){
     tot.live+=x.live;tot.post+=x.post;tot.net+=x.net;custSet[r.customerId]=1;cb[r.customerId]=(cb[r.customerId]||0)+x.xf-x.tot;
     if(r.date&&r.date.slice(0,7)===m){tot.m+=x.live+x.post;tot.mnet+=x.net}
   });
+  var opt=ui.ovp||"all",OR=ovpRange(opt),P={live:0,post:0,net:0,d:0,set:{}};
+  S.spend.forEach(function(r){
+    if(!r.date||r.date<OR[0]||r.date>OR[1]||!cust(r.customerId))return;var x=spendRow(r);
+    P.live+=x.live;P.post+=x.post;P.net+=x.net;P.d+=x.xf-x.tot;if(x.live+x.post>0)P.set[r.customerId]=1;
+  });
   var dn=0,nOwe=0,nOver=0;Object.keys(cb).forEach(function(k){dn+=cb[k];if(cb[k]<0)nOwe++;else if(cb[k]>0)nOver++});
-  var h='<div class="kpis top">'
-   +'<div class="kpi c-thu"><span>Tổng chi tiêu quảng cáo</span><b>'+vnd(tot.live+tot.post)+'</b><small>Live '+num(tot.live)+' · Bài viết '+num(tot.post)+' · Tháng này '+num(tot.m)+'</small></div>'
-   +'<div class="kpi c-no '+(dn<0?"bad":"")+'"><span>Tổng dư nợ khách hàng</span><b>'+vnd(dn)+'</b><small>'+nOwe+' khách còn nợ'+(nOver?' · '+nOver+' khách chuyển dư':'')+(dn<0?' (số âm là khách nợ)':'')+'</small></div>'
-   +'<div class="kpi c-net"><span>Fee thực nhận</span><b>'+vnd(tot.net)+'</b><small>Phí dịch vụ − phí ngân hàng · Tháng này '+num(tot.mnet)+'</small></div>'
+  var h='<div class="tools"><div class="tabs" role="group" aria-label="Xem số liệu theo">'+OVP.map(function(t){return '<button data-act="ovp" data-v="'+t[0]+'" aria-pressed="'+(opt===t[0])+'">'+t[1]+'</button>'}).join("")+'</div></div><div class="kpis top">'
+   +'<div class="kpi c-thu"><span>Tổng chi tiêu quảng cáo</span><b>'+vnd(P.live+P.post)+'</b><small>'+esc(OR[2])+' · Live '+num(P.live)+' · Bài viết '+num(P.post)+'</small></div>'
+   +'<div class="kpi c-no '+(P.d<0?"bad":"")+'"><span>'+(opt==="all"?"Tổng dư nợ khách hàng":"Dư nợ khách hàng phát sinh")+'</span><b>'+vnd(P.d)+'</b><small>'+(opt==="all"?"":esc(OR[2])+' · ')+'Hiện tại '+nOwe+' khách còn nợ'+(nOver?' · '+nOver+' khách chuyển dư':'')+(opt==="all"?'':' · tổng nợ '+vnd(dn))+(P.d<0?' (số âm là khách nợ)':'')+'</small></div>'
+   +'<div class="kpi c-net"><span>Fee thực nhận</span><b>'+vnd(P.net)+'</b><small>'+esc(OR[2])+' · Phí dịch vụ − phí ngân hàng</small></div>'
    +'<div class="kpi c-qh '+(over.length?"bad":"")+'"><span>Quá hạn</span><b>'+vnd(overAmt)+'</b><small>'+(over.length?over.length+' khách từ 2 ngày không phát sinh chi phí':'Không có khách nào quá 2 ngày không phát sinh chi phí')+'</small></div>'
-   +'<div class="kpi c-kh"><span>Số lượng khách hàng</span><b>'+S.customers.length+'</b><small>'+Object.keys(custSet).length+' khách đã có chi tiêu</small></div>'
+   +'<div class="kpi c-kh"><span>Số lượng khách hàng</span><b>'+S.customers.length+'</b><small>'+Object.keys(P.set).length+' khách có chi tiêu · '+esc(OR[2])+'</small></div>'
    +'</div>'+ovChart()+'<div class="grid2">';
   var late=dueSoon();
   h+='<section class="panel"><h2>Cần thu sớm <small>'+(late.length?late.length+" khách chưa thanh toán từ 3 ngày":"chưa thanh toán từ 3 ngày trở lên")+'</small></h2>';
@@ -1404,6 +1419,7 @@ document.addEventListener("click",function(e){
   else if(a==="apshift"){ui.anchor=shiftAnchor(ui.ap,ui.anchor,+el.dataset.v);render()}
   else if(a==="apnow"){ui.anchor=todayStr();render()}
   else if(a==="spt"){ui.spt=el.dataset.v;render()}
+  else if(a==="ovp"){ui.ovp=el.dataset.v;render()}
   else if(a==="spaid"){if(el.dataset.id.indexOf("new:")===0)setPaidBlank(el.dataset.id.slice(4),el.dataset.v==="1");else save("spend",el.dataset.id,{paid:el.dataset.v==="1"})}
 });
 function releasePointer(){pointerDown=false;if(pendingRender){pendingRender=false;render()}}
