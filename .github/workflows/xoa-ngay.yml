@@ -1,0 +1,34 @@
+name: Xóa chi tiêu một ngày
+
+on:
+  workflow_dispatch:
+    inputs:
+      del_date:
+        description: "Ngày cần xóa chi tiêu (YYYY-MM-DD)"
+        default: "2026-10-27"
+      check_date:
+        description: "Ngày cần in số liệu để đối chiếu (YYYY-MM-DD)"
+        default: "2026-10-28"
+      apply:
+        description: "Tick để XÓA thật. Bỏ trống = chỉ xem trước"
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm install firebase-admin --no-save
+      - run: node scripts/xoa-ngay.js
+        env:
+          FIREBASE_SA: ${{ secrets.FIREBASE_SA }}
+          DEL_DATE: ${{ inputs.del_date }}
+          CHECK_DATE: ${{ inputs.check_date }}
+          APPLY: ${{ inputs.apply }}
