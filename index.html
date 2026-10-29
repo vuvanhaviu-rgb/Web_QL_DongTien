@@ -143,7 +143,7 @@ table.ledger thead tr+tr th{font-weight:500}
 table.ledger tfoot td{font-weight:700;background:var(--surface-2);border-top:1px solid var(--line);border-bottom:0;font-variant-numeric:tabular-nums}
 td.owe{color:var(--bad);font-weight:700}
 td.clear{color:var(--ok);font-weight:700}
-.notice.warn{background:#fdecea;border:1px solid #f5c2bd;color:#9b1c10;border-radius:10px;padding:10px 12px;margin:0 0 12px;font-size:12px}.sub.warn,td.warn{color:#b26a00}.bank-in{width:100%;font:inherit;font-size:16px;font-weight:700;padding:4px 6px;border:1px solid var(--line,#ddd);border-radius:6px;background:transparent;color:inherit;margin:4px 0}.bill-in{font:inherit;font-size:10px;padding:4px 6px;border:1px solid var(--line,#ddd);border-radius:6px;background:transparent;color:inherit}.thr-in{width:110px;font:inherit;font-size:10px;text-align:right;padding:4px 6px;border:1px solid var(--line,#ddd);border-radius:6px;background:transparent;color:inherit}.hint{margin:0;color:var(--muted);font-size:10px}
+.notice.warn{background:#fdecea;border:1px solid #f5c2bd;color:#9b1c10;border-radius:10px;padding:10px 12px;margin:0 0 12px;font-size:12px}.sub.warn,td.warn{color:#b26a00}.bank-in{width:100%;font:inherit;font-size:16px;font-weight:700;padding:4px 6px;border:1px solid var(--line,#ddd);border-radius:6px;background:transparent;color:inherit;margin:4px 0}.bill-in{font:inherit;font-size:10px;padding:4px 6px;border:1px solid var(--line,#ddd);border-radius:6px;background:transparent;color:inherit}.thr-in{width:110px;font:inherit;font-size:10px;text-align:right;padding:4px 6px;border:1px solid var(--line,#ddd);border-radius:6px;background:transparent;color:inherit}.dayp{display:inline-flex;white-space:nowrap;align-items:center;gap:6px;font-size:10px;color:var(--muted)}.dayp input{font:inherit;font-size:10px;padding:5px 8px;border:1px solid var(--line,#ddd);border-radius:8px;background:transparent;color:inherit}.hint{margin:0;color:var(--muted);font-size:10px}
 input[type=month]{width:100%;background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:8px 10px}
 .ph{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:12px}
 .pick{gap:8px}
@@ -816,6 +816,7 @@ var OVP=[["today","Hôm nay"],["3d","3 ngày"],["7d","7 ngày"],["month","Tháng
 function ovpRange(t){
   var n=new Date(),d0=function(k){return ymd(new Date(n.getFullYear(),n.getMonth(),n.getDate()+k))};
   if(t==="today")return[d0(0),d0(0),"Hôm nay "+fmtDate(d0(0))];
+  if(t==="day"){var dd=ui.ovd||d0(0);return[dd,dd,"Ngày "+fmtDate(dd)]}
   if(t==="3d")return[d0(-2),d0(0),"3 ngày gần nhất"];
   if(t==="7d")return[d0(-6),d0(0),"7 ngày gần nhất"];
   if(t==="month")return[ymd(new Date(n.getFullYear(),n.getMonth(),1)),d0(0),"Tháng "+(n.getMonth()+1)+"/"+n.getFullYear()];
@@ -847,7 +848,7 @@ function vOverview(){
     P.live+=x.live;P.post+=x.post;P.net+=x.net;P.d+=x.xf-x.tot;if(x.live+x.post>0)P.set[r.customerId]=1;
   });
   var dn=0,nOwe=0,nOver=0;Object.keys(cb).forEach(function(k){dn+=cb[k];if(cb[k]<0)nOwe++;else if(cb[k]>0)nOver++});
-  var h='<div class="tools"><div class="tabs" role="group" aria-label="Xem số liệu theo">'+OVP.map(function(t){return '<button data-act="ovp" data-v="'+t[0]+'" aria-pressed="'+(opt===t[0])+'">'+t[1]+'</button>'}).join("")+'</div></div><div class="kpis top">'
+  var h='<div class="tools"><div class="tabs" role="group" aria-label="Xem số liệu theo">'+OVP.map(function(t){return '<button data-act="ovp" data-v="'+t[0]+'" aria-pressed="'+(opt===t[0])+'">'+t[1]+'</button>'}).join("")+'</div><label class="dayp"><span>Chọn ngày</span><input type="date" id="ov-day" value="'+(opt==="day"?esc(OR[0]):"")+'" max="'+todayStr()+'" aria-label="Chọn một ngày để xem"></label></div><div class="kpis top">'
    +'<div class="kpi c-thu"><span>Tổng chi tiêu quảng cáo</span><b>'+vnd(P.live+P.post)+'</b><small>'+esc(OR[2])+' · Live '+num(P.live)+' · Bài viết '+num(P.post)+'</small></div>'
    +'<div class="kpi c-no '+(P.d<0?"bad":"")+'"><span>'+(opt==="all"?"Tổng dư nợ khách hàng":"Dư nợ khách hàng phát sinh")+'</span><b>'+vnd(P.d)+'</b><small>'+(opt==="all"?"":esc(OR[2])+' · ')+'Hiện tại '+nOwe+' khách còn nợ'+(nOver?' · '+nOver+' khách chuyển dư':'')+(opt==="all"?'':' · tổng nợ '+vnd(dn))+(P.d<0?' (số âm là khách nợ)':'')+'</small></div>'
    +'<div class="kpi c-net"><span>Fee thực nhận</span><b>'+vnd(P.net)+'</b><small>'+esc(OR[2])+' · Phí dịch vụ − phí ngân hàng</small></div>'
@@ -1468,6 +1469,7 @@ document.addEventListener("change",function(e){
     return;
   }
   if(id==="pc"){ui.pc=v;render()}
+  else if(id==="ov-day"){if(v){ui.ovd=v;ui.ovp="day";render()}}
   else if(id==="ov-month"){if(v){ui.ovmo=v;render()}}
   else if(id==="ov-year"){var yy=Math.round(Number(v));if(yy>=2000&&yy<=2100){ui.ovy=yy;render()}}
   else if(id==="ap-date"){if(v){ui.anchor=v;render()}}
