@@ -1,70 +1,18 @@
-# Hướng dẫn đưa web Quản lý dòng tiền lên mạng (làm 1 lần, khoảng 20–30 phút)
+# Hướng dẫn vận hành web Quản lý dòng tiền (VH Agency)
 
-Bạn cần 2 dịch vụ miễn phí: **Firebase** (lưu dữ liệu + đăng nhập) và **Netlify** (đặt web lên mạng). Tên miền riêng (ten-ban.com) mua thêm, khoảng 250–400 nghìn đồng/năm.
+Web chạy trên 3 dịch vụ miễn phí: **GitHub** (giữ mã web và tự đưa lên mạng), **Firebase** (lưu dữ liệu và đăng nhập), **Facebook Marketing API** (lấy chi phí quảng cáo). Địa chỉ web: https://vhagency.io.vn
 
-## Bước 1. Tạo nơi lưu dữ liệu (Firebase)
-1. Vào https://console.firebase.google.com, đăng nhập bằng Gmail.
-2. Bấm **Create a project** (Tạo dự án), đặt tên bất kỳ (vd: quanlydongtien). Tắt Google Analytics, bấm Create.
-3. Menu trái: **Build → Firestore Database → Create database**. Chọn vị trí **asia-southeast1 (Singapore)**, chọn **Production mode**, bấm Enable.
-4. Menu trái: **Build → Authentication → Get started → Email/Password → bật Enable → Save**.
-5. Vẫn ở Authentication, tab **Users → Add user**: nhập email và mật khẩu của bạn. Đây là tài khoản để đăng nhập vào web. Muốn thêm người khác, thêm tương tự.
+## 1. Dữ liệu nằm ở đâu
+- **Firebase Firestore (dự án qldt-188a5):** toàn bộ dữ liệu: khách hàng, bảng giá, bảng chi tiêu từng ngày, chi tiêu Facebook, thông tin tài khoản quảng cáo, số dư ngân hàng, ngưỡng và ngày thanh toán bạn nhập. Chỉ tài khoản đăng nhập mới đọc và ghi được.
+- **GitHub (kho Web_QL_DongTien):** chỉ chứa mã web, **không chứa dữ liệu kinh doanh**. Hai mã bí mật nằm ở Settings → Secrets and variables → Actions: `FB_TOKEN` (mã Facebook) và `FIREBASE_SA` (khóa ghi vào Firebase).
+- **Máy của bạn:** file sao lưu bạn tải về (mục 6).
 
-## Bước 2. Khóa dữ liệu, chỉ người đăng nhập mới xem được
-1. Vào **Firestore Database → tab Rules**.
-2. Xóa hết nội dung cũ, dán nguyên đoạn này rồi bấm **Publish**:
+## 2. Cập nhật web
+Mọi thay đổi trên kho GitHub (nhánh main) tự đưa lên mạng sau khoảng 1 phút (workflow "Deploy UI to GitHub Pages"). Sau đó nhấn **Ctrl + Shift + R** để tải bản mới. Trên điện thoại, đóng hẳn app rồi mở lại.
 
-```
-rules_version = '2';
-service cloud.firestore {
-  match /databases/{database}/documents {
-    match /{document=**} {
-      allow read, write: if request.auth != null;
-    }
-  }
-}
-```
-
-## Bước 3. Lấy thông tin kết nối dán vào web
-1. Bấm biểu tượng bánh răng (góc trên trái) → **Project settings**.
-2. Kéo xuống mục **Your apps**, bấm biểu tượng **</>** (Web), đặt tên bất kỳ, bấm Register app.
-3. Màn hình hiện đoạn `firebaseConfig = { apiKey: ..., authDomain: ..., projectId: ..., appId: ... }`.
-4. Mở file **firebase-config.js** (bằng Notepad), thay 4 giá trị DAN-... bằng 4 giá trị tương ứng. Lưu file.
-
-## Bước 4. Đưa web lên mạng (Netlify)
-1. Vào https://app.netlify.com/drop, đăng ký/đăng nhập.
-2. Kéo thả **cả thư mục website** (chứa index.html, firebase-config.js, firebase-shim.js) vào khung.
-3. Netlify cho một địa chỉ dạng `ten-ngau-nhien.netlify.app`. Mở thử, đăng nhập bằng tài khoản ở Bước 1.
-4. Quay lại Firebase: **Authentication → Settings → Authorized domains → Add domain**, thêm địa chỉ netlify.app vừa có (và tên miền riêng ở Bước 5 nếu có).
-
-## Bước 5. Gắn tên miền riêng (tùy chọn)
-1. Mua tên miền (vd ở Mắt Bão, PA Vietnam, Namecheap).
-2. Trong Netlify: **Domain management → Add a domain**, nhập tên miền, làm theo hướng dẫn trỏ DNS (Netlify chỉ từng dòng cần nhập ở nơi bạn mua tên miền). Chờ vài phút đến vài giờ.
-3. Nhớ thêm tên miền này vào **Authorized domains** của Firebase như Bước 4.4.
-
-
-## Bước 6. Sao lưu dữ liệu (rất nên làm)
-Dữ liệu nằm trên Firebase nên không mất khi hỏng máy, nhưng vẫn cần bản dự phòng phòng khi xóa nhầm hoặc có sự cố.
-
-**Cách 1: nút sao lưu trong web (dễ nhất, miễn phí)**
-- Cột menu bên trái có khung **Sao lưu dữ liệu**. Bấm **Tải bản sao lưu** để tải về một file `.json` chứa toàn bộ khách hàng, chi tiêu, công nợ, bảng giá.
-- Khung này nhắc bạn khi đã quá 7 ngày chưa sao lưu. Nên sao lưu **mỗi tuần**, và trước khi sửa hay xóa số lượng lớn.
-- Cất file ở ít nhất 2 nơi: máy tính và Google Drive hoặc email của bạn.
-
-**Cách khôi phục khi có sự cố**
-1. Mở web, đăng nhập.
-2. Bấm **Khôi phục từ file**, chọn file sao lưu gần nhất.
-3. Web hỏi xác nhận, bấm OK. Dữ liệu trong file được ghi lại. Dữ liệu cùng mã sẽ bị ghi đè, dữ liệu thêm sau ngày sao lưu vẫn còn.
-4. Nếu dự án Firebase bị xóa hẳn, tạo dự án mới theo Bước 1–3, rồi khôi phục bằng file như trên.
-
-**Cách 2: Firebase tự sao lưu (tùy chọn, cần nâng gói Blaze và gắn thẻ thanh toán)**
-Trong Firebase: Firestore Database → tab **Disaster Recovery** → bật lịch sao lưu hằng ngày. Với vài chục khách, chi phí gần như bằng 0, nhưng bạn nên đặt hạn mức chi tiêu thấp trong Google Cloud Billing.
-
-## Tóm tắt quy trình
-Tạo dự án Firebase → bật Firestore + đăng nhập → dán luật bảo mật → dán thông tin kết nối → đưa lên Netlify → (gắn tên miền) → tải bản sao lưu mỗi tuần.
-
-
-## Chia sẻ bảng chi tiêu cho khách xem (không cần đăng nhập)
-1. Vào Firebase, mở **Firestore Database → Rules**, thay toàn bộ luật bằng đoạn sau rồi bấm **Publish**:
+## 3. Đăng nhập và luật bảo mật Firebase
+- Tài khoản đăng nhập: Firebase → Authentication → Users → Add user (email + mật khẩu).
+- Luật Firestore (Firestore Database → Rules → Publish):
 
 ```
 rules_version = '2';
@@ -80,12 +28,41 @@ service cloud.firestore {
   }
 }
 ```
-   Đoạn này chỉ cho phép người ngoài **đọc đúng một bảng khi có link**. Không ai xem được danh sách hay dữ liệu khác.
-2. Trong web, mở bảng chi tiêu của khách, bấm **Tạo link chia sẻ**, rồi **Sao chép** và gửi link cho khách.
-3. Link chỉ xem, không sửa được, không có phí ngân hàng và phí thực nhận. Số liệu tự cập nhật khi bạn sửa bảng.
-4. Muốn thu hồi, bấm **Tắt chia sẻ**. Link cũ sẽ không mở được nữa.
+Đoạn `shares` cho phép người ngoài xem đúng một bảng chi tiêu khi có link chia sẻ. Không xem được dữ liệu khác.
 
-## Lưu ý
-- Dữ liệu ở trang Claude cũ **không tự chuyển sang** web mới. Web mới bắt đầu trống, sạch dữ liệu mẫu.
-- Muốn sửa giao diện hay thêm tính năng: nhắn cho Claude, nhận file mới, kéo thả lại lên Netlify.
-- Gói miễn phí của Firebase và Netlify dư sức cho việc quản lý vài chục khách.
+## 4. Lấy chi phí từ Facebook
+**Cách hoạt động:** workflow "Kéo chi phí Facebook" chạy `scripts/fb-sync.js`, đọc chi phí các chiến dịch và ghi vào Firebase.
+- Nhập **ID tài khoản quảng cáo** cho từng khách ở mục Khách hàng (một khách có thể có nhiều ID, cách nhau bằng dấu phẩy).
+- **Tách chi phí theo khách:** khi một tài khoản chạy cho nhiều khách, web nhận chiến dịch có tên trùng đúng tên khách. Chiến dịch không trùng tên thì tính theo **từ khóa Live / Bài viết** điền trong form khách hàng.
+- **Tự điền bảng chi tiêu:** dòng hôm nay cập nhật mỗi lần đồng bộ. Dòng hôm qua được chốt một lần từ **10:00 sáng** giờ Việt Nam.
+- Chạy ngay: github.com/vuvanhaviu-rgb/Web_QL_DongTien/actions/workflows/fb-sync.yml → **Run workflow**.
+
+**Lịch chạy mỗi 30 phút:** lịch tự động của GitHub hay bị chậm, nên dùng thêm cron-job.org gọi GitHub:
+- URL: `https://api.github.com/repos/vuvanhaviu-rgb/Web_QL_DongTien/actions/workflows/fb-sync.yml/dispatches`
+- Phương thức POST, body `{"ref":"main"}`
+- Headers: `Authorization: Bearer <mã GitHub chỉ có quyền Actions của kho này>`, `Accept: application/vnd.github+json`, `Content-Type: application/json`
+- Lịch: mỗi 30 phút. Kết quả đúng khi Test run báo 204.
+- Mã GitHub nằm ở github.com/settings/personal-access-tokens. Nếu lộ mã, bấm **Regenerate token** rồi dán mã mới vào cron-job.org.
+
+**Đổi mã Facebook (`FB_TOKEN`):** Business Settings → Người dùng hệ thống → Tạo mã, tick `ads_read`, `ads_management`, `business_management`. Dán vào GitHub Secrets, ghi đè `FB_TOKEN`. Không gửi mã vào chat hay file công khai.
+
+## 5. Mục Thanh toán / công nợ
+- **Bảng tài khoản quảng cáo:** dư nợ hiện tại và 4 số cuối thẻ lấy tự động từ Facebook. **Ngưỡng thanh toán** và **ngày thanh toán dự kiến** Facebook không trả về, nên bạn tự nhập từ Ads Manager → Thanh toán. Ô nào chưa có dữ liệu hiện "Chưa xác định", web không tự đoán.
+- **Cảnh báo:** báo "Sắp chạm ngưỡng" khi còn dưới 20% ngưỡng, "Đã chạm ngưỡng" khi dư nợ ≥ ngưỡng.
+- **Ô chỉ số:** Dư nợ hiện tại, Tổng ngưỡng, Số dư ngưỡng còn lại (ngưỡng − dư nợ), Số dư ngân hàng (bạn nhập), Phí thanh toán (dư nợ × 1,1%), Tổng dư nợ khách hàng, và **Số dư thực tế = Số dư ngân hàng − Dư nợ − Phí + Dư nợ khách hàng**.
+- **Danh sách công nợ khách:** lấy từ bảng chi tiêu từng khách. Còn nợ = (chi phí quảng cáo + phí dịch vụ) − số khách đã chuyển. **Quá hạn** là khách còn nợ và có dòng chưa thanh toán từ 3 ngày trở lên. Mục **Thống kê** cũng dùng cùng nguồn số liệu này.
+
+## 6. Sao lưu dữ liệu (nên làm mỗi tuần)
+- Cột menu trái có khung **Sao lưu dữ liệu**. Bấm **Tải bản sao lưu** để tải file `.json` chứa toàn bộ dữ liệu. Cất ở ít nhất 2 nơi (máy tính và Google Drive hoặc email).
+- **Khôi phục:** đăng nhập, bấm **Khôi phục từ file**, chọn file gần nhất, bấm OK. Dữ liệu cùng mã bị ghi đè, dữ liệu thêm sau ngày sao lưu vẫn còn.
+- Firebase có thể tự sao lưu hằng ngày (Firestore → Disaster Recovery), nhưng cần nâng gói Blaze và gắn thẻ thanh toán. Nếu dùng, đặt hạn mức chi tiêu thấp.
+
+## 7. Chia sẻ bảng chi tiêu cho khách
+Mở bảng chi tiêu của khách → **Tạo link chia sẻ** → **Sao chép** gửi khách. Link chỉ xem, không có phí ngân hàng và phí thực nhận. Muốn thu hồi, bấm **Tắt chia sẻ**.
+
+## 8. Cài thành app trên điện thoại
+Mở https://vhagency.io.vn bằng trình duyệt điện thoại → menu trình duyệt → **Thêm vào màn hình chính** (hoặc **Cài đặt ứng dụng**).
+
+## Lưu ý an toàn
+- Không bao giờ dán mã `FB_TOKEN`, `FIREBASE_SA` hay mã GitHub vào chat, ảnh chụp màn hình hay file trong kho. Lỡ lộ thì tạo lại mã ngay.
+- Gói miễn phí của Firebase và GitHub đủ dùng cho vài chục khách.

@@ -1103,25 +1103,40 @@ function adAccHtml(){
    +'</tbody><tfoot><tr><td><b>Tổng cộng</b><span class="sub">'+info.length+' tài khoản</span></td><td class="num"><b>'+vnd(info.reduce(function(t,i){return t+(i.a.balance||0)},0))+'</b></td><td class="num"><b>'+vnd(info.reduce(function(t,i){return t+(i.th||0)},0))+'</b></td><td class="num"><b>'+vnd(info.reduce(function(t,i){return t+(i.left!=null?i.left:0)},0))+'</b></td><td></td><td></td></tr></tfoot></table></div><p class="hint">Ngưỡng thanh toán là mức dư nợ Facebook sẽ tự trừ tiền (nếu Facebook không trả về, bạn tự nhập ngưỡng và ngày thanh toán vào ô, xem ở Ads Manager → Thanh toán), không phải số dư thẻ ngân hàng. Còn lại = Ngưỡng − Dư nợ; cảnh báo khi còn dưới 20% ngưỡng. “Chưa xác định” nghĩa là Facebook chưa trả về dữ liệu đó. Cập nhật lần cuối: '+new Date(Math.max.apply(null,AC.map(function(a){return a.updatedAt||0}))).toLocaleString("vi-VN")+'.</p></section>';
   return h;
 }
+/* số liệu tổng hợp từ bảng chi tiêu từng khách: đã xuất (phí + quảng cáo), đã chuyển khoản, theo khách và theo tháng */
+function ledger(){
+  var L={per:{},mTot:{},mXf:{},tot:0,xf:0};
+  S.spend.forEach(function(r){
+    if(!cust(r.customerId))return;var x=spendRow(r);
+    var c=L.per[r.customerId]||(L.per[r.customerId]={tot:0,xf:0});c.tot+=x.tot;c.xf+=x.xf;L.tot+=x.tot;L.xf+=x.xf;
+    var m=(r.date||"").slice(0,7);if(m){L.mTot[m]=(L.mTot[m]||0)+x.tot;L.mXf[m]=(L.mXf[m]||0)+x.xf}
+  });
+  return L;
+}
+/* trạng thái công nợ từng khách: Đã thu (hết nợ), Chờ thu (còn nợ, dưới 3 ngày), Quá hạn (có dòng chưa thanh toán từ 3 ngày) */
+function debtRows(){
+  var L=ledger(),late={};dueSoon().forEach(function(l){late[l.id]=l});
+  return Object.keys(L.per).map(function(id){
+    var c=L.per[id],bal=c.tot-c.xf,st=bal<=0?"paid":(late[id]?"overdue":"pending");
+    return{id:id,tot:c.tot,xf:c.xf,bal:bal,st:st,days:late[id]?late[id].days:0,oldest:late[id]?late[id].oldest:""};
+  }).sort(function(a,b){var o={overdue:0,pending:1,paid:2};return o[a.st]-o[b.st]||b.bal-a.bal});
+}
 function vPayments(){
-  var f=ui.pf,pc=ui.pc;
-  var all=S.payments.filter(function(p){return!pc||p.customerId===pc});
-  var cnt={all:all.length,pending:0,overdue:0,paid:0};all.forEach(function(p){cnt[status(p)]++});
-  var list=all.filter(function(p){return f==="all"||status(p)===f})
-    .sort(function(a,b){return f==="paid"?(b.paidDate||"").localeCompare(a.paidDate||""):(a.dueDate||"9999").localeCompare(b.dueDate||"9999")});
+  var f=ui.pf,pc=ui.pc,all=debtRows().filter(function(r){return!pc||r.id===pc});
+  var cnt={all:all.length,pending:0,overdue:0,paid:0};all.forEach(function(r){cnt[r.st]++});
+  var list=all.filter(function(r){return f==="all"||r.st===f});
   var tabs=[["all","Tất cả"],["pending","Chờ thu"],["overdue","Quá hạn"],["paid","Đã thu"]];
   var h='<div class="tools"><div class="tabs" role="group" aria-label="Lọc theo trạng thái">'
     +tabs.map(function(t){return '<button data-act="pf" data-v="'+t[0]+'" aria-pressed="'+(f===t[0])+'">'+t[1]+' ('+cnt[t[0]]+')</button>'}).join("")+'</div>'
     +'<select id="pc" aria-label="Lọc theo khách hàng"><option value="">Mọi khách hàng</option>'+S.customers.map(function(c){return '<option value="'+esc(c.id)+'"'+(pc===c.id?" selected":"")+'>'+esc(c.name)+'</option>'}).join("")+'</select></div>';
-  if(!S.payments.length)h+='<div class="tablewrap">'+emptyBlock("Chưa có khoản thanh toán","Ghi một khoản phải thu, sau đó bấm “Đã thu” khi tiền về.",'<button class="btn primary" data-act="add" data-type="payments">Ghi khoản thu</button>')+'</div>';
-  else if(!list.length)h+='<div class="tablewrap">'+emptyBlock("Không có khoản nào","Không có khoản nào khớp bộ lọc này.")+'</div>';
-  else h+='<div class="tablewrap"><table><thead><tr><th>Khách hàng</th><th>Nội dung</th><th>Hạn thu</th><th class="num">Số tiền</th><th>Trạng thái</th><th></th></tr></thead><tbody>'
-    +list.map(function(p){var paid=!!p.paidDate;return '<tr><td><b>'+esc(custName(p.customerId))+'</b></td><td>'+esc(p.desc||"")+'<span class="sub">Xuất '+fmtDate(p.issueDate)+'</span></td><td>'+fmtDate(p.dueDate)+(paid?'<span class="sub">Thu '+fmtDate(p.paidDate)+'</span>':"")+'</td><td class="num">'+vnd(p.amount)+'</td><td>'+pill(p)+'</td><td class="act">'
-      +(paid?'<button class="btn small" data-act="unpay" data-id="'+esc(p.id)+'">Hoàn tác</button> ':'<button class="btn small primary" data-act="pay" data-id="'+esc(p.id)+'">Đã thu</button> ')
-      +'<button class="btn small" data-act="edit" data-type="payments" data-id="'+esc(p.id)+'">Sửa</button></td></tr>'}).join("")
-    +'</tbody></table></div>';
-  var unpaid=S.payments.filter(function(p){return!p.paidDate});
-  return{title:"Thanh toán / công nợ",sub:"Còn phải thu "+vnd(sum(unpaid)),action:'<button class="btn primary" data-act="add" data-type="payments">Ghi khoản thu</button>',html:adAccHtml()+h};
+  var ST={paid:["Đã thu","ok"],pending:["Chờ thu","wait"],overdue:["Quá hạn","bad"]};
+  if(!debtRows().length)h+='<div class="tablewrap">'+emptyBlock("Chưa có công nợ","Khi khách có chi phí quảng cáo trong bảng chi tiêu, số tiền đã xuất, đã chuyển và còn nợ sẽ hiện ở đây.")+'</div>';
+  else if(!list.length)h+='<div class="tablewrap">'+emptyBlock("Không có khách nào","Không có khách nào khớp bộ lọc này.")+'</div>';
+  else h+='<div class="tablewrap"><table><thead><tr><th>Khách hàng</th><th class="num">Đã xuất</th><th class="num">Đã chuyển</th><th class="num">Còn nợ</th><th>Chưa thanh toán từ</th><th>Trạng thái</th><th></th></tr></thead><tbody>'
+    +list.map(function(r){var s=ST[r.st];return '<tr><td><b>'+esc(custName(r.id))+'</b></td><td class="num">'+num(r.tot)+'</td><td class="num">'+nz(r.xf)+'</td><td class="num">'+(r.bal>0?'<b>'+num(r.bal)+'</b>':(r.bal<0?'<span class="sub">Dư '+num(-r.bal)+'</span>':"—"))+'</td><td>'+(r.oldest?fmtDate(r.oldest)+'<span class="sub">'+r.days+' ngày</span>':"—")+'</td><td><span class="pill '+s[1]+'">'+s[0]+'</span></td><td class="act"><button class="btn small" data-act="goc" data-id="'+esc(r.id)+'">Bảng chi tiêu</button></td></tr>'}).join("")
+    +'</tbody></table></div><p class="hint">Số liệu lấy từ bảng chi tiêu của từng khách. Còn nợ = (chi phí quảng cáo + phí dịch vụ) − số khách đã chuyển. Quá hạn là khách còn nợ và có dòng chưa thanh toán từ 3 ngày trở lên.</p>';
+  var owe=0;debtRows().forEach(function(r){if(r.bal>0)owe+=r.bal});
+  return{title:"Thanh toán / công nợ",sub:"Khách còn nợ "+vnd(owe),html:adAccHtml()+h};
 }
 
 var PLANS=[
@@ -1147,8 +1162,8 @@ function niceMax(v){var p=Math.pow(10,Math.floor(Math.log10(v)));var c=[1,2,4,5,
 function chartSvg(){
   var months=[],d=new Date();
   for(var i=5;i>=0;i--){var x=new Date(d.getFullYear(),d.getMonth()-i,1);months.push(x.getFullYear()+"-"+pad(x.getMonth()+1))}
-  var inv=months.map(function(m){return sum(S.payments.filter(function(p){return(p.issueDate||"").slice(0,7)===m}))});
-  var col=months.map(function(m){return sum(S.payments.filter(function(p){return p.paidDate&&p.paidDate.slice(0,7)===m}))});
+  var LG=ledger(),inv=months.map(function(m){return LG.mTot[m]||0});
+  var col=months.map(function(m){return LG.mXf[m]||0});
   var mx=niceMax(Math.max(1,Math.max.apply(null,inv),Math.max.apply(null,col)));
   var W=640,H=250,L=56,R=10,T=12,B=28,pw=W-L-R,ph=H-T-B,gw=pw/6,bw=Math.min(26,gw*.28);
   var s='<svg class="chart" viewBox="0 0 '+W+' '+H+'" role="img" aria-label="Biểu đồ doanh thu đã xuất và đã thu theo tháng">';
@@ -1206,21 +1221,21 @@ function newCustHtml(){
    +months.map(function(x){return '<div class="hbar"><div class="t"><span>'+x.l+'</span><span>'+x.n+' khách</span></div><div class="track"><i style="width:'+(x.n?Math.max(3,x.n/mx*100):0)+'%"></i></div></div>'}).join("")+'</section>';
 }
 function vStats(){
-  var tot=sum(S.payments),paid=sum(S.payments.filter(function(p){return p.paidDate}));
-  var ov=sum(S.payments.filter(function(p){return status(p)==="overdue"})),pe=sum(S.payments.filter(function(p){return status(p)==="pending"}));
-  var by={};S.payments.forEach(function(p){by[p.customerId]=(by[p.customerId]||0)+(Number(p.amount)||0)});
-  var top=Object.keys(by).map(function(k){return[k,by[k]]}).sort(function(a,b){return b[1]-a[1]}).slice(0,6);
+  var L=ledger(),rows=debtRows(),n=rows.length,tot=L.tot,paid=L.xf;
+  var ov=0,pe=0;rows.forEach(function(r){if(r.bal>0){if(r.st==="overdue")ov+=r.bal;else pe+=r.bal}});
+  var top=rows.slice().sort(function(a,b){return b.tot-a.tot}).slice(0,6).map(function(r){return[r.id,r.tot]});
   var h;
-  if(!S.payments.length)h='<div class="tablewrap">'+emptyBlock("Chưa có số liệu","Thống kê sẽ hiện sau khi bạn ghi các khoản thu.",'<button class="btn primary" data-act="add" data-type="payments">Ghi khoản thu</button>')+'</div>';
+  if(!n)h='<div class="tablewrap">'+emptyBlock("Chưa có số liệu","Thống kê sẽ hiện khi khách có chi phí quảng cáo trong bảng chi tiêu.")+'</div>';
   else{
-    h='<div class="kpis"><div class="kpi"><span>Tổng đã xuất</span><b>'+vnd(tot)+'</b><small>'+S.payments.length+' khoản</small></div>'
-     +'<div class="kpi"><span>Tỷ lệ đã thu</span><b>'+(tot?Math.round(paid/tot*100):0)+'%</b><small>'+vnd(paid)+' đã về</small></div>'
-     +'<div class="kpi"><span>Trung bình mỗi khoản</span><b>'+vnd(Math.round(tot/S.payments.length))+'</b><small>&nbsp;</small></div></div>'
+    var den=(paid>0?paid:0)+pe+ov||1;
+    h='<div class="kpis"><div class="kpi"><span>Tổng đã xuất</span><b>'+vnd(tot)+'</b><small>'+n+' khách có chi tiêu</small></div>'
+     +'<div class="kpi"><span>Tỷ lệ đã thu</span><b>'+(tot?Math.round(Math.min(paid,tot)/tot*100):0)+'%</b><small>'+vnd(paid)+' đã về</small></div>'
+     +'<div class="kpi"><span>Trung bình mỗi khách</span><b>'+vnd(Math.round(tot/n))+'</b><small>&nbsp;</small></div></div>'
      +'<section class="panel"><h2>Đã xuất và đã thu theo tháng <small>6 tháng gần nhất</small></h2><div class="legend"><span><i style="background:var(--bar-a)"></i>Đã xuất</span><span><i style="background:var(--bar-b)"></i>Đã thu</span></div>'+chartSvg()+'</section>'
      +'<div class="grid2"><section class="panel"><h2>Theo trạng thái</h2><div class="stack">'
-     +[[paid,"var(--ok)"],[pe,"var(--wait)"],[ov,"var(--bad)"]].map(function(x){return x[0]?'<i style="width:'+x[0]/tot*100+'%;background:'+x[1]+'"></i>':""}).join("")+'</div>'
+     +[[Math.max(paid,0),"var(--ok)"],[pe,"var(--wait)"],[ov,"var(--bad)"]].map(function(x){return x[0]?'<i style="width:'+x[0]/den*100+'%;background:'+x[1]+'"></i>':""}).join("")+'</div>'
      +'<div class="list"><div class="row"><div class="l"><b>Đã thu</b></div><div class="r">'+vnd(paid)+'</div></div><div class="row"><div class="l"><b>Chờ thu</b></div><div class="r">'+vnd(pe)+'</div></div><div class="row"><div class="l"><b>Quá hạn</b></div><div class="r">'+vnd(ov)+'</div></div></div></section>'
-     +'<section class="panel"><h2>Khách hàng theo giá trị</h2>'+top.map(function(t){return '<div class="hbar"><div class="t"><span>'+esc(custName(t[0]))+'</span><span>'+vnd(t[1])+'</span></div><div class="track"><i style="width:'+Math.max(3,t[1]/top[0][1]*100)+'%"></i></div></div>'}).join("")+'</section></div>';
+     +'<section class="panel"><h2>Khách hàng theo giá trị</h2>'+top.map(function(t){return '<div class="hbar"><div class="t"><span>'+esc(custName(t[0]))+'</span><span>'+vnd(t[1])+'</span></div><div class="track"><i style="width:'+Math.max(3,top[0][1]?t[1]/top[0][1]*100:0)+'%"></i></div></div>'}).join("")+'</section></div>';
   }
   return{title:"Thống kê",sub:"Khách mới, doanh thu và tình hình thu tiền",html:newCustHtml()+h};
 }
@@ -1229,7 +1244,7 @@ function vStats(){
 function render(){
   if(pointerDown){pendingRender=true;return}
   var v=(ui.view==="khach-hang"&&ui.cid&&cust(ui.cid))?vCustomerDetail:(({"tong-quan":vOverview,"spend":vSpend,"khach-hang":vCustomers,"cong-no":vPayments,"bang-gia":vPrices,"thong-ke":vStats})[ui.view]||vOverview);
-  var overdue=S.payments.filter(function(p){return status(p)==="overdue"}).length;
+  var overdue=ready()?dueSoon().length:0;
   $("#nav").innerHTML=VIEWS.map(function(x){return '<a href="#'+x[0]+'"'+(x[0]===ui.view?' aria-current="page"':"")+'>'+x[1]+(x[0]==="cong-no"&&overdue?'<span class="badge" title="Khoản quá hạn">'+overdue+'</span>':"")+'</a>'}).join("");
   var r;
   if(!ready())r={title:VIEWS.filter(function(x){return x[0]===ui.view})[0][1],html:loadingBlock()};
