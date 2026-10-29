@@ -46,7 +46,7 @@ service cloud.firestore {
 
 **Đổi mã Facebook (`FB_TOKEN`):** Business Settings → Người dùng hệ thống → Tạo mã, tick `ads_read`, `ads_management`, `business_management`. Dán vào GitHub Secrets, ghi đè `FB_TOKEN`. Không gửi mã vào chat hay file công khai.
 
-## 5. Mục Thanh toán / công nợ
+## 5. Mục Quản Lý TKQC META
 - **Bảng tài khoản quảng cáo:** dư nợ hiện tại và 4 số cuối thẻ lấy tự động từ Facebook. **Ngưỡng thanh toán** và **ngày thanh toán dự kiến** Facebook không trả về, nên bạn tự nhập từ Ads Manager → Thanh toán. Ô nào chưa có dữ liệu hiện "Chưa xác định", web không tự đoán.
 - **Cảnh báo:** báo "Sắp chạm ngưỡng" khi còn dưới 20% ngưỡng, "Đã chạm ngưỡng" khi dư nợ ≥ ngưỡng.
 - **Ô chỉ số:** Dư nợ hiện tại, Tổng ngưỡng, Số dư ngưỡng còn lại (ngưỡng − dư nợ), Số dư ngân hàng (bạn nhập), Phí thanh toán (dư nợ × 1,1%), Tổng dư nợ khách hàng, và **Số dư thực tế = Số dư ngân hàng − Dư nợ − Phí + Dư nợ khách hàng**.

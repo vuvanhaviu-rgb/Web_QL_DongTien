@@ -420,7 +420,7 @@ var fmtDate=function(s){return s?String(s).split("-").reverse().join("/"):"—"}
 var sum=function(a){return a.reduce(function(t,p){return t+(Number(p.amount)||0)},0)};
 var short=function(n){if(n>=1e9)return +(n/1e9).toFixed(1)+" tỷ";if(n>=1e6)return +(n/1e6).toFixed(1)+" tr";if(n>=1e3)return +(n/1e3).toFixed(0)+"k";return String(n)};
 
-var VIEWS=[["tong-quan","Tổng quan"],["spend","Spend hiện tại"],["khach-hang","Khách hàng"],["cong-no","Thanh toán / công nợ"],["bang-gia","Bảng giá"],["thong-ke","Thống kê"]];
+var VIEWS=[["tong-quan","Tổng quan"],["spend","Spend hiện tại"],["khach-hang","Khách hàng"],["cong-no","Quản Lý TKQC META"],["bang-gia","Bảng giá"],["thong-ke","Thống kê"]];
 var COLS=["customers","prices","payments","spend","hidden","fbspend","fbaccounts"];
 var S={customers:[],prices:[],payments:[],spend:[],hidden:[],fbspend:[],fbaccounts:[]};
 var loaded={customers:false,prices:false,payments:false,spend:false,hidden:false,fbspend:false,fbaccounts:false};
@@ -1136,7 +1136,7 @@ function vPayments(){
     +list.map(function(r){var s=ST[r.st];return '<tr><td><b>'+esc(custName(r.id))+'</b></td><td class="num">'+num(r.tot)+'</td><td class="num">'+nz(r.xf)+'</td><td class="num">'+(r.bal>0?'<b>'+num(r.bal)+'</b>':(r.bal<0?'<span class="sub">Dư '+num(-r.bal)+'</span>':"—"))+'</td><td>'+(r.oldest?fmtDate(r.oldest)+'<span class="sub">'+r.days+' ngày</span>':"—")+'</td><td><span class="pill '+s[1]+'">'+s[0]+'</span></td><td class="act"><button class="btn small" data-act="goc" data-id="'+esc(r.id)+'">Bảng chi tiêu</button></td></tr>'}).join("")
     +'</tbody></table></div><p class="hint">Số liệu lấy từ bảng chi tiêu của từng khách. Còn nợ = (chi phí quảng cáo + phí dịch vụ) − số khách đã chuyển. Quá hạn là khách còn nợ và có dòng chưa thanh toán từ 3 ngày trở lên.</p>';
   var owe=0;debtRows().forEach(function(r){if(r.bal>0)owe+=r.bal});
-  return{title:"Thanh toán / công nợ",sub:"Khách còn nợ "+vnd(owe),html:adAccHtml()+h};
+  return{title:"Quản Lý TKQC META",sub:"Khách còn nợ "+vnd(owe),html:adAccHtml()+h};
 }
 
 var PLANS=[
