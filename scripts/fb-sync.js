@@ -11,12 +11,14 @@ const API = "https://graph.facebook.com/v21.0";
 if (!TOKEN || !SA) { console.error("Thiếu FB_TOKEN hoặc FIREBASE_SA trong GitHub Secrets."); process.exit(1); }
 admin.initializeApp({ credential: admin.credential.cert(JSON.parse(SA)) });
 const db = admin.firestore();
+// Nếu chạy quá 12 phút thì tự dừng, để lần sau chạy lại thay vì treo mãi
+setTimeout(() => { console.error("QUÁ 12 PHÚT: tự dừng"); process.exit(2); }, 12 * 60e3).unref();
 
 // Thông tin tài khoản quảng cáo: dư nợ, ngưỡng thanh toán, thẻ, ngày thanh toán (chỉ ghi khi Facebook trả về)
 const OFFSET1 = ["VND", "JPY", "KRW", "CLP", "ISK", "HUF", "PYG", "TWD", "UGX"];
 const money = (v, cur) => (v === undefined || v === null || v === "" || isNaN(Number(v))) ? null : Math.round(Number(v) / (OFFSET1.includes(cur) ? 1 : 100));
 async function accountInfo(acct) {
-  const g = async path => { const j = await (await fetch(`${API}/${path}${path.includes("?") ? "&" : "?"}access_token=${TOKEN}`)).json(); if (j.error) throw new Error(j.error.message); return j; };
+  const g = async path => { const j = await (await fetch(`${API}/${path}${path.includes("?") ? "&" : "?"}access_token=${TOKEN}`, { signal: AbortSignal.timeout(60000) })).json(); if (j.error) throw new Error(j.error.message); return j; };
   const a = await g(`act_${acct}?fields=name,currency,balance,account_status,is_prepay_account`);
   const info = { accountId: acct, name: a.name || "", currency: a.currency || "", balance: money(a.balance, a.currency), status: a.account_status, prepay: !!a.is_prepay_account,
     threshold: null, cardLast4: "", cardText: "", nextBill: "", updatedAt: Date.now() };
@@ -33,9 +35,10 @@ const ymd = d => d.getUTCFullYear() + "-" + String(d.getUTCMonth() + 1).padStart
 async function insights(acct, since, until) {
   let url = `${API}/act_${acct}/insights?level=campaign&fields=campaign_name,spend&time_increment=1`
     + `&time_range=${encodeURIComponent(JSON.stringify({ since, until }))}&limit=500&access_token=${TOKEN}`;
-  const rows = [];
-  while (url) {
-    const r = await fetch(url);
+  const rows = [], seen = new Set();
+  while (url && !seen.has(url) && seen.size < 200) {
+    seen.add(url);
+    const r = await fetch(url, { signal: AbortSignal.timeout(60000) });
     const j = await r.json();
     if (j.error) throw new Error(j.error.message);
     rows.push(...(j.data || []));
