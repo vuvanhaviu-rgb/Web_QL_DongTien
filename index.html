@@ -1426,39 +1426,6 @@ function debtAging(C,bal){
   });
   return{B:B,avg:tsum?Math.round(wsum/tsum*10)/10:0,tsum:tsum};
 }
-function forecastHtml(SD,bank){
-  var AC=S.fbaccounts.filter(function(x){return x.id!=="__bank"});
-  var now=new Date(),since=ymd(new Date(now.getFullYear(),now.getMonth(),now.getDate()-6)),sims=[];
-  AC.forEach(function(a){
-    var th=a.threshold!=null?a.threshold:(a.thresholdManual!=null?a.thresholdManual:null);if(!(th>0))return;
-    var aid=String(a.accountId||a.id).replace(/\D/g,"");if(!aid)return;
-    var ids=S.customers.filter(function(c){return String(c.adAccountId||"").split(/[,;\s]+/).map(function(z){return z.replace(/\D/g,"")}).indexOf(aid)>=0}).map(function(c){return c.id});
-    var sum=0;S.fbspend.forEach(function(r){if(r.date>=since&&ids.indexOf(r.customerId)>=0)sum+=(Number(r.live)||0)+(Number(r.post)||0)});
-    var rate=sum/7;if(!(rate>0))return;
-    sims.push({name:a.name||aid,th:th,bal:a.balance||0,rate:rate});
-  });
-  if(!sims.length)return '<section class="panel"><h2>Dự báo dòng tiền 14 ngày <small>Facebook sắp trừ, khách trả và số dư ngân hàng</small></h2>'+emptyBlock("Chưa đủ dữ liệu để dự báo","Cần tài khoản quảng cáo có ngưỡng thanh toán và khách đã nối tài khoản có chi tiêu trong 7 ngày gần nhất.")+'</section>';
-  var inflow=SD.X30/30,cash=bank,rows=[],tout=0,tin=0,low=cash,lowDay="";
-  var bals=sims.map(function(z){return z.bal});
-  for(var d=1;d<=14;d++){
-    var out=0,names=[];
-    sims.forEach(function(z,i){bals[i]+=z.rate;if(bals[i]>=z.th){out+=bals[i];names.push(z.name);bals[i]=0}});
-    tout+=out;tin+=inflow;
-    if(cash!=null){cash=cash-out+inflow;if(cash<low||lowDay===""){low=Math.min(low,cash);lowDay=cash<=low?d:lowDay}}
-    var dt=new Date(now.getFullYear(),now.getMonth(),now.getDate()+d);
-    if(out>0)rows.push({d:dt,out:out,names:names,cash:cash});
-  }
-  var warn=cash!=null&&low<0;
-  var h='<section class="panel"><h2>Dự báo dòng tiền 14 ngày <small>Ước tính theo tốc độ chi 7 ngày gần nhất và số tiền khách chuyển trung bình 30 ngày</small></h2>'
-   +'<div class="kpis in"><div class="kpi t-info"><span>Facebook sắp trừ</span><b>'+vnd(Math.round(tout))+'</b><small>'+rows.length+' lần trong 14 ngày</small></div>'
-   +'<div class="kpi t-ok"><span>Khách chuyển dự kiến</span><b>'+vnd(Math.round(tin))+'</b><small>Bằng mức trung bình 30 ngày</small></div>'
-   +'<div class="kpi '+(warn?"bad":"")+'"><span>Số dư thấp nhất dự kiến</span><b>'+(cash==null?"Chưa nhập số dư":vnd(Math.round(low)))+'</b><small>'+(cash==null?"Nhập số dư ngân hàng ở trang TKQC Meta":warn?"Có nguy cơ thiếu tiền":"Đủ tiền trong 14 ngày")+'</small></div></div>';
-  if(rows.length)h+='<div class="tablewrap"><table><thead><tr><th>Ngày</th><th>Tài khoản bị trừ</th><th class="num">Facebook trừ</th><th class="num">Số dư sau đó</th></tr></thead><tbody>'
-   +rows.map(function(r){return '<tr><td>'+pad(r.d.getDate())+'/'+pad(r.d.getMonth()+1)+'</td><td>'+esc(r.names.join(", "))+'</td><td class="num">'+num(Math.round(r.out))+'</td><td class="num'+(r.cash!=null&&r.cash<0?' owe':'')+'">'+(r.cash==null?"—":num(Math.round(r.cash)))+'</td></tr>'}).join("")+'</tbody></table></div>';
-  var runway=(bank!=null&&SD.D7>0)?Math.floor(bank/(SD.D7/7)):null;
-  h+='<p class="hint">Tốc độ chi trung bình '+vnd(Math.round(SD.D7/7))+' mỗi ngày'+(runway!=null?'. Với số dư ngân hàng hiện tại, bạn trụ được khoảng '+runway+' ngày nếu khách chưa trả thêm.':'.')+' Đây là số ước tính, không phải số Facebook sẽ trừ chính xác.</p></section>';
-  return h;
-}
 function vStats(){
   var SD=statData(),mk=SD.mk,M=SD.M,C=SD.C,cur=M[mk[11]],prev=M[mk[10]];
   var bal=custBalances(),balSum=0,balIds=Object.keys(bal);balIds.forEach(function(k){balSum+=bal[k]});
@@ -1487,7 +1454,6 @@ function vStats(){
    +(sorted.length?'<div class="list">'+sorted.slice(0,3).map(function(k){return '<div class="row"><div class="l"><button class="link" data-act="goc" data-id="'+esc(k)+'">'+esc(custName(k))+'</button><span>'+pctTxt(bal[k],balSum)+' tổng công nợ</span></div><div class="r">'+vnd(bal[k])+'</div></div>'}).join("")+'</div>':"")
    +(big.length?'<div class="notice warn">Cảnh báo: '+big.map(function(k){return esc(custName(k))}).join(", ")+' chiếm trên 20% tổng công nợ.</div>':'')
    +(over.length?'<div class="notice warn">Vượt hạn mức nợ: '+over.map(function(c){return esc(c.name)+' (nợ '+vnd(bal[c.id])+' / hạn mức '+vnd(c.creditLimit)+')'}).join("; ")+'.</div>':'<p class="hint">Đặt hạn mức nợ tối đa cho từng khách ở Khách hàng → Sửa để được cảnh báo khi vượt.</p>')+'</section></div>';
-  h+=forecastHtml(SD,bank);
   /* khách ngừng chạy */
   var idle=Object.keys(C).filter(function(id){return C[id].last}).map(function(id){var l=C[id].last,d=Math.round((SD.t0-new Date(+l.slice(0,4),+l.slice(5,7)-1,+l.slice(8,10)).getTime())/86400000);return{id:id,last:l,days:d}}).filter(function(o){return o.days>=14}).sort(function(a,b){return b.days-a.days});
   h+='<section class="panel"><h2>Khách ngừng chạy <small>Không phát sinh chi tiêu từ 14 ngày trở lên, nên gọi chăm sóc lại</small></h2>'
