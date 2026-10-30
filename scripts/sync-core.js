@@ -60,6 +60,7 @@ function split(rows, liveKeys, postKeys, nameKey) {
     if (!kind) continue;
     const b = by[r.date_start] || (by[r.date_start] = { live: 0, post: 0 });
     b[kind] += amt;
+    if (amt > 0) (b.camps || (b.camps = [])).push({ n: name, s: amt, k: kind });
   }
   return by;
 }
@@ -68,6 +69,7 @@ async function main() {
   const nowVN = VN(Date.now()), now = nowVN;
   // Để không vượt hạn mức miễn phí của Firebase: lần chạy thường chỉ quét hôm qua và hôm nay.
   // Quét đủ cả khoảng ngày (và dọn số cũ) chỉ khi: chạy tay có tick "full", hoặc lần chạy đầu tiên sau 10:00 sáng giờ Việt Nam.
+  const since7 = ymd(VN(Date.now() - 6 * 864e5)); // tên chiến dịch chỉ lưu cho 7 ngày gần nhất
   const FULL = OPT.full === true || (nowVN.getUTCHours() === 10 && nowVN.getUTCMinutes() < 30);
   const from = VN(Date.now() - ((FULL ? DAYS : 2) - 1) * 864e5);
   console.log(FULL ? "Chế độ quét đủ" : "Chế độ nhanh (hôm qua và hôm nay)");
@@ -92,6 +94,7 @@ async function main() {
         for (const day of Object.keys(one)) {
           const b = by[day] || (by[day] = { live: 0, post: 0 });
           b.live += one[day].live; b.post += one[day].post;
+          if (one[day].camps) b.camps = (b.camps || []).concat(one[day].camps);
         }
       }
       // xóa số cũ của các ngày trong khoảng quét mà lần này không còn chiến dịch nào khớp khách (tránh còn sót số tính theo cách cũ)
@@ -101,7 +104,8 @@ async function main() {
       }
       for (const day of Object.keys(by)) {
         await db.collection("fbspend").doc(`${c.id}_${day}`).set(
-          { customerId: c.id, date: day, live: by[day].live, post: by[day].post, updatedAt: Date.now() }, { merge: true });
+          Object.assign({ customerId: c.id, date: day, live: by[day].live, post: by[day].post, updatedAt: Date.now() },
+            day >= since7 ? { camps: (by[day].camps || []).slice(0, 40) } : {}), { merge: true });
       }
       // Cập nhật bảng chi tiêu của khách: hôm nay (và hôm qua nếu chưa chốt) mỗi lần chạy; từ 10h sáng giờ VN chốt hôm qua một lần rồi khóa.
       // Chỉ đụng vào dòng do Facebook tạo (fromFb). Dòng bạn tự nhập hoặc đã chốt thì không đè.
