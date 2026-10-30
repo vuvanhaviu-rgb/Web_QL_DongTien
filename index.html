@@ -444,6 +444,7 @@ td .link,.tablewrap .link{text-decoration:none}
 .gear{display:inline-block;margin-top:6px;color:var(--accent);font-weight:600;text-decoration:none;font-size:12px}
 @media (max-width:700px){.gear{margin:0 0 0 auto}}
 .bk{margin-top:0}
+.notice.ok{background:var(--ok-soft);border:1px solid var(--ok);color:var(--ok);border-radius:10px;padding:10px 12px;font-size:12px;line-height:1.5}
 
 details.idle{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:10px 14px}
 details.idle summary{cursor:pointer;font-weight:600;color:var(--muted)}
@@ -637,8 +638,8 @@ async function bkRestore(file){
   toast(failed?"Khôi phục xong, lỗi "+failed+" bản ghi":"Đã khôi phục "+n+" bản ghi");
 }
 document.addEventListener("click",function(e){
-  var ab=e.target&&e.target.closest?e.target.closest("[data-act=logout],[data-act=bk-dismiss]"):null;
-  if(ab){if(ab.dataset.act==="logout"){if(window.__logout)window.__logout();else toast("Chưa đăng nhập")}else{try{sessionStorage.setItem("bk-dismiss","1")}catch(x){}render()}return}
+  var ab=e.target&&e.target.closest?e.target.closest("[data-act=logout],[data-act=bk-dismiss],[data-act=bk-auto]"):null;
+  if(ab){if(ab.dataset.act==="bk-auto"){bkAuto()}else if(ab.dataset.act==="logout"){if(window.__logout)window.__logout();else toast("Chưa đăng nhập")}else{try{sessionStorage.setItem("bk-dismiss","1")}catch(x){}render()}return}
   var t=e.target;if(!t||!t.id)return;
   if(t.id==="bk-save")bkSave();
   else if(t.id==="bk-load")document.getElementById("bk-file").click();
@@ -1547,19 +1548,37 @@ function tagKpis(root){
 }
 
 /* ---------- Cài đặt: sao lưu và đăng xuất ---------- */
+function loadAutoBk(){
+  if(ui.autoBk!==undefined)return;
+  if(localMode||!db){ui.autoBk=false;return}
+  ui.autoBk=null;
+  db.collection("backups").doc("latest").get().then(function(d){ui.autoBk=d.exists?d.data():false;if(ui.view==="cai-dat")render()}).catch(function(){ui.autoBk=false;if(ui.view==="cai-dat")render()});
+}
+async function bkAuto(){
+  var m=ui.autoBk;if(!m||!m.date){toast("Chưa có bản sao lưu tự động");return}
+  try{
+    var snap=await db.collection("backups").where("date","==",m.date).get(),by={};
+    snap.docs.forEach(function(d){var x=d.data();(by[x.col]||(by[x.col]=[]))[x.i]=x.json});
+    var out={app:"quan-ly-dong-tien",version:1,exportedAt:new Date(m.at).toISOString(),data:{}};
+    COLS.forEach(function(c){var rows=[];(by[c]||[]).forEach(function(j){if(j)rows=rows.concat(JSON.parse(j))});out.data[c]=rows});
+    var blob=new Blob([JSON.stringify(out,null,1)],{type:"application/json"}),a=document.createElement("a");
+    a.href=URL.createObjectURL(blob);a.download="sao-luu-tu-dong-"+m.date+".json";document.body.appendChild(a);a.click();
+    setTimeout(function(){URL.revokeObjectURL(a.href);a.remove()},500);toast("Đã tải bản sao lưu tự động");
+  }catch(e){toast("Không tải được: "+((e&&(e.message||e.code))||"lỗi"))}
+}
 function vSettings(){
-  var h='<section class="panel"><h2>Sao lưu dữ liệu <small>Tải toàn bộ dữ liệu về máy để phòng khi cần khôi phục</small></h2>'
+  loadAutoBk();
+  var m=ui.autoBk,st;
+  if(m)st='<div class="notice ok">Đã bật sao lưu tự động mỗi ngày (lúc 2 giờ sáng), giữ 30 ngày gần nhất.<br>Lần gần nhất: <b>'+new Date(m.at).toLocaleString("vi-VN")+'</b> · '+m.total+' bản ghi.</div><button class="btn small" data-act="bk-auto" type="button">Tải bản sao lưu tự động gần nhất</button>';
+  else if(m===false)st='<p class="hint">Sao lưu tự động chạy mỗi ngày lúc 2 giờ sáng và giữ 30 ngày gần nhất. Chưa có bản nào, hoặc trang chưa đọc được bản đã lưu.</p>';
+  else st='<p class="hint">Đang kiểm tra bản sao lưu tự động…</p>';
+  var h='<section class="panel"><h2>Sao lưu tự động <small>Dữ liệu được tự chép vào kho lưu trữ riêng mỗi ngày, bạn không cần làm gì</small></h2><div class="bk">'+st+'</div></section>'
+   +'<section class="panel"><h2>Sao lưu thủ công <small>Tải một bản về máy khi muốn tự giữ</small></h2>'
    +'<div class="bk" id="bk"><small id="bk-last"></small><button class="btn small" id="bk-save" type="button">Tải bản sao lưu</button><button class="btn small" id="bk-load" type="button">Khôi phục từ file</button><input type="file" id="bk-file" accept=".json,application/json" hidden></div></section>'
    +'<section class="panel"><h2>Tài khoản <small>Đăng xuất khỏi thiết bị này</small></h2><div><button class="btn small" data-act="logout" type="button">Đăng xuất</button></div></section>';
   return{title:"Cài đặt",sub:"Sao lưu dữ liệu và tài khoản",html:h};
 }
-function bkRemind(){
-  if(ui.view!=="tong-quan"||!ready())return"";
-  var t=bkStamp(),days=t?Math.floor((Date.now()-Number(t))/86400000):999;
-  if(days<7)return"";
-  try{if(sessionStorage.getItem("bk-dismiss"))return""}catch(e){}
-  return '<div class="note"><span>'+(t?'Đã '+days+' ngày chưa sao lưu dữ liệu.':'Bạn chưa sao lưu dữ liệu lần nào.')+'</span><span><a class="btn small" href="#cai-dat">Sao lưu ngay</a> <button class="btn small" data-act="bk-dismiss" type="button">Để sau</button></span></div>';
-}
+function bkRemind(){return""}
 function render(){
   if(pointerDown){pendingRender=true;return}
   var v=(ui.view==="khach-hang"&&ui.cid&&cust(ui.cid))?vCustomerDetail:(({"tong-quan":vOverview,"spend":vSpend,"khach-hang":vCustomers,"cong-no":vPayments,"bang-gia":vPrices,"lich-su":vHistory,"thong-ke":vStats,"cai-dat":vSettings})[ui.view]||vOverview);

@@ -1,0 +1,27 @@
+name: Sao lưu dữ liệu tự động
+
+on:
+  schedule:
+    - cron: "0 19 * * *"   # 02:00 sáng giờ Việt Nam mỗi ngày
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: backup
+  cancel-in-progress: false
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm install firebase-admin --no-save
+      - run: node scripts/backup.js
+        env:
+          FIREBASE_SA: ${{ secrets.FIREBASE_SA }}
