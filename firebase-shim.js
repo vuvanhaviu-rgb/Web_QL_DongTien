@@ -38,12 +38,7 @@
     return new Promise(function () {}); // không bao giờ mở khóa
   }
   function logoutButton(auth) {
-    var box = document.getElementById("bk"); if (!box) return;
-    var b = document.createElement("button");
-    b.type = "button"; b.className = "btn small"; b.textContent = "Đăng xuất";
-    b.addEventListener("click", function () { auth.signOut().then(function () { location.reload(); }); });
-    box.parentNode.insertBefore(b, box.nextSibling);
-    b.style.marginTop = "10px";
+    window.__logout = function () { auth.signOut().then(function () { location.reload(); }); };
   }
   window.claude = {
     use: async function (name) {
