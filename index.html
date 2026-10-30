@@ -566,7 +566,16 @@ var ready=function(){return localMode||COLS.every(function(c){return loaded[c]})
 
 /* ---------- data layer ---------- */
 function toast(msg){var r=$("#toast-root");r.innerHTML='<div class="toast" role="status">'+esc(msg)+'</div>';clearTimeout(toast.t);toast.t=setTimeout(function(){r.innerHTML=""},3200)}
+/* ghi lại thời điểm THẬT mỗi lần số tiền khách chuyển thay đổi (app tự lưu, không cần nhập ngày) */
+function withXfLog(id,data){
+  if(data.transfer===undefined)return data;
+  var r=id?S.spend.filter(function(x){return x.id===id})[0]:null,old=r?Number(r.transfer)||0:0,nv=Number(data.transfer)||0;
+  if(nv===old)return data;
+  var log=(r&&Array.isArray(r.xfLog)?r.xfLog:[]).concat([{at:Date.now(),v:nv-old}]);
+  return Object.assign({},data,{xfLog:log});
+}
 async function save(col,id,data){
+  if(col==="spend")data=withXfLog(id,data);
   if(localMode){
     if(id){var i=S[col].findIndex(function(x){return x.id===id});S[col][i]=Object.assign({},S[col][i],data)}
     else S[col].push(Object.assign({id:"l"+(++seq),createdAt:Date.now()},data));
@@ -1060,6 +1069,7 @@ function saveNewCell(el){
   var g=function(c){return tr.querySelector('[data-col="'+c+'"]')};
   var data={customerId:ui.cid,date:date,adLive:parseMoney(g("adLive").value),adPost:parseMoney(g("adPost").value),feeRate:parseRate(g("feeRate").value),transfer:parseMoney(g("transfer").value),paid:false};
   if(!data.adLive&&!data.adPost&&!data.transfer&&data.feeRate===defaultRate(ui.cid))return;
+  if(data.transfer>0)data.xfLog=[{at:Date.now(),v:data.transfer}];
   if(ui.pend[date]){
     var v=data[col];ui.pend[date].p.then(function(){var u={};u[col]=v;save("spend",ui.pend[date]&&ui.pend[date].id||ex&&ex.id,u)}).catch(function(){});
     return;
@@ -1084,6 +1094,7 @@ function setPaidBlank(date,paid){
   var tr=document.querySelector('tr[data-date="'+date+'"]');if(!tr)return;
   var g=function(c){return tr.querySelector('[data-col="'+c+'"]')};
   var data={customerId:ui.cid,date:date,adLive:parseMoney(g("adLive").value),adPost:parseMoney(g("adPost").value),feeRate:parseRate(g("feeRate").value),transfer:parseMoney(g("transfer").value),paid:paid};
+  if(data.transfer>0)data.xfLog=[{at:Date.now(),v:data.transfer}];
   if(localMode){S.spend.push(Object.assign({id:"l"+(++seq),createdAt:Date.now()},data));render();return}
   var ref=db.collection("spend").doc(),pr=ref.set(Object.assign({createdAt:Date.now()},data));
   ui.pend[date]={id:ref.id,p:pr};
@@ -1395,17 +1406,22 @@ function newCustHtml(){
 var PHG=[["day","Theo ngày"],["month","Theo tháng"],["year","Theo năm"]];
 function vHistory(){
   var g=ui.phg||"day",pc=ui.phc||"";
-  var all=[];
-  S.spend.forEach(function(r){var t=Number(r.transfer)||0;if(!(t>0)||!r.date||!cust(r.customerId))return;all.push({d:r.date,c:r.customerId,v:t})});
+  var all=[],hasEst=false;
+  S.spend.forEach(function(r){
+    var t=Number(r.transfer)||0;if(!r.date||!cust(r.customerId))return;
+    var L=0;
+    (Array.isArray(r.xfLog)?r.xfLog:[]).forEach(function(e){var v=Number(e.v)||0;if(!v||!e.at)return;L+=v;all.push({d:ymd(new Date(e.at)),c:r.customerId,v:v,at:e.at})});
+    var rest=t-L;if(rest>0){all.push({d:r.date,c:r.customerId,v:rest,est:true});hasEst=true}
+  });
   var list=all.filter(function(e){return!pc||e.c===pc});
-  var tot=0,cs={},last="";list.forEach(function(e){tot+=e.v;cs[e.c]=1;if(e.d>last)last=e.d});
-  var G={};list.forEach(function(e){var k=g==="day"?e.d:g==="month"?e.d.slice(0,7):e.d.slice(0,4);var o=G[k]||(G[k]={k:k,v:0,n:0,by:{}});o.v+=e.v;o.n++;o.by[e.c]=(o.by[e.c]||0)+e.v});
+  var tot=0,cs={},last="",cnt=0;list.forEach(function(e){tot+=e.v;cs[e.c]=1;if(e.v>0)cnt++;if(e.d>last)last=e.d});
+  var G={};list.forEach(function(e){var k=g==="day"?e.d:g==="month"?e.d.slice(0,7):e.d.slice(0,4);var o=G[k]||(G[k]={k:k,v:0,n:0,by:{}});o.v+=e.v;if(e.v>0)o.n++;o.by[e.c]=(o.by[e.c]||0)+e.v;if(e.est){o.est=o.est||{};o.est[e.c]=true}});
   var keys=Object.keys(G).sort().reverse();
   var lbl=function(k){return g==="day"?fmtDate(k):g==="month"?"Tháng "+(+k.slice(5))+"/"+k.slice(0,4):"Năm "+k};
   var h='<div class="tools"><div class="tabs" role="group" aria-label="Thống kê theo">'+PHG.map(function(x){return '<button data-act="phg" data-v="'+x[0]+'" aria-pressed="'+(g===x[0])+'">'+x[1]+'</button>'}).join("")+'</div>'
    +'<select id="phc" aria-label="Lọc theo khách hàng"><option value="">Mọi khách hàng</option>'+S.customers.slice().sort(function(a,b){return String(a.name).localeCompare(String(b.name),"vi")}).map(function(c){return '<option value="'+esc(c.id)+'"'+(pc===c.id?" selected":"")+'>'+esc(c.name)+'</option>'}).join("")+'</select></div>'
    +'<div class="kpis"><div class="kpi"><span>Tổng đã chuyển</span><b>'+vnd(tot)+'</b><small>'+(pc?esc(custName(pc)):"Tất cả khách hàng")+'</small></div>'
-   +'<div class="kpi"><span>Số lượt chuyển</span><b>'+list.length+'</b><small>Mỗi dòng có tiền chuyển là một lượt</small></div>'
+   +'<div class="kpi"><span>Số lượt chuyển</span><b>'+cnt+'</b><small>Mỗi lần bạn nhập tiền chuyển là một lượt</small></div>'
    +'<div class="kpi"><span>Số khách đã chuyển</span><b>'+Object.keys(cs).length+'</b><small>Trên '+S.customers.length+' khách</small></div>'
    +'<div class="kpi"><span>Lần chuyển gần nhất</span><b>'+(last?fmtDate(last):"—")+'</b><small>&nbsp;</small></div></div>';
   if(!list.length){return{title:"Payment history",sub:"Lịch sử khách chuyển khoản",html:h+'<div class="tablewrap">'+emptyBlock("Chưa có lịch sử chuyển khoản","Khi bạn điền số tiền vào cột “Khách chuyển khoản” trong bảng chi tiêu của khách, lịch sử sẽ hiện ở đây.")+'</div>'}}
@@ -1414,9 +1430,10 @@ function vHistory(){
   h+='<section class="panel"><h2>Tiền khách chuyển '+(g==="day"?"theo ngày":g==="month"?"theo tháng":"theo năm")+' <small>'+(g==="day"?"14 ngày có chuyển khoản gần nhất":g==="month"?"12 tháng gần nhất":"Các năm có chuyển khoản")+'</small></h2>'+groupedSvg(groups,"Khách chuyển")+'</section>';
   var cap=g==="day"?60:g==="month"?24:50;
   h+=keys.slice(0,cap).map(function(k){var o=G[k],ids=Object.keys(o.by).sort(function(a,b){return o.by[b]-o.by[a]});
-    return '<section class="panel"><h2>'+lbl(k)+' <small>'+o.n+' lượt chuyển · '+ids.length+' khách · tổng '+vnd(o.v)+'</small></h2><div class="list">'+ids.map(function(id){return '<div class="row"><div class="l"><button class="link" data-act="goc" data-id="'+esc(id)+'">'+esc(custName(id))+'</button></div><div class="r"><b>'+vnd(o.by[id])+'</b></div></div>'}).join("")+'</div></section>'}).join("");
+    return '<section class="panel"><h2>'+lbl(k)+' <small>'+o.n+' lượt chuyển · '+ids.length+' khách · tổng '+vnd(o.v)+'</small></h2><div class="list">'+ids.map(function(id){return '<div class="row"><div class="l"><button class="link" data-act="goc" data-id="'+esc(id)+'">'+esc(custName(id))+'</button></div><div class="r"><b>'+vnd(o.by[id])+'</b>'+(o.est&&o.est[id]?'<br><span class="sub">gồm khoản cũ tạm tính</span>':'')+'</div></div>'}).join("")+'</div></section>'}).join("");
+  if(hasEst)h+='<p class="hint">Từ nay app tự ghi ngày giờ thật mỗi khi bạn nhập hoặc sửa số tiền khách chuyển. Các khoản nhập trước đây chưa có ngày thật nên tạm tính theo ngày của dòng chi tiêu.</p>';
   if(keys.length>cap)h+='<p class="hint">Chỉ hiện '+cap+' mục gần nhất. Chọn một khách hàng hoặc đổi sang xem theo tháng/năm để xem số liệu cũ hơn.</p>';
-  return{title:"Payment history",sub:"Lịch sử khách chuyển khoản, lấy từ bảng chi tiêu của từng khách",html:h};
+  return{title:"Payment history",sub:"Lịch sử khách chuyển khoản, ghi theo ngày bạn nhập thật",html:h};
 }
 function pctTxt(a,b){return b?(Math.round(a/b*1000)/10).toString().replace(".",",")+"%":"0%"}
 function deltaTxt(cur,prev){
