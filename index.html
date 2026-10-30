@@ -730,7 +730,11 @@ function adSection(){
   return h+'<p class="hint">Phí ngân hàng = (Live + Bài viết) × '+String(BANK_FEE).replace('.',',')+'%. Phí thực nhận = phí dịch vụ − phí ngân hàng.</p></section>';
 }
 
-/* customers whose spending rows have stayed "chưa thanh toán" for 3 days or more */
+/* ĐỊNH NGHĨA DUY NHẤT của "Quá hạn" cho toàn bộ ứng dụng:
+   khách còn nợ (tổng đã xuất − đã chuyển > 0) và có ít nhất một dòng chi tiêu chưa thanh toán đã từ OVERDUE_DAYS ngày trở lên.
+   Mọi nơi (Tổng quan, Cần thu sớm, Quản lý TKQC Meta, Thống kê, số đỏ trên menu) đều dùng dueSoon() này. */
+var OVERDUE_DAYS=3;
+var OVERDUE_DEF="Quá hạn = khách còn nợ và có khoản chưa thanh toán từ "+OVERDUE_DAYS+" ngày trở lên.";
 function dueSoon(){
   var now=new Date(),t0=new Date(now.getFullYear(),now.getMonth(),now.getDate()).getTime(),by={};
   S.spend.forEach(function(r){
@@ -738,7 +742,7 @@ function dueSoon(){
     var x=spendRow(r);if(!(x.tot>0))return;
     var d=new Date(+r.date.slice(0,4),+r.date.slice(5,7)-1,+r.date.slice(8,10)).getTime();
     var days=Math.round((t0-d)/86400000);
-    if(days<3)return;
+    if(days<OVERDUE_DAYS)return;
     var b=by[r.customerId]||(by[r.customerId]={n:0,owe:0,days:0,oldest:r.date});
     b.n++;b.owe+=Math.max(0,x.tot-x.xf);
     if(days>b.days){b.days=days;b.oldest=r.date}
@@ -859,8 +863,8 @@ function ovpRange(t){
 function vOverview(){
   var bal=custBalances(),balSum=0,balN=Object.keys(bal).length;Object.keys(bal).forEach(function(k){balSum+=bal[k]});
   var unpaid=owedRows();
-  var over=idleCustomers();
-  var overAmt=over.reduce(function(t,x){return t+(bal[x.id]||0)},0);
+  var over=dueSoon();
+  var overAmt=over.reduce(function(t,x){return t+x.owe},0);
   var m=todayStr().slice(0,7);
   var recvM=0,recvN=0;
   S.spend.forEach(function(r){if(r.date&&r.date.slice(0,7)===m&&cust(r.customerId)){var t=Number(r.transfer)||0;if(t>0){recvM+=t;recvN++}}});
@@ -883,9 +887,9 @@ function vOverview(){
   var dn=0,nOwe=0,nOver=0;Object.keys(cb).forEach(function(k){dn+=cb[k];if(cb[k]<0)nOwe++;else if(cb[k]>0)nOver++});
   var h='<div class="tools"><div class="tabs" role="group" aria-label="Xem số liệu theo">'+OVP.map(function(t){return '<button data-act="ovp" data-v="'+t[0]+'" aria-pressed="'+(opt===t[0])+'">'+t[1]+'</button>'}).join("")+'</div><label class="dayp"><span>Chọn ngày</span><input type="date" id="ov-day" value="'+(opt==="day"?esc(OR[0]):"")+'" max="'+todayStr()+'" aria-label="Chọn một ngày để xem"></label></div><div class="kpis top">'
    +'<div class="kpi c-thu"><span>Tổng chi tiêu quảng cáo</span><b>'+vnd(P.live+P.post)+'</b><small>'+esc(OR[2])+' · Live '+num(P.live)+' · Bài viết '+num(P.post)+'</small></div>'
-   +'<div class="kpi c-no '+(P.d<0?"bad":"")+'"><span>'+(opt==="all"?"Tổng dư nợ khách hàng":"Dư nợ khách hàng phát sinh")+'</span><b>'+vnd(P.d)+'</b><small>'+(opt==="all"?"":esc(OR[2])+' · ')+'Hiện tại '+nOwe+' khách còn nợ'+(nOver?' · '+nOver+' khách chuyển dư':'')+(opt==="all"?'':' · tổng nợ '+vnd(dn))+(P.d<0?' (số âm là khách nợ)':'')+'</small></div>'
+   +'<div class="kpi c-no '+((opt==="all"?balSum:-P.d)>0?"bad":"")+'"><span>'+(opt==="all"?"Khách đang nợ bạn":"Nợ phát sinh trong kỳ")+'</span><b>'+vnd(opt==="all"?balSum:Math.max(0,-P.d))+'</b><small>'+(opt==="all"?balN+' khách còn nợ':esc(OR[2])+(P.d>0?' · khách đã trả thêm '+vnd(P.d):'')+' · hiện tất cả khách đang nợ bạn '+vnd(balSum))+'</small></div>'
    +'<div class="kpi c-net"><span>Fee thực nhận</span><b>'+vnd(P.net)+'</b><small>'+esc(OR[2])+' · Phí dịch vụ − phí ngân hàng</small></div>'
-   +'<div class="kpi c-qh '+(over.length?"bad":"")+'"><span>Quá hạn</span><b>'+vnd(overAmt)+'</b><small>'+(over.length?over.length+' khách từ 2 ngày không phát sinh chi phí':'Không có khách nào quá 2 ngày không phát sinh chi phí')+'</small></div>'
+   +'<div class="kpi c-qh '+(over.length?"bad":"")+'"><span>Quá hạn</span><b>'+vnd(overAmt)+'</b><small>'+(over.length?over.length+' khách còn nợ từ '+OVERDUE_DAYS+' ngày trở lên':'Chưa có khách nào quá hạn')+'</small></div>'
    +'<div class="kpi c-kh"><span>Số lượng khách hàng</span><b>'+S.customers.length+'</b><small>'+Object.keys(P.set).length+' khách có chi tiêu · '+esc(OR[2])+'</small></div>'
    +'</div>'+ovChart()+'<div class="grid2">';
   var late=dueSoon();
@@ -1137,7 +1141,7 @@ function adAccHtml(){
    +'<div class="kpi"><span>Số dư ngân hàng</span><input class="bank-in" inputmode="numeric" placeholder="Nhập số dư" value="'+(bank!=null?num(bank):"")+'" aria-label="Số dư ngân hàng"><small>Bạn tự nhập</small></div>'
    +'<div class="kpi"><span>Phí thanh toán</span><b>'+vnd(fee)+'</b><small>Dư nợ × 1,1%</small></div>'
    +'<div class="kpi"><span>Số dư thực tế</span><b'+(real!=null&&real<0?' class="owe"':'')+'>'+(real==null?"Chưa nhập số dư":vnd(real))+'</b><small>Ngân hàng − dư nợ − phí + dư nợ khách</small></div>'
-   +'<div class="kpi"><span>Tổng dư nợ khách hàng</span><b>'+vnd(cDebt)+'</b><small>Khách còn nợ bạn, đã cộng vào số dư thực tế</small></div></div>';
+   +'<div class="kpi"><span>Khách đang nợ bạn</span><b>'+vnd(cDebt)+'</b><small>Khách còn nợ bạn, đã cộng vào số dư thực tế</small></div></div>';
   if(bad.length)h+='<div class="notice warn" role="alert"><b>Cảnh báo:</b> '+bad.map(function(i){return esc(i.a.name||i.a.accountId)+(i.lv==="hit"?" đã chạm ngưỡng":" sắp chạm ngưỡng (còn "+vnd(i.left)+")")}).join("; ")+'.</div>';
   if(!AC.length)return h+emptyBlock("Chưa có dữ liệu tài khoản quảng cáo","Điền ID tài khoản quảng cáo cho khách ở mục Khách hàng, rồi chạy đồng bộ Facebook. Dữ liệu sẽ hiện ở đây.")+'</section>';
   h+='<div class="tablewrap"><table><thead><tr><th>Tài khoản quảng cáo</th><th class="num">Dư nợ hiện tại</th><th class="num">Ngưỡng thanh toán</th><th class="num">Còn lại trước ngưỡng</th><th>Ngày thanh toán dự kiến</th><th>Thẻ thanh toán</th></tr></thead><tbody>'
@@ -1165,7 +1169,7 @@ function ledger(){
 /* trạng thái công nợ từng khách: Đã thu (hết nợ), Chờ thu (còn nợ, dưới 3 ngày), Quá hạn (có dòng chưa thanh toán từ 3 ngày) */
 function debtRows(){
   var L=ledger(),late={};dueSoon().forEach(function(l){late[l.id]=l});
-  return Object.keys(L.per).map(function(id){
+  return Object.keys(L.per).filter(function(id){return L.per[id].tot>0}).map(function(id){
     var c=L.per[id],bal=c.tot-c.xf,st=bal<=0?"paid":(late[id]?"overdue":"pending");
     return{id:id,tot:c.tot,xf:c.xf,bal:bal,st:st,days:late[id]?late[id].days:0,oldest:late[id]?late[id].oldest:""};
   }).sort(function(a,b){var o={overdue:0,pending:1,paid:2};return o[a.st]-o[b.st]||b.bal-a.bal});
@@ -1183,7 +1187,7 @@ function vPayments(){
   else if(!list.length)h+='<div class="tablewrap">'+emptyBlock("Không có khách nào","Không có khách nào khớp bộ lọc này.")+'</div>';
   else h+='<div class="tablewrap"><table><thead><tr><th>Khách hàng</th><th class="num">Đã xuất</th><th class="num">Đã chuyển</th><th class="num">Còn nợ</th><th>Chưa thanh toán từ</th><th>Trạng thái</th><th></th></tr></thead><tbody>'
     +list.map(function(r){var s=ST[r.st];return '<tr><td><b>'+esc(custName(r.id))+'</b></td><td class="num">'+num(r.tot)+'</td><td class="num">'+nz(r.xf)+'</td><td class="num">'+(r.bal>0?'<b>'+num(r.bal)+'</b>':(r.bal<0?'<span class="sub">Dư '+num(-r.bal)+'</span>':"—"))+'</td><td>'+(r.oldest?fmtDate(r.oldest)+'<span class="sub">'+r.days+' ngày</span>':"—")+'</td><td><span class="pill '+s[1]+'">'+s[0]+'</span></td><td class="act"><button class="btn small" data-act="goc" data-id="'+esc(r.id)+'">Bảng chi tiêu</button></td></tr>'}).join("")
-    +'</tbody></table></div><p class="hint">Số liệu lấy từ bảng chi tiêu của từng khách. Còn nợ = (chi phí quảng cáo + phí dịch vụ) − số khách đã chuyển. Quá hạn là khách còn nợ và có dòng chưa thanh toán từ 3 ngày trở lên.</p>';
+    +'</tbody></table></div><p class="hint">Số liệu lấy từ bảng chi tiêu của từng khách. Còn nợ = (chi phí quảng cáo + phí dịch vụ) − số khách đã chuyển. '+OVERDUE_DEF+'</p>';
   var owe=0;debtRows().forEach(function(r){if(r.bal>0)owe+=r.bal});
   return{title:"Quản lý TKQC Meta",sub:"Khách còn nợ "+vnd(owe),html:adAccHtml()+h};
 }
@@ -1200,11 +1204,11 @@ function plansHtml(){
 function vPrices(){
   var list=S.prices.slice().sort(function(a,b){return String(a.channel||"").localeCompare(String(b.channel||""),"vi")||String(a.name).localeCompare(String(b.name),"vi")});
   var h;
-  if(!list.length)h='<div class="tablewrap">'+emptyBlock("Chưa có bảng giá","Liệt kê các dịch vụ và mức giá để báo giá nhanh cho khách.",'<button class="btn primary" data-act="add" data-type="prices">Thêm dịch vụ</button>')+'</div>';
+  if(!list.length)h='';
   else h='<div class="tablewrap"><table><thead><tr><th>Dịch vụ</th><th>Kênh</th><th>Đơn vị</th><th class="num">Đơn giá</th><th></th></tr></thead><tbody>'
     +list.map(function(p){return '<tr><td><b>'+esc(p.name)+'</b>'+(p.note?'<span class="sub">'+esc(p.note)+'</span>':"")+'</td><td>'+esc(p.channel||"—")+'</td><td>'+esc(p.unit||"—")+'</td><td class="num"><b>'+vnd(p.price)+'</b></td><td class="act"><button class="btn small" data-act="edit" data-type="prices" data-id="'+esc(p.id)+'">Sửa</button></td></tr>'}).join("")
     +'</tbody></table></div>';
-  return{title:"Bảng giá",sub:S.prices.length+" dịch vụ",action:'<button class="btn primary" data-act="add" data-type="prices">Thêm dịch vụ</button>',html:plansHtml()+h};
+  return{title:"Bảng giá",sub:(PLANS.length+S.prices.length)+" dịch vụ",action:'<button class="btn primary" data-act="add" data-type="prices">Thêm dịch vụ</button>',html:plansHtml()+h};
 }
 
 function niceMax(v){var p=Math.pow(10,Math.floor(Math.log10(v)));var c=[1,2,4,5,10];for(var i=0;i<c.length;i++){if(c[i]*p>=v)return c[i]*p}return 10*p}
@@ -1258,13 +1262,13 @@ function vSpend(){
 }
 function newCustHtml(){
   var now=new Date(),y=now.getFullYear(),m=now.getMonth(),cnt={},unk=0;
-  S.customers.forEach(function(c){if(!c.createdAt){unk++;return}var d=new Date(c.createdAt),k=d.getFullYear()+"-"+(d.getMonth()+1);cnt[k]=(cnt[k]||0)+1});
+  S.customers.forEach(function(c){var d0=c.startDate&&/^\d{4}-\d{2}-\d{2}$/.test(c.startDate)?new Date(+c.startDate.slice(0,4),+c.startDate.slice(5,7)-1,+c.startDate.slice(8,10)):(c.createdAt?new Date(c.createdAt):null);if(!d0){unk++;return}var d=d0,k=d.getFullYear()+"-"+(d.getMonth()+1);cnt[k]=(cnt[k]||0)+1});
   var months=[];for(var i=5;i>=0;i--){var d=new Date(y,m-i,1);months.push({k:d.getFullYear()+"-"+(d.getMonth()+1),l:"Tháng "+(d.getMonth()+1)+"/"+d.getFullYear(),n:0})}
   months.forEach(function(x){x.n=cnt[x.k]||0});
   var cur=months[5].n,prev=months[4].n,mx=Math.max.apply(null,months.map(function(x){return x.n}).concat([1]));
   var yc=0;Object.keys(cnt).forEach(function(k){if(k.split("-")[0]==String(y))yc+=cnt[k]});
   return '<div class="kpis"><div class="kpi"><span>Khách mới tháng này</span><b>'+cur+'</b><small>Tháng trước: '+prev+'</small></div>'
-   +'<div class="kpi"><span>Khách mới năm '+y+'</span><b>'+yc+'</b><small>Tính theo ngày tạo khách hàng</small></div>'
+   +'<div class="kpi"><span>Khách mới năm '+y+'</span><b>'+yc+'</b><small>Tính theo ngày bắt đầu hợp tác (sửa trong Khách hàng → Sửa)</small></div>'
    +'<div class="kpi"><span>Tổng khách hàng</span><b>'+S.customers.length+'</b><small>'+(unk?unk+' khách tạo trước khi có thống kê (chưa rõ ngày)':'&nbsp;')+'</small></div></div>'
    +'<section class="panel"><h2>Khách hàng mới theo tháng <small>6 tháng gần nhất</small></h2>'
    +months.map(function(x){return '<div class="hbar"><div class="t"><span>'+x.l+'</span><span>'+x.n+' khách</span></div><div class="track"><i style="width:'+(x.n?Math.max(3,x.n/mx*100):0)+'%"></i></div></div>'}).join("")+'</section>';
@@ -1278,12 +1282,12 @@ function vStats(){
   else{
     var den=(paid>0?paid:0)+pe+ov||1;
     h='<div class="kpis"><div class="kpi"><span>Tổng đã xuất</span><b>'+vnd(tot)+'</b><small>'+n+' khách có chi tiêu</small></div>'
-     +'<div class="kpi"><span>Tỷ lệ đã thu</span><b>'+(tot?Math.round(Math.min(paid,tot)/tot*100):0)+'%</b><small>'+vnd(paid)+' đã về</small></div>'
+     +'<div class="kpi"><span>Tỷ lệ đã thu</span><b>'+(tot?Math.round(Math.min(paid,tot)/tot*100):0)+'%</b><small>'+vnd(paid)+' đã về · '+rows.filter(function(r){return r.st==="paid"}).length+'/'+n+' khách đã trả đủ</small></div>'
      +'<div class="kpi"><span>Trung bình mỗi khách</span><b>'+vnd(Math.round(tot/n))+'</b><small>&nbsp;</small></div></div>'
      +'<section class="panel"><h2>Đã xuất và đã thu theo tháng <small>6 tháng gần nhất</small></h2><div class="legend"><span><i style="background:var(--bar-a)"></i>Đã xuất</span><span><i style="background:var(--bar-b)"></i>Đã thu</span></div>'+chartSvg()+'</section>'
      +'<div class="grid2"><section class="panel"><h2>Theo trạng thái</h2><div class="stack">'
      +[[Math.max(paid,0),"var(--ok)"],[pe,"var(--wait)"],[ov,"var(--bad)"]].map(function(x){return x[0]?'<i style="width:'+x[0]/den*100+'%;background:'+x[1]+'"></i>':""}).join("")+'</div>'
-     +'<div class="list"><div class="row"><div class="l"><b>Đã thu</b></div><div class="r">'+vnd(paid)+'</div></div><div class="row"><div class="l"><b>Chờ thu</b></div><div class="r">'+vnd(pe)+'</div></div><div class="row"><div class="l"><b>Quá hạn</b></div><div class="r">'+vnd(ov)+'</div></div></div></section>'
+     +'<div class="list"><div class="row"><div class="l"><b>Đã thu</b></div><div class="r">'+vnd(paid)+'</div></div><div class="row"><div class="l"><b>Chờ thu</b></div><div class="r">'+vnd(pe)+'</div></div><div class="row"><div class="l"><b>Quá hạn</b><span>'+OVERDUE_DEF+'</span></div><div class="r">'+vnd(ov)+'</div></div></div></section>'
      +'<section class="panel"><h2>Khách hàng theo giá trị</h2>'+top.map(function(t){return '<div class="hbar"><div class="t"><span>'+esc(custName(t[0]))+'</span><span>'+vnd(t[1])+'</span></div><div class="track"><i style="width:'+Math.max(3,top[0][1]?t[1]/top[0][1]*100:0)+'%"></i></div></div>'}).join("")+'</section></div>';
   }
   return{title:"Thống kê",sub:"Khách mới, doanh thu và tình hình thu tiền",html:newCustHtml()+h};
@@ -1356,6 +1360,7 @@ var FORMS={
     {k:"liveKey",l:"Từ khóa chiến dịch LIVE (có trong tên chiến dịch, nhiều từ ngăn bằng dấu phẩy)",t:"text",ph:"ví dụ: Ngân live, LV Ngân"},
     {k:"postKey",l:"Từ khóa chiến dịch BÀI VIẾT (có trong tên chiến dịch, nhiều từ ngăn bằng dấu phẩy)",t:"text",ph:"ví dụ: Ngân bài viết, BV Ngân"},
     {k:"feeRate",l:"Phí dịch vụ mặc định (%)",req:1,t:"number",step:0.5,max:100},
+    {k:"startDate",l:"Ngày bắt đầu hợp tác",t:"date"},
     {k:"note",l:"Ghi chú",t:"textarea"}]},
   prices:{title:["Thêm dịch vụ","Sửa dịch vụ"],fields:[
     {k:"name",l:"Tên dịch vụ",req:1,t:"text"},
