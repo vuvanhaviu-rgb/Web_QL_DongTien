@@ -991,6 +991,45 @@ function ovpRange(t){
   if(t==="year")return[ymd(new Date(n.getFullYear(),0,1)),d0(0),"Năm "+n.getFullYear()];
   return["0000-01-01","9999-12-31","Toàn bộ thời gian"];
 }
+/* so sánh số Facebook (Spend hiện tại) với bảng chi tiêu trong một khoảng ngắn, để phát hiện lệch */
+function fbDiff(from,to){
+  var a=new Date(+from.slice(0,4),+from.slice(5,7)-1,+from.slice(8,10)),b=new Date(+to.slice(0,4),+to.slice(5,7)-1,+to.slice(8,10));
+  if(Math.round((b-a)/86400000)>6)return null;
+  var F={},L={},keys={};
+  S.fbspend.forEach(function(r){if(!r.date||r.date<from||r.date>to||!cust(r.customerId))return;var k=r.customerId+"|"+r.date,o=F[k]||(F[k]={live:0,post:0});o.live+=Number(r.live)||0;o.post+=Number(r.post)||0;keys[k]=1});
+  S.spend.forEach(function(r){if(!r.date||r.date<from||r.date>to||!cust(r.customerId))return;var k=r.customerId+"|"+r.date,o=L[k]||(L[k]={live:0,post:0,n:0});o.live+=Number(r.adLive)||0;o.post+=Number(r.adPost)||0;o.n++;keys[k]=1});
+  var items=[],fb=0,led=0;
+  Object.keys(keys).forEach(function(k){
+    var f=F[k]||{live:0,post:0},l=L[k]||{live:0,post:0,n:0},ft=f.live+f.post,lt=l.live+l.post;
+    if(!F[k])return; /* chỉ so khi Facebook có số; ngày không có số Facebook là dòng nhập tay */
+    fb+=ft;led+=lt;
+    if(Math.abs(ft-lt)>=1)items.push({c:k.split("|")[0],d:k.split("|")[1],f:f,l:l,ft:ft,lt:lt});
+  });
+  return{fb:fb,led:led,items:items};
+}
+async function fbFix(from,to){
+  var D=fbDiff(from,to);if(!D||!D.items.length)return;
+  var n=0;
+  for(var i=0;i<D.items.length;i++){
+    var it=D.items[i],rows=S.spend.filter(function(r){return r.customerId===it.c&&r.date===it.d});
+    if(rows.length){
+      var others=rows.slice(1).reduce(function(t,r){return{l:t.l+(Number(r.adLive)||0),p:t.p+(Number(r.adPost)||0)}},{l:0,p:0});
+      await save("spend",rows[0].id,{adLive:Math.max(0,it.f.live-others.l),adPost:Math.max(0,it.f.post-others.p),fromFb:true});
+    }else{
+      S.hidden.filter(function(h){return h.customerId===it.c&&h.date===it.d}).forEach(function(h){remove("hidden",h.id)});
+      await save("spend",null,{customerId:it.c,date:it.d,adLive:it.f.live,adPost:it.f.post,feeRate:defaultRate(it.c),transfer:0,paid:false,fromFb:true});
+    }
+    n++;
+  }
+  toast("Đã cập nhật "+n+" dòng theo số Facebook");
+}
+function fbDiffHtml(from,to){
+  var D=fbDiff(from,to);if(!D||!D.items.length)return"";
+  return '<div class="notice warn"><b>Số liệu đang lệch với Spend hiện tại.</b> Facebook báo '+vnd(D.fb)+', bảng chi tiêu ghi '+vnd(D.led)+' (lệch '+vnd(Math.abs(D.fb-D.led))+').<br>'
+   +D.items.slice(0,8).map(function(it){return esc(custName(it.c))+(from!==to?' ('+fmtDate(it.d)+')':'')+': Facebook '+vnd(it.ft)+' · bảng chi tiêu '+(it.l.n?vnd(it.lt):'chưa có dòng')}).join('<br>')
+   +(D.items.length>8?'<br>… và '+(D.items.length-8)+' khách khác':'')
+   +'<br><button class="btn small" data-act="fbfix" data-from="'+from+'" data-to="'+to+'" type="button" style="margin-top:8px">Cập nhật bảng chi tiêu theo Facebook</button></div>';
+}
 function vOverview(){
   var bal=custBalances(),balSum=0,balN=Object.keys(bal).length;Object.keys(bal).forEach(function(k){balSum+=bal[k]});
   var unpaid=owedRows();
@@ -1019,7 +1058,7 @@ function vOverview(){
   S.spend.forEach(function(r){if(!cust(r.customerId))return;if(r.date!==td0&&r.date!==td1)return;var x=spendRow(r),v=x.tot-x.xf;if(r.date===td0)nd0+=v;else nd1+=v});
   nd0=Math.max(0,nd0);nd1=Math.max(0,nd1);
   var dn=0,nOwe=0,nOver=0;Object.keys(cb).forEach(function(k){dn+=cb[k];if(cb[k]<0)nOwe++;else if(cb[k]>0)nOver++});
-  var h='<div class="tools"><div class="tabs" role="group" aria-label="Xem số liệu theo">'+OVP.map(function(t){return '<button data-act="ovp" data-v="'+t[0]+'" aria-pressed="'+(opt===t[0])+'">'+t[1]+'</button>'}).join("")+'</div><label class="dayp"><span>Chọn ngày</span>'+dateText("ov-day",opt==="day"?OR[0]:"","Chọn một ngày để xem (dd/mm/yyyy)")+'</label></div><div class="kpis top">'
+  var h='<div class="tools"><div class="tabs" role="group" aria-label="Xem số liệu theo">'+OVP.map(function(t){return '<button data-act="ovp" data-v="'+t[0]+'" aria-pressed="'+(opt===t[0])+'">'+t[1]+'</button>'}).join("")+'</div><label class="dayp"><span>Chọn ngày</span>'+dateText("ov-day",opt==="day"?OR[0]:"","Chọn một ngày để xem (dd/mm/yyyy)")+'</label></div>'+fbDiffHtml(OR[0],OR[1])+'<div class="kpis top">'
    +'<div class="kpi c-thu"><span>Tổng chi tiêu quảng cáo</span><b>'+vnd(P.live+P.post)+'</b><small>'+esc(OR[2])+' · Live '+num(P.live)+' · Bài viết '+num(P.post)+'</small></div>'
    +'<div class="kpi c-no '+(balSum>0?"bad":"")+'"><span>Tổng công nợ</span><b>'+vnd(balSum)+'</b><small>'+balN+' khách còn nợ · Nợ mới hôm nay '+vnd(nd0)+' · hôm qua '+vnd(nd1)+'</small></div>'
    +'<div class="kpi c-xf"><span>Tổng tiền khách chuyển</span><b>'+vnd(P.xf)+'</b><small>'+esc(OR[2])+' · '+Object.keys(P.xs).length+' khách đã chuyển</small></div>'
@@ -1750,6 +1789,7 @@ document.addEventListener("click",function(e){
   else if(a==="spt"){ui.spt=el.dataset.v;render()}
   else if(a==="ovp"){ui.ovp=el.dataset.v;render()}
   else if(a==="phg"){ui.phg=el.dataset.v;render()}
+  else if(a==="fbfix"){if(confirm("Ghi đè số chi tiêu trong bảng của các khách bị lệch bằng số Facebook?"))fbFix(el.dataset.from,el.dataset.to)}
   else if(a==="spaid"){if(el.dataset.id.indexOf("new:")===0)setPaidBlank(el.dataset.id.slice(4),el.dataset.v==="1");else save("spend",el.dataset.id,{paid:el.dataset.v==="1"})}
 });
 function releasePointer(){pointerDown=false;if(pendingRender){pendingRender=false;render()}}

@@ -124,9 +124,12 @@ async function main() {
           console.log(`    -> ghi ${day} vào bảng chi tiêu của ${d.name}`);
         } else {
           const row = ex.docs[0], x = row.data();
-          if (!x.fromFb || x.finalized) continue;
-          if (x.adLive === v.live && x.adPost === v.post && !(day === yesterday && pastTen)) continue;
-          await row.ref.update({ adLive: v.live, adPost: v.post, finalized: day === yesterday && pastTen });
+          // dòng trống do bạn tạo sẵn (chưa nhập tiền) thì nhận làm dòng của Facebook luôn
+          const blank = !x.fromFb && !(Number(x.adLive) > 0) && !(Number(x.adPost) > 0);
+          if ((!x.fromFb && !blank) || x.finalized) continue;
+          if (x.adLive === v.live && x.adPost === v.post && !(day === yesterday && pastTen) && !blank) continue;
+          if (blank && v.live + v.post <= 0) continue;
+          await row.ref.update({ adLive: v.live, adPost: v.post, fromFb: true, finalized: day === yesterday && pastTen });
           console.log(`    -> cập nhật ${day}${day === yesterday && pastTen ? " (chốt)" : ""} cho ${d.name}`);
         }
       }
