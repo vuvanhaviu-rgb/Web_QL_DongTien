@@ -1,4 +1,4 @@
-// Lõi đồng bộ chi phí Facebook: dùng chung cho GitHub Actions (scripts/fb-sync.js) và nút Làm mới trên web (hàm Firebase).
+// Lõi đồng bộ chi phí Facebook: dùng cho GitHub Actions (scripts/fb-sync.js).
 const API = "https://graph.facebook.com/v21.0";
 
 module.exports = async function runSync(db, OPT) {

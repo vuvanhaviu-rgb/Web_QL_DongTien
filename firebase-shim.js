@@ -54,7 +54,7 @@
       await load(B + "firebase-app-compat.js");
       await load(B + "firebase-auth-compat.js");
       await load(B + "firebase-firestore-compat.js");
-      await load(B + "firebase-functions-compat.js");
+      
       firebase.initializeApp(cfg);
       // Link chia sẻ (?v=...): chỉ đọc một tài liệu công khai, không cần đăng nhập.
       if (new URLSearchParams(location.search).get("v")) return firebase.firestore();

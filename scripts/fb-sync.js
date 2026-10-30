@@ -1,6 +1,6 @@
 // Chạy trên GitHub Actions. Bí mật lấy từ biến môi trường, không nằm trong code.
 const admin = require("firebase-admin");
-const runSync = require("../functions/sync.js");
+const runSync = require("./sync-core.js");
 
 const SA = process.env.FIREBASE_SA;
 if (!process.env.FB_TOKEN || !SA) { console.error("Thiếu FB_TOKEN hoặc FIREBASE_SA trong GitHub Secrets."); process.exit(1); }
