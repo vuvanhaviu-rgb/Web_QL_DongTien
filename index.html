@@ -943,15 +943,18 @@ function vOverview(){
     tot.live+=x.live;tot.post+=x.post;tot.net+=x.net;custSet[r.customerId]=1;cb[r.customerId]=(cb[r.customerId]||0)+x.xf-x.tot;
     if(r.date&&r.date.slice(0,7)===m){tot.m+=x.live+x.post;tot.mnet+=x.net}
   });
-  var opt=ui.ovp||"all",OR=ovpRange(opt),P={live:0,post:0,net:0,d:0,set:{}};
+  var opt=ui.ovp||"month",OR=ovpRange(opt),P={live:0,post:0,net:0,d:0,set:{}};
   S.spend.forEach(function(r){
     if(!r.date||r.date<OR[0]||r.date>OR[1]||!cust(r.customerId))return;var x=spendRow(r);
     P.live+=x.live;P.post+=x.post;P.net+=x.net;P.d+=x.xf-x.tot;if(x.live+x.post>0)P.set[r.customerId]=1;
   });
+  var td0=todayStr(),yd=new Date();yd.setDate(yd.getDate()-1);var td1=ymd(yd),nd0=0,nd1=0;
+  S.spend.forEach(function(r){if(!cust(r.customerId))return;if(r.date!==td0&&r.date!==td1)return;var x=spendRow(r),v=x.tot-x.xf;if(r.date===td0)nd0+=v;else nd1+=v});
+  nd0=Math.max(0,nd0);nd1=Math.max(0,nd1);
   var dn=0,nOwe=0,nOver=0;Object.keys(cb).forEach(function(k){dn+=cb[k];if(cb[k]<0)nOwe++;else if(cb[k]>0)nOver++});
   var h='<div class="tools"><div class="tabs" role="group" aria-label="Xem số liệu theo">'+OVP.map(function(t){return '<button data-act="ovp" data-v="'+t[0]+'" aria-pressed="'+(opt===t[0])+'">'+t[1]+'</button>'}).join("")+'</div><label class="dayp"><span>Chọn ngày</span>'+dateText("ov-day",opt==="day"?OR[0]:"","Chọn một ngày để xem (dd/mm/yyyy)")+'</label></div><div class="kpis top">'
    +'<div class="kpi c-thu"><span>Tổng chi tiêu quảng cáo</span><b>'+vnd(P.live+P.post)+'</b><small>'+esc(OR[2])+' · Live '+num(P.live)+' · Bài viết '+num(P.post)+'</small></div>'
-   +'<div class="kpi c-no '+((opt==="all"?balSum:-P.d)>0?"bad":"")+'"><span>'+(opt==="all"?"Khách đang nợ bạn":"Nợ phát sinh trong kỳ")+'</span><b>'+vnd(opt==="all"?balSum:Math.max(0,-P.d))+'</b><small>'+(opt==="all"?balN+' khách còn nợ':esc(OR[2])+(P.d>0?' · khách đã trả thêm '+vnd(P.d):'')+' · hiện tất cả khách đang nợ bạn '+vnd(balSum))+'</small></div>'
+   +'<div class="kpi c-no '+(balSum>0?"bad":"")+'"><span>Tổng công nợ</span><b>'+vnd(balSum)+'</b><small>'+balN+' khách còn nợ · Nợ mới hôm nay '+vnd(nd0)+' · hôm qua '+vnd(nd1)+'</small></div>'
    +'<div class="kpi c-net"><span>Fee thực nhận</span><b>'+vnd(P.net)+'</b><small>'+esc(OR[2])+' · Phí dịch vụ − phí ngân hàng</small></div>'
    +'<div class="kpi c-qh '+(over.length?"bad":"")+'"><span>Quá hạn</span><b>'+vnd(overAmt)+'</b><small>'+(over.length?over.length+' khách còn nợ từ '+OVERDUE_DAYS+' ngày trở lên':'Chưa có khách nào quá hạn')+'</small></div>'
    +'<div class="kpi c-kh"><span>Số lượng khách hàng</span><b>'+S.customers.length+'</b><small>'+Object.keys(P.set).length+' khách có chi tiêu · '+esc(OR[2])+'</small></div>'
@@ -1353,7 +1356,7 @@ function vStats(){
 /* ---------- shell ---------- */
 
 /* gán màu (info/ok/bad) và biểu tượng cho từng thẻ KPI theo nhãn */
-var KPI_IC=[[/chuyển khoản/i,"transfer"],[/chi phí quảng cáo/i,"spend"],[/phí dịch vụ|phí thực nhận/i,"fee"],[/nợ bạn|nợ phát sinh|dư nợ|còn phải thanh toán|còn lại trong kỳ/i,"debt"],[/quá hạn/i,"warn"],[/khách mới/i,"userplus"],[/thực nhận/i,"fee"],[/ngưỡng/i,"gauge"],[/số dư ngân hàng/i,"bank"],[/phí thanh toán/i,"percent"],[/số dư thực tế/i,"wallet"],[/tỷ lệ/i,"chart"],[/đã thu/i,"check"],[/live/i,"live"],[/bài viết/i,"post"],[/tổng (chi tiêu|spend)/i,"spend"],[/tổng đã xuất/i,"doc"],[/khách|trung bình/i,"users"]];
+var KPI_IC=[[/chuyển khoản/i,"transfer"],[/chi phí quảng cáo/i,"spend"],[/phí dịch vụ|phí thực nhận/i,"fee"],[/nợ bạn|nợ phát sinh|công nợ|dư nợ|còn phải thanh toán|còn lại trong kỳ/i,"debt"],[/quá hạn/i,"warn"],[/khách mới/i,"userplus"],[/thực nhận/i,"fee"],[/ngưỡng/i,"gauge"],[/số dư ngân hàng/i,"bank"],[/phí thanh toán/i,"percent"],[/số dư thực tế/i,"wallet"],[/tỷ lệ/i,"chart"],[/đã thu/i,"check"],[/live/i,"live"],[/bài viết/i,"post"],[/tổng (chi tiêu|spend)/i,"spend"],[/tổng đã xuất/i,"doc"],[/khách|trung bình/i,"users"]];
 var KPI_OK=/thực nhận|đã thu|tỷ lệ|số dư thực tế|chuyển khoản|phí dịch vụ/i;
 function tagKpis(root){
   (root||document).querySelectorAll(".kpis .kpi").forEach(function(k){
