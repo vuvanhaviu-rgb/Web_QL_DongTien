@@ -72,7 +72,12 @@ function split(rows, liveKeys, postKeys, nameKey) {
 }
 
 (async () => {
-  const nowVN = VN(Date.now()), now = nowVN, from = VN(Date.now() - (DAYS - 1) * 864e5);
+  const nowVN = VN(Date.now()), now = nowVN;
+  // Để không vượt hạn mức miễn phí của Firebase: lần chạy thường chỉ quét hôm qua và hôm nay.
+  // Quét đủ cả khoảng ngày (và dọn số cũ) chỉ khi: chạy tay có tick "full", hoặc lần chạy đầu tiên sau 10:00 sáng giờ Việt Nam.
+  const FULL = process.env.FULL === "true" || (nowVN.getUTCHours() === 10 && nowVN.getUTCMinutes() < 30);
+  const from = VN(Date.now() - ((FULL ? DAYS : 2) - 1) * 864e5);
+  console.log(FULL ? "Chế độ quét đủ" : "Chế độ nhanh (hôm qua và hôm nay)");
   const since = ymd(from), until = ymd(now), yesterday = ymd(VN(Date.now() - 864e5));
   const pastTen = nowVN.getUTCHours() >= 10; // từ 10h sáng giờ Việt Nam: chốt chi phí hôm qua // từ 10h sáng giờ Việt Nam: chốt chi phí hôm qua vào bảng chi tiêu
   const snap = await db.collection("customers").get();
@@ -97,8 +102,10 @@ function split(rows, liveKeys, postKeys, nameKey) {
         }
       }
       // xóa số cũ của các ngày trong khoảng quét mà lần này không còn chiến dịch nào khớp khách (tránh còn sót số tính theo cách cũ)
-      const have = await db.collection("fbspend").where("customerId", "==", c.id).get();
-      for (const e of have.docs) { const dt = e.data().date; if (dt >= since && dt <= until && !by[dt]) await e.ref.delete(); }
+      if (FULL) {
+        const have = await db.collection("fbspend").where("customerId", "==", c.id).get();
+        for (const e of have.docs) { const dt = e.data().date; if (dt >= since && dt <= until && !by[dt]) await e.ref.delete(); }
+      }
       for (const day of Object.keys(by)) {
         await db.collection("fbspend").doc(`${c.id}_${day}`).set(
           { customerId: c.id, date: day, live: by[day].live, post: by[day].post, updatedAt: Date.now() }, { merge: true });

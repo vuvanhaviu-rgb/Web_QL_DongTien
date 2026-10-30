@@ -604,8 +604,11 @@ async function init(){
   var cl=window.claude;
   try{db=cl&&cl.use?await cl.use("db"):null}catch(e){db=null}
   if(!db){localMode=true;render();return}
+  var cutoff=ymd(new Date(Date.now()-62*864e5));
   COLS.forEach(function(c){
-    db.collection(c).onSnapshot(function(snap){
+    /* chi tiêu Facebook chỉ cần 62 ngày gần nhất: đọc ít hơn để không vượt hạn mức miễn phí của Firebase */
+    var q=c==="fbspend"?db.collection(c).where("date",">=",cutoff):db.collection(c);
+    q.onSnapshot(function(snap){
       S[c]=snap.docs.map(function(d){return Object.assign({id:d.id},d.data())});
       loaded[c]=true;render();scheduleShare();
     },function(){loaded[c]=true;render()});

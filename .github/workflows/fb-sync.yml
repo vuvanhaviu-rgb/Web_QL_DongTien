@@ -4,6 +4,11 @@ on:
   schedule:
     - cron: "*/30 * * * *"   # mỗi 30 phút
   workflow_dispatch:
+    inputs:
+      full:
+        description: "Tick để quét đủ 30 ngày và dọn số cũ (tốn hạn mức, chỉ dùng khi cần)"
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -26,4 +31,5 @@ jobs:
         env:
           FB_TOKEN: ${{ secrets.FB_TOKEN }}
           FIREBASE_SA: ${{ secrets.FIREBASE_SA }}
+          FULL: ${{ inputs.full }}
           LIVE_WORD: ${{ vars.LIVE_WORD }}
