@@ -545,7 +545,7 @@ var fmtDate=function(s){return s?String(s).split("-").reverse().join("/"):"—"}
 var sum=function(a){return a.reduce(function(t,p){return t+(Number(p.amount)||0)},0)};
 var short=function(n){if(n>=1e9)return +(n/1e9).toFixed(1)+" tỷ";if(n>=1e6)return +(n/1e6).toFixed(1)+" tr";if(n>=1e3)return +(n/1e3).toFixed(0)+"k";return String(n)};
 
-var VIEWS=[["tong-quan","Tổng quan"],["spend","Spend hiện tại"],["khach-hang","Khách hàng"],["cong-no","Quản lý TKQC Meta","TKQC Meta"],["lich-su","Payment history","Lịch sử"],["bang-gia","Bảng giá"],["thong-ke","Thống kê"],["cai-dat","Cài đặt","Cài đặt","hide"]];
+var VIEWS=[["tong-quan","Tổng quan"],["spend","Spend hiện tại"],["khach-hang","Khách hàng"],["cong-no","Quản lý TKQC Meta","TKQC Meta"],["lich-su","Payment History"],["bang-gia","Bảng giá"],["thong-ke","Thống kê"],["cai-dat","Cài đặt","Cài đặt","hide"]];
 var COLS=["customers","prices","payments","spend","hidden","fbspend","fbaccounts"];
 var S={customers:[],prices:[],payments:[],spend:[],hidden:[],fbspend:[],fbaccounts:[]};
 var loaded={customers:false,prices:false,payments:false,spend:false,hidden:false,fbspend:false,fbaccounts:false};
@@ -1428,16 +1428,16 @@ function vHistory(){
     var th=tabsH+'<div class="kpis"><div class="kpi"><span>Số khách chuyển hôm nay</span><b>'+tids.length+'</b><small>Trên '+S.customers.length+' khách · '+fmtDate(todayStr())+'</small></div>'
      +'<div class="kpi"><span>Tổng tiền chuyển hôm nay</span><b>'+vnd(ttot)+'</b><small>'+tn+' lượt chuyển</small></div>'
      +'<div class="kpi"><span>Lần chuyển gần nhất</span><b>'+(lastAt?pad(new Date(lastAt).getHours())+':'+pad(new Date(lastAt).getMinutes()):"—")+'</b><small>&nbsp;</small></div></div>';
-    if(!tids.length)return{title:"Payment history",sub:"Hôm nay "+fmtDate(todayStr()),html:th+'<div class="tablewrap">'+emptyBlock("Hôm nay chưa có khách nào chuyển","Khi bạn nhập tiền vào cột “Khách chuyển khoản” trong bảng chi tiêu của khách, khách đó sẽ hiện ở đây.")+'</div>'};
+    if(!tids.length)return{title:"Payment History",sub:"Hôm nay "+fmtDate(todayStr()),html:th+'<div class="tablewrap">'+emptyBlock("Hôm nay chưa có khách nào chuyển","Khi bạn nhập tiền vào cột “Khách chuyển khoản” trong bảng chi tiêu của khách, khách đó sẽ hiện ở đây.")+'</div>'};
     th+='<section class="panel"><h2>Khách đã chuyển hôm nay <small>'+tids.length+' khách · tổng '+vnd(ttot)+'</small></h2><div class="list">'+tids.map(function(id){var o=TB[id];return '<div class="row"><div class="l"><button class="link" data-act="goc" data-id="'+esc(id)+'">'+esc(custName(id))+'</button><span>'+(o.at?'Lúc '+pad(new Date(o.at).getHours())+':'+pad(new Date(o.at).getMinutes()):'Nhập trước khi app ghi giờ')+'</span></div><div class="r"><b>'+vnd(o.v)+'</b></div></div>'}).join("")+'</div></section>';
-    return{title:"Payment history",sub:"Hôm nay "+fmtDate(todayStr()),html:th};
+    return{title:"Payment History",sub:"Hôm nay "+fmtDate(todayStr()),html:th};
   }
   var h=tabsH
    +'<div class="kpis"><div class="kpi"><span>Tổng đã chuyển</span><b>'+vnd(tot)+'</b><small>'+(pc?esc(custName(pc)):"Tất cả khách hàng")+'</small></div>'
    +'<div class="kpi"><span>Số lượt chuyển</span><b>'+cnt+'</b><small>Mỗi lần bạn nhập tiền chuyển là một lượt</small></div>'
    +'<div class="kpi"><span>Số khách đã chuyển</span><b>'+Object.keys(cs).length+'</b><small>Trên '+S.customers.length+' khách</small></div>'
    +'<div class="kpi"><span>Lần chuyển gần nhất</span><b>'+(last?fmtDate(last):"—")+'</b><small>&nbsp;</small></div></div>';
-  if(!list.length){return{title:"Payment history",sub:"Lịch sử khách chuyển khoản",html:h+'<div class="tablewrap">'+emptyBlock("Chưa có lịch sử chuyển khoản","Khi bạn điền số tiền vào cột “Khách chuyển khoản” trong bảng chi tiêu của khách, lịch sử sẽ hiện ở đây.")+'</div>'}}
+  if(!list.length){return{title:"Payment History",sub:"Lịch sử khách chuyển khoản",html:h+'<div class="tablewrap">'+emptyBlock("Chưa có lịch sử chuyển khoản","Khi bạn điền số tiền vào cột “Khách chuyển khoản” trong bảng chi tiêu của khách, lịch sử sẽ hiện ở đây.")+'</div>'}}
   var asc=keys.slice(0,g==="day"?14:g==="month"?12:10).reverse();
   var groups=asc.map(function(k){return{l:lbl(k),t:g==="day"?k.slice(8)+"/"+k.slice(5,7):g==="month"?"T"+(+k.slice(5)):k,a:G[k].v}});
   h+='<section class="panel"><h2>Tiền khách chuyển '+(g==="day"?"theo ngày":g==="month"?"theo tháng":"theo năm")+' <small>'+(g==="day"?"14 ngày có chuyển khoản gần nhất":g==="month"?"12 tháng gần nhất":"Các năm có chuyển khoản")+'</small></h2>'+groupedSvg(groups,"Khách chuyển")+'</section>';
@@ -1446,7 +1446,7 @@ function vHistory(){
     return '<section class="panel"><h2>'+lbl(k)+' <small>'+o.n+' lượt chuyển · '+ids.length+' khách · tổng '+vnd(o.v)+'</small></h2><div class="list">'+ids.map(function(id){return '<div class="row"><div class="l"><button class="link" data-act="goc" data-id="'+esc(id)+'">'+esc(custName(id))+'</button></div><div class="r"><b>'+vnd(o.by[id])+'</b>'+(o.est&&o.est[id]?'<br><span class="sub">gồm khoản cũ tạm tính</span>':'')+'</div></div>'}).join("")+'</div></section>'}).join("");
   if(hasEst)h+='<p class="hint">Từ nay app tự ghi ngày giờ thật mỗi khi bạn nhập hoặc sửa số tiền khách chuyển. Các khoản nhập trước đây chưa có ngày thật nên tạm tính theo ngày của dòng chi tiêu.</p>';
   if(keys.length>cap)h+='<p class="hint">Chỉ hiện '+cap+' mục gần nhất. Chọn một khách hàng hoặc đổi sang xem theo tháng/năm để xem số liệu cũ hơn.</p>';
-  return{title:"Payment history",sub:"Lịch sử khách chuyển khoản, ghi theo ngày bạn nhập thật",html:h};
+  return{title:"Payment History",sub:"Lịch sử khách chuyển khoản, ghi theo ngày bạn nhập thật",html:h};
 }
 function pctTxt(a,b){return b?(Math.round(a/b*1000)/10).toString().replace(".",",")+"%":"0%"}
 function deltaTxt(cur,prev){
