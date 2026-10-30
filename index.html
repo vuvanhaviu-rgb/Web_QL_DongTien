@@ -143,7 +143,7 @@ table.ledger thead tr+tr th{font-weight:500}
 table.ledger tfoot td{font-weight:700;background:var(--surface-2);border-top:1px solid var(--line);border-bottom:0;font-variant-numeric:tabular-nums}
 td.owe{color:var(--bad);font-weight:700}
 td.clear{color:var(--ok);font-weight:700}
-.notice.warn{background:#fdecea;border:1px solid #f5c2bd;color:#9b1c10;border-radius:10px;padding:10px 12px;margin:0 0 12px;font-size:12px}.sub.warn,td.warn{color:#b26a00}.bank-in{width:100%;font:inherit;font-size:16px;font-weight:700;padding:4px 6px;border:1px solid var(--line,#ddd);border-radius:6px;background:transparent;color:inherit;margin:4px 0}.bill-in{font:inherit;font-size:10px;padding:4px 6px;border:1px solid var(--line,#ddd);border-radius:6px;background:transparent;color:inherit}.thr-in{width:110px;font:inherit;font-size:10px;text-align:right;padding:4px 6px;border:1px solid var(--line,#ddd);border-radius:6px;background:transparent;color:inherit}.dayp{display:inline-flex;white-space:nowrap;align-items:center;gap:6px;font-size:10px;color:var(--muted)}.dayp input{font:inherit;font-size:10px;padding:5px 8px;border:1px solid var(--line,#ddd);border-radius:8px;background:transparent;color:inherit}.refgrp{display:inline-flex;gap:8px;flex-wrap:wrap}.iconb{display:inline-flex;align-items:center;gap:6px;text-decoration:none}.hint{margin:0;color:var(--muted);font-size:10px}
+.notice.warn{background:#fdecea;border:1px solid #f5c2bd;color:#9b1c10;border-radius:10px;padding:10px 12px;margin:0 0 12px;font-size:12px}.sub.warn,td.warn{color:#b26a00}.bank-in{width:100%;font:inherit;font-size:16px;font-weight:700;padding:4px 6px;border:1px solid var(--line,#ddd);border-radius:6px;background:transparent;color:inherit;margin:4px 0}.bill-in{font:inherit;font-size:10px;padding:4px 6px;border:1px solid var(--line,#ddd);border-radius:6px;background:transparent;color:inherit}.thr-in{width:110px;font:inherit;font-size:10px;text-align:right;padding:4px 6px;border:1px solid var(--line,#ddd);border-radius:6px;background:transparent;color:inherit}.dayp{display:inline-flex;white-space:nowrap;align-items:center;gap:6px;font-size:10px;color:var(--muted)}.dayp input{font:inherit;font-size:10px;padding:5px 8px;border:1px solid var(--line,#ddd);border-radius:8px;background:transparent;color:inherit}.btn.pulling svg{animation:spin 1s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}.iconb{display:inline-flex;align-items:center;gap:6px;text-decoration:none}.hint{margin:0;color:var(--muted);font-size:10px}
 input[type=month]{width:100%;background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:8px 10px}
 .ph{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:12px}
 .pick{gap:8px}
@@ -1205,6 +1205,7 @@ function spRange(t){
   return[ymd(new Date(n.getFullYear(),n.getMonth(),1)),d0(0),"Tháng "+(n.getMonth()+1)+"/"+n.getFullYear()];
 }
 function vSpend(){
+  var pulling=ui.pullAt&&Date.now()-ui.pullAt<180000;
   var t=ui.spt||"today",R=spRange(t),by={},upd=0,T={live:0,post:0,fee:0,bank:0,net:0};
   S.fbspend.forEach(function(r){
     if(r.updatedAt>upd)upd=r.updatedAt;
@@ -1225,7 +1226,7 @@ function vSpend(){
    +rows.map(function(r){return '<tr><td><button class="link" data-act="goc" data-id="'+esc(r.c.id)+'">'+esc(r.c.name)+'</button></td><td class="num">'+nz(r.live)+'</td><td class="num">'+nz(r.post)+'</td><td class="num"><b>'+nz(r.tot)+'</b></td><td class="num net">'+nz(r.net)+'</td></tr>'}).join("")
    +'</tbody><tfoot><tr><td>Tổng cộng</td><td class="num">'+num(T.live)+'</td><td class="num">'+num(T.post)+'</td><td class="num">'+num(T.live+T.post)+'</td><td class="num net">'+num(T.net)+'</td></tr></tfoot></table></div>';
   h+='<p class="hint">Dữ liệu lấy tự động từ Facebook mỗi 30 phút. '+(upd?'Cập nhật gần nhất: '+new Date(upd).toLocaleString("vi-VN")+'.':'Chưa có lần cập nhật nào.')+' Live và Bài viết được tách theo từ khóa trong tên chiến dịch mà bạn điền ở form khách hàng (không điền thì lấy cả tài khoản, chữ LIVE trong tên là Live, còn lại là Bài viết). Phí thực nhận = (spend × phí dịch vụ % của khách) − phí ngân hàng '+String(BANK_FEE).replace('.',',')+'%. Số này chỉ để theo dõi, không tự ghi vào bảng chi tiêu của khách.</p>';
-  return{title:"Spend hiện tại",sub:"Chi phí quảng cáo đang chạy từ Facebook",action:'<span class="refgrp"><button class="btn iconb" data-act="spref" title="Làm mới số liệu đang hiển thị" aria-label="Làm mới"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg> Làm mới</button><button class="btn iconb primary" data-act="spfb" title="Gửi lệnh kéo dữ liệu mới từ Facebook (mất khoảng 3 phút)" aria-label="Kéo từ Facebook"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg> Kéo từ Facebook</button></span>',html:h};
+  return{title:"Spend hiện tại",sub:"Chi phí quảng cáo đang chạy từ Facebook",action:'<button class="btn iconb primary'+(pulling?' pulling':'')+'" data-act="spref" '+(pulling?'disabled ':'')+'title="Kéo chi phí mới nhất từ Facebook rồi cập nhật số liệu (mất khoảng 3 phút)" aria-label="Làm mới"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg>'+(pulling?' Đang kéo dữ liệu…':' Làm mới')+'</button>',html:h};
 }
 function newCustHtml(){
   var now=new Date(),y=now.getFullYear(),m=now.getMonth(),cnt={},unk=0;
@@ -1424,14 +1425,14 @@ document.addEventListener("click",function(e){
   else if(a==="apshift"){ui.anchor=shiftAnchor(ui.ap,ui.anchor,+el.dataset.v);render()}
   else if(a==="apnow"){ui.anchor=todayStr();render()}
   else if(a==="spt"){ui.spt=el.dataset.v;render()}
-  else if(a==="spref"){render();toast("Đã làm mới số liệu")}
-  else if(a==="spfb"){
+  else if(a==="spref"){
     var GHU="https://github.com/vuvanhaviu-rgb/Web_QL_DongTien/actions/workflows/fb-sync.yml";
     var fn=null;try{fn=window.firebase&&firebase.app().functions("asia-southeast1").httpsCallable("kichHoatDongBo")}catch(e){fn=null}
-    if(!fn){toast("Chưa cài xong chức năng này. Đang mở trang GitHub để bạn bấm Run workflow.");window.open(GHU,"_blank","noopener");return}
-    el.disabled=true;toast("Đang gửi lệnh kéo dữ liệu…");
-    fn().then(function(){toast("Đã gửi lệnh. Chờ khoảng 3 phút rồi bấm Làm mới.");setTimeout(function(){el.disabled=false},60000)})
-      .catch(function(er){el.disabled=false;var c=er&&er.code||"";
+    if(!fn){render();toast("Đã làm mới số liệu. Chưa cài xong chức năng tự kéo, đang mở trang GitHub để bạn bấm Run workflow.");window.open(GHU,"_blank","noopener");return}
+    ui.pullAt=Date.now();render();toast("Đang gửi lệnh kéo dữ liệu từ Facebook…");
+    setTimeout(function(){render()},181000);
+    fn().then(function(){toast("Đã gửi lệnh. Số liệu sẽ tự cập nhật sau khoảng 3 phút.")})
+      .catch(function(er){var c=er&&er.code||"";ui.pullAt=0;render();
         if(/resource-exhausted/.test(c))toast("Vừa kéo xong, đợi 1 phút rồi bấm lại.");
         else{toast("Chưa gọi được chức năng tự động. Đang mở trang GitHub để bạn bấm Run workflow.");window.open(GHU,"_blank","noopener")}});
   }
