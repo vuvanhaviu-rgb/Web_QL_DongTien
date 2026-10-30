@@ -1390,31 +1390,131 @@ function newCustHtml(){
    +'<section class="panel"><h2>Khách hàng mới theo tháng <small>6 tháng gần nhất</small></h2>'
    +months.map(function(x){return '<div class="hbar"><div class="t"><span>'+x.l+'</span><span>'+x.n+' khách</span></div><div class="track"><i style="width:'+(x.n?Math.max(3,x.n/mx*100):0)+'%"></i></div></div>'}).join("")+'</section>';
 }
-function vStats(){
-  var L=ledger(),rows=debtRows(),n=rows.length,tot=L.tot,paid=L.xf;
-  var ov=0,pe=0;rows.forEach(function(r){if(r.bal>0){if(r.st==="overdue")ov+=r.bal;else pe+=r.bal}});
-  var top=rows.slice().sort(function(a,b){return b.tot-a.tot}).slice(0,6).map(function(r){return[r.id,r.tot]});
-  var h;
-  if(!n)h='<div class="tablewrap">'+emptyBlock("Chưa có số liệu","Thống kê sẽ hiện khi khách có chi phí quảng cáo trong bảng chi tiêu.")+'</div>';
-  else{
-    var den=(paid>0?paid:0)+pe+ov||1;
-    h='<div class="kpis"><div class="kpi"><span>Tổng đã xuất</span><b>'+vnd(tot)+'</b><small>'+n+' khách có chi tiêu</small></div>'
-     +'<div class="kpi"><span>Tỷ lệ đã thu</span><b>'+(tot?Math.round(Math.min(paid,tot)/tot*100):0)+'%</b><small>'+vnd(paid)+' đã về · '+rows.filter(function(r){return r.st==="paid"}).length+'/'+n+' khách đã trả đủ</small></div>'
-     +'<div class="kpi"><span>Trung bình mỗi khách</span><b>'+vnd(Math.round(tot/n))+'</b><small>&nbsp;</small></div></div>'
-     +'<section class="panel"><h2>Đã xuất và đã thu theo tháng <small>6 tháng gần nhất</small></h2><div class="legend"><span><i style="background:var(--bar-a)"></i>Đã xuất</span><span><i style="background:var(--bar-b)"></i>Đã thu</span></div>'+chartSvg()+'</section>'
-     +'<div class="grid2"><section class="panel"><h2>Theo trạng thái</h2><div class="stack">'
-     +[[Math.max(paid,0),"var(--ok)"],[pe,"var(--wait)"],[ov,"var(--bad)"]].map(function(x){return x[0]?'<i style="width:'+x[0]/den*100+'%;background:'+x[1]+'"></i>':""}).join("")+'</div>'
-     +'<div class="list"><div class="row"><div class="l"><b>Đã thu</b></div><div class="r">'+vnd(paid)+'</div></div><div class="row"><div class="l"><b>Chờ thu</b></div><div class="r">'+vnd(pe)+'</div></div><div class="row"><div class="l"><b>Quá hạn</b><span>'+OVERDUE_DEF+'</span></div><div class="r">'+vnd(ov)+'</div></div></div></section>'
-     +'<section class="panel"><h2>Khách hàng theo giá trị</h2>'+top.map(function(t){return '<div class="hbar"><div class="t"><span>'+esc(custName(t[0]))+'</span><span>'+vnd(t[1])+'</span></div><div class="track"><i style="width:'+Math.max(3,top[0][1]?t[1]/top[0][1]*100:0)+'%"></i></div></div>'}).join("")+'</section></div>';
+function pctTxt(a,b){return b?(Math.round(a/b*1000)/10).toString().replace(".",",")+"%":"0%"}
+function deltaTxt(cur,prev){
+  if(!prev)return cur?"Tháng trước chưa có số liệu":"";
+  var d=Math.round((cur-prev)/prev*100);
+  return (d>=0?"▲ ":"▼ ")+Math.abs(d)+"% so với tháng trước";
+}
+function statData(){
+  var now=new Date(),mk=[],M={},C={},td=todayStr();
+  for(var i=11;i>=0;i--){var d=new Date(now.getFullYear(),now.getMonth()-i,1),k=d.getFullYear()+"-"+pad(d.getMonth()+1);mk.push(k);M[k]={k:k,ad:0,fee:0,net:0,tot:0,xf:0,live:0,post:0,act:{}}}
+  var t0=new Date(now.getFullYear(),now.getMonth(),now.getDate()).getTime();
+  var D7=0,X30=0;
+  S.spend.forEach(function(r){
+    if(!r.date||!cust(r.customerId))return;
+    var x=spendRow(r),k=r.date.slice(0,7),m=M[k],ad=x.live+x.post,id=r.customerId;
+    var c=C[id]||(C[id]={ad:0,fee:0,net:0,tot:0,xf:0,last:"",rows:[]});
+    c.ad+=ad;c.fee+=x.fee;c.net+=x.net;c.tot+=x.tot;c.xf+=x.xf;c.rows.push({date:r.date,tot:x.tot});
+    if(ad>0&&r.date>c.last)c.last=r.date;
+    if(m){m.ad+=ad;m.fee+=x.fee;m.net+=x.net;m.tot+=x.tot;m.xf+=x.xf;m.live+=x.live;m.post+=x.post;if(ad>0)m.act[id]=1}
+    var dd=Math.round((t0-new Date(+r.date.slice(0,4),+r.date.slice(5,7)-1,+r.date.slice(8,10)).getTime())/86400000);
+    if(dd>=0&&dd<7)D7+=ad;
+    if(dd>=0&&dd<30)X30+=x.xf;
+  });
+  return{mk:mk,M:M,C:C,D7:D7,X30:X30,t0:t0};
+}
+function debtAging(C,bal){
+  var B=[{l:"0–3 ngày",max:3,v:0,c:"var(--ok)"},{l:"4–7 ngày",max:7,v:0,c:"var(--wait)"},{l:"8–15 ngày",max:15,v:0,c:"#E8740C"},{l:"Trên 15 ngày",max:1e9,v:0,c:"var(--bad)"}];
+  var now=new Date(),t0=new Date(now.getFullYear(),now.getMonth(),now.getDate()).getTime(),wsum=0,tsum=0;
+  Object.keys(bal).forEach(function(id){
+    var c=C[id];if(!c)return;var rem=bal[id];
+    var rows=c.rows.slice().sort(function(a,b){return a.date<b.date?1:-1});
+    function put(amt,days){for(var i=0;i<B.length;i++){if(days<=B[i].max){B[i].v+=amt;break}}wsum+=amt*days;tsum+=amt}
+    rows.forEach(function(r){if(rem<=0||!(r.tot>0))return;var take=Math.min(rem,r.tot),days=Math.max(0,Math.round((t0-new Date(+r.date.slice(0,4),+r.date.slice(5,7)-1,+r.date.slice(8,10)).getTime())/86400000));put(take,days);rem-=take});
+    if(rem>0)put(rem,999);
+  });
+  return{B:B,avg:tsum?Math.round(wsum/tsum*10)/10:0,tsum:tsum};
+}
+function forecastHtml(SD,bank){
+  var AC=S.fbaccounts.filter(function(x){return x.id!=="__bank"});
+  var now=new Date(),since=ymd(new Date(now.getFullYear(),now.getMonth(),now.getDate()-6)),sims=[];
+  AC.forEach(function(a){
+    var th=a.threshold!=null?a.threshold:(a.thresholdManual!=null?a.thresholdManual:null);if(!(th>0))return;
+    var aid=String(a.accountId||a.id).replace(/\D/g,"");if(!aid)return;
+    var ids=S.customers.filter(function(c){return String(c.adAccountId||"").split(/[,;\s]+/).map(function(z){return z.replace(/\D/g,"")}).indexOf(aid)>=0}).map(function(c){return c.id});
+    var sum=0;S.fbspend.forEach(function(r){if(r.date>=since&&ids.indexOf(r.customerId)>=0)sum+=(Number(r.live)||0)+(Number(r.post)||0)});
+    var rate=sum/7;if(!(rate>0))return;
+    sims.push({name:a.name||aid,th:th,bal:a.balance||0,rate:rate});
+  });
+  if(!sims.length)return '<section class="panel"><h2>Dự báo dòng tiền 14 ngày <small>Facebook sắp trừ, khách trả và số dư ngân hàng</small></h2>'+emptyBlock("Chưa đủ dữ liệu để dự báo","Cần tài khoản quảng cáo có ngưỡng thanh toán và khách đã nối tài khoản có chi tiêu trong 7 ngày gần nhất.")+'</section>';
+  var inflow=SD.X30/30,cash=bank,rows=[],tout=0,tin=0,low=cash,lowDay="";
+  var bals=sims.map(function(z){return z.bal});
+  for(var d=1;d<=14;d++){
+    var out=0,names=[];
+    sims.forEach(function(z,i){bals[i]+=z.rate;if(bals[i]>=z.th){out+=bals[i];names.push(z.name);bals[i]=0}});
+    tout+=out;tin+=inflow;
+    if(cash!=null){cash=cash-out+inflow;if(cash<low||lowDay===""){low=Math.min(low,cash);lowDay=cash<=low?d:lowDay}}
+    var dt=new Date(now.getFullYear(),now.getMonth(),now.getDate()+d);
+    if(out>0)rows.push({d:dt,out:out,names:names,cash:cash});
   }
-  return{title:"Thống kê",sub:"Khách mới, doanh thu và tình hình thu tiền",html:newCustHtml()+h};
+  var warn=cash!=null&&low<0;
+  var h='<section class="panel"><h2>Dự báo dòng tiền 14 ngày <small>Ước tính theo tốc độ chi 7 ngày gần nhất và số tiền khách chuyển trung bình 30 ngày</small></h2>'
+   +'<div class="kpis in"><div class="kpi t-info"><span>Facebook sắp trừ</span><b>'+vnd(Math.round(tout))+'</b><small>'+rows.length+' lần trong 14 ngày</small></div>'
+   +'<div class="kpi t-ok"><span>Khách chuyển dự kiến</span><b>'+vnd(Math.round(tin))+'</b><small>Bằng mức trung bình 30 ngày</small></div>'
+   +'<div class="kpi '+(warn?"bad":"")+'"><span>Số dư thấp nhất dự kiến</span><b>'+(cash==null?"Chưa nhập số dư":vnd(Math.round(low)))+'</b><small>'+(cash==null?"Nhập số dư ngân hàng ở trang TKQC Meta":warn?"Có nguy cơ thiếu tiền":"Đủ tiền trong 14 ngày")+'</small></div></div>';
+  if(rows.length)h+='<div class="tablewrap"><table><thead><tr><th>Ngày</th><th>Tài khoản bị trừ</th><th class="num">Facebook trừ</th><th class="num">Số dư sau đó</th></tr></thead><tbody>'
+   +rows.map(function(r){return '<tr><td>'+pad(r.d.getDate())+'/'+pad(r.d.getMonth()+1)+'</td><td>'+esc(r.names.join(", "))+'</td><td class="num">'+num(Math.round(r.out))+'</td><td class="num'+(r.cash!=null&&r.cash<0?' owe':'')+'">'+(r.cash==null?"—":num(Math.round(r.cash)))+'</td></tr>'}).join("")+'</tbody></table></div>';
+  var runway=(bank!=null&&SD.D7>0)?Math.floor(bank/(SD.D7/7)):null;
+  h+='<p class="hint">Tốc độ chi trung bình '+vnd(Math.round(SD.D7/7))+' mỗi ngày'+(runway!=null?'. Với số dư ngân hàng hiện tại, bạn trụ được khoảng '+runway+' ngày nếu khách chưa trả thêm.':'.')+' Đây là số ước tính, không phải số Facebook sẽ trừ chính xác.</p></section>';
+  return h;
+}
+function vStats(){
+  var SD=statData(),mk=SD.mk,M=SD.M,C=SD.C,cur=M[mk[11]],prev=M[mk[10]];
+  var bal=custBalances(),balSum=0,balIds=Object.keys(bal);balIds.forEach(function(k){balSum+=bal[k]});
+  var AG=debtAging(C,bal),bankDoc=S.fbaccounts.filter(function(x){return x.id==="__bank"})[0],bank=bankDoc&&bankDoc.amount!=null?bankDoc.amount:null;
+  var sorted=balIds.slice().sort(function(a,b){return bal[b]-bal[a]}),top3=sorted.slice(0,3).reduce(function(t,k){return t+bal[k]},0);
+  var actN=Object.keys(cur.act).length,actP=Object.keys(prev.act).length;
+  var avgC=actN?Math.round(cur.ad/actN):0,avgP=actP?Math.round(prev.ad/actP):0;
+  if(!S.customers.length||!S.spend.length)return{title:"Thống kê",sub:"Lợi nhuận, công nợ và dòng tiền",html:'<div class="tablewrap">'+emptyBlock("Chưa có số liệu","Thống kê sẽ hiện khi khách có chi phí quảng cáo trong bảng chi tiêu.")+'</div>'+newCustHtml()};
+  var h='<div class="kpis">'
+   +'<div class="kpi"><span>Lợi nhuận tháng này</span><b>'+vnd(cur.net)+'</b><small>'+(deltaTxt(cur.net,prev.net)||"Phí dịch vụ − phí ngân hàng")+'</small></div>'
+   +'<div class="kpi"><span>Tỷ suất phí thực nhận</span><b>'+pctTxt(cur.net,cur.ad)+'</b><small>Phí niêm yết bình quân '+pctTxt(cur.fee,cur.ad)+'</small></div>'
+   +'<div class="kpi '+(balSum>0?"bad":"")+'"><span>Tổng công nợ</span><b>'+vnd(balSum)+'</b><small>'+balIds.length+' khách · top 3 chiếm '+pctTxt(top3,balSum)+'</small></div>'
+   +'<div class="kpi '+(AG.avg>7?"bad":"")+'"><span>Tuổi nợ trung bình</span><b>'+String(AG.avg).replace(".",",")+' ngày</b><small>Tính theo số tiền còn nợ</small></div>'
+   +'<div class="kpi"><span>Khách đang hoạt động</span><b>'+actN+'</b><small>'+(deltaTxt(actN,actP)||"Có chi tiêu trong tháng")+'</small></div>'
+   +'<div class="kpi"><span>Chi tiêu TB mỗi khách</span><b>'+vnd(avgC)+'</b><small>'+(deltaTxt(avgC,avgP)||"Trong tháng này")+'</small></div></div>';
+  /* lợi nhuận theo tháng */
+  var groups=mk.map(function(k){var m=M[k];return{l:"Tháng "+(+k.slice(5))+"/"+k.slice(0,4),t:"T"+(+k.slice(5)),a:m.net}});
+  h+='<section class="panel"><h2>Lợi nhuận theo tháng <small>Phí dịch vụ trừ phí ngân hàng, 12 tháng gần nhất</small></h2>'+(groups.some(function(g){return g.a>0})?groupedSvg(groups,"Lợi nhuận"):emptyBlock("Chưa có lợi nhuận","Lợi nhuận hiện khi có chi phí quảng cáo và phí dịch vụ."))
+   +'<div class="ovsum">'+mk.slice(-6).map(function(k){var m=M[k];return '<span>T'+(+k.slice(5))+': <b>'+vnd(m.net)+'</b> · '+pctTxt(m.net,m.ad)+'</span>'}).join("")+'</div></section>';
+  /* tuổi nợ + rủi ro */
+  var mxB=Math.max.apply(null,AG.B.map(function(b){return b.v}).concat([1]));
+  h+='<div class="grid2"><section class="panel"><h2>Tuổi nợ <small>Khách nợ bao lâu rồi. '+OVERDUE_DEF+'</small></h2>'
+   +(balSum>0?AG.B.map(function(b){return '<div class="hbar"><div class="t"><span>'+b.l+'</span><span>'+vnd(b.v)+' · '+pctTxt(b.v,balSum)+'</span></div><div class="track"><i style="width:'+(b.v?Math.max(3,b.v/mxB*100):0)+'%;background:'+b.c+'"></i></div></div>'}).join(""):emptyBlock("Không có công nợ","Hiện không khách nào còn nợ."))+'</section>';
+  var big=sorted.filter(function(k){return balSum>0&&bal[k]/balSum>0.2}),over=S.customers.filter(function(c){return Number(c.creditLimit)>0&&(bal[c.id]||0)>Number(c.creditLimit)});
+  h+='<section class="panel"><h2>Rủi ro công nợ <small>Mức độ phụ thuộc và hạn mức từng khách</small></h2>'
+   +(sorted.length?'<div class="list">'+sorted.slice(0,3).map(function(k){return '<div class="row"><div class="l"><button class="link" data-act="goc" data-id="'+esc(k)+'">'+esc(custName(k))+'</button><span>'+pctTxt(bal[k],balSum)+' tổng công nợ</span></div><div class="r">'+vnd(bal[k])+'</div></div>'}).join("")+'</div>':"")
+   +(big.length?'<div class="notice warn">Cảnh báo: '+big.map(function(k){return esc(custName(k))}).join(", ")+' chiếm trên 20% tổng công nợ.</div>':'')
+   +(over.length?'<div class="notice warn">Vượt hạn mức nợ: '+over.map(function(c){return esc(c.name)+' (nợ '+vnd(bal[c.id])+' / hạn mức '+vnd(c.creditLimit)+')'}).join("; ")+'.</div>':'<p class="hint">Đặt hạn mức nợ tối đa cho từng khách ở Khách hàng → Sửa để được cảnh báo khi vượt.</p>')+'</section></div>';
+  h+=forecastHtml(SD,bank);
+  /* khách ngừng chạy */
+  var idle=Object.keys(C).filter(function(id){return C[id].last}).map(function(id){var l=C[id].last,d=Math.round((SD.t0-new Date(+l.slice(0,4),+l.slice(5,7)-1,+l.slice(8,10)).getTime())/86400000);return{id:id,last:l,days:d}}).filter(function(o){return o.days>=14}).sort(function(a,b){return b.days-a.days});
+  h+='<section class="panel"><h2>Khách ngừng chạy <small>Không phát sinh chi tiêu từ 14 ngày trở lên, nên gọi chăm sóc lại</small></h2>'
+   +(idle.length?'<div class="list">'+idle.map(function(o){return '<div class="row"><div class="l"><button class="link" data-act="goc" data-id="'+esc(o.id)+'">'+esc(custName(o.id))+'</button><span>Chi tiêu gần nhất '+fmtDate(o.last)+'</span></div><div class="r"><span class="pill '+(o.days>=30?"bad":"wait")+'">'+o.days+' ngày</span></div></div>'}).join("")+'</div>':emptyBlock("Không có khách ngừng chạy","Khách nào ngừng chi tiêu từ 14 ngày sẽ hiện ở đây."))+'</section>';
+  /* live/bài viết + ngành */
+  var m6=mk.slice(-6);
+  h+='<div class="grid2"><section class="panel"><h2>Live và Bài viết <small>Tỷ trọng chi tiêu theo tháng</small></h2>'
+   +m6.map(function(k){var m=M[k],t=m.live+m.post,lp=t?m.live/t*100:0;return '<div class="hbar"><div class="t"><span>Tháng '+(+k.slice(5))+'/'+k.slice(0,4)+'</span><span>'+(t?'Live '+Math.round(lp)+'% · Bài viết '+Math.round(100-lp)+'%':'—')+'</span></div><div class="track"><i style="width:'+lp+'%;background:var(--bar-b)"></i></div></div>'}).join("")
+   +'<div class="legend"><span><i style="background:var(--bar-b)"></i>Live</span><span><i style="background:var(--line)"></i>Bài viết</span></div></section>';
+  var P={};S.customers.forEach(function(c){var cc=C[c.id];if(!cc)return;var key=String(c.product||"").trim(),lk=key.toLowerCase()||"_";var o=P[lk]||(P[lk]={n:key||"Chưa phân loại",ad:0,net:0,k:0});o.ad+=cc.ad;o.net+=cc.net;if(cc.ad>0)o.k++});
+  var pl=Object.keys(P).map(function(k){return P[k]}).filter(function(o){return o.ad>0}).sort(function(a,b){return b.ad-a.ad}).slice(0,8);
+  h+='<section class="panel"><h2>Theo ngành hàng <small>Chi tiêu và phí theo sản phẩm của khách</small></h2>'
+   +(pl.length?pl.map(function(o){return '<div class="hbar"><div class="t"><span>'+esc(o.n)+' ('+o.k+' khách)</span><span>'+vnd(o.ad)+' · phí '+vnd(o.net)+'</span></div><div class="track"><i style="width:'+Math.max(3,o.ad/pl[0].ad*100)+'%"></i></div></div>'}).join(""):emptyBlock("Chưa có dữ liệu","Điền ô Sản phẩm trong Khách hàng → Sửa để xem theo ngành."))+'</section></div>';
+  /* lợi nhuận theo khách + đã xuất/đã thu */
+  var tc=Object.keys(C).filter(function(id){return C[id].net>0}).sort(function(a,b){return C[b].net-C[a].net}).slice(0,8);
+  h+='<div class="grid2"><section class="panel"><h2>Lợi nhuận theo khách <small>Khách mang lại nhiều phí nhất, tất cả thời gian</small></h2>'
+   +(tc.length?tc.map(function(id){return '<div class="hbar"><div class="t"><span>'+esc(custName(id))+'</span><span>'+vnd(C[id].net)+' · '+pctTxt(C[id].net,C[id].ad)+'</span></div><div class="track"><i style="width:'+Math.max(3,C[id].net/C[tc[0]].net*100)+'%"></i></div></div>'}).join(""):emptyBlock("Chưa có dữ liệu","Lợi nhuận từng khách hiện khi có phí dịch vụ."))+'</section>'
+   +'<section class="panel"><h2>Đã xuất và đã thu <small>Tỷ lệ thu tiền theo tháng</small></h2><div class="legend"><span><i style="background:var(--bar-a)"></i>Đã xuất</span><span><i style="background:var(--bar-b)"></i>Đã thu</span></div>'+chartSvg()
+   +'<div class="ovsum">'+m6.map(function(k){var m=M[k];return '<span>T'+(+k.slice(5))+': <b>'+pctTxt(m.xf,m.tot)+'</b></span>'}).join("")+'</div></section></div>';
+  return{title:"Thống kê",sub:"Lợi nhuận, công nợ và dòng tiền",html:h+newCustHtml()};
 }
 
 /* ---------- shell ---------- */
 
 /* gán màu (info/ok/bad) và biểu tượng cho từng thẻ KPI theo nhãn */
-var KPI_IC=[[/chuyển/i,"transfer"],[/chi phí quảng cáo/i,"spend"],[/phí dịch vụ|phí thực nhận/i,"fee"],[/nợ bạn|nợ phát sinh|công nợ|dư nợ|còn phải thanh toán|còn lại trong kỳ/i,"debt"],[/quá hạn/i,"warn"],[/khách mới/i,"userplus"],[/thực nhận/i,"fee"],[/ngưỡng/i,"gauge"],[/số dư ngân hàng/i,"bank"],[/phí thanh toán/i,"percent"],[/số dư thực tế/i,"wallet"],[/tỷ lệ/i,"chart"],[/đã thu/i,"check"],[/live/i,"live"],[/bài viết/i,"post"],[/tổng (chi tiêu|spend)/i,"spend"],[/tổng đã xuất/i,"doc"],[/khách|trung bình/i,"users"]];
-var KPI_OK=/thực nhận|đã thu|tỷ lệ|số dư thực tế|chuyển|phí dịch vụ/i;
+var KPI_IC=[[/lợi nhuận/i,"fee"],[/tuổi nợ/i,"gauge"],[/chi tiêu (tb|trung bình)/i,"spend"],[/dự kiến|facebook sắp/i,"debt"],[/chuyển/i,"transfer"],[/chi phí quảng cáo/i,"spend"],[/phí dịch vụ|phí thực nhận/i,"fee"],[/nợ bạn|nợ phát sinh|công nợ|dư nợ|còn phải thanh toán|còn lại trong kỳ/i,"debt"],[/quá hạn/i,"warn"],[/khách mới/i,"userplus"],[/thực nhận/i,"fee"],[/ngưỡng/i,"gauge"],[/số dư ngân hàng/i,"bank"],[/phí thanh toán/i,"percent"],[/số dư thực tế/i,"wallet"],[/tỷ lệ/i,"chart"],[/đã thu/i,"check"],[/live/i,"live"],[/bài viết/i,"post"],[/tổng (chi tiêu|spend)/i,"spend"],[/tổng đã xuất/i,"doc"],[/khách|trung bình/i,"users"]];
+var KPI_OK=/lợi nhuận|thực nhận|đã thu|tỷ lệ|số dư thực tế|chuyển|phí dịch vụ/i;
 function tagKpis(root){
   (root||document).querySelectorAll(".kpis .kpi").forEach(function(k){
     var sp=k.querySelector("span");if(!sp)return;var t=sp.textContent||"",ic="chart";
@@ -1507,6 +1607,7 @@ var FORMS={
     {k:"postKey",l:"Từ khóa chiến dịch BÀI VIẾT (có trong tên chiến dịch, nhiều từ ngăn bằng dấu phẩy)",t:"text",ph:"ví dụ: Ngân bài viết, BV Ngân"},
     {k:"feeRate",l:"Phí dịch vụ mặc định (%)",req:1,t:"number",step:0.5,max:100},
     {k:"startDate",l:"Ngày bắt đầu hợp tác",t:"date"},
+    {k:"creditLimit",l:"Hạn mức nợ tối đa (₫, bỏ trống nếu không giới hạn)",t:"number",step:1000000},
     {k:"note",l:"Ghi chú",t:"textarea"}]},
   prices:{title:["Thêm dịch vụ","Sửa dịch vụ"],fields:[
     {k:"name",l:"Tên dịch vụ",req:1,t:"text"},
