@@ -1403,9 +1403,9 @@ function newCustHtml(){
    +months.map(function(x){return '<div class="hbar"><div class="t"><span>'+x.l+'</span><span>'+x.n+' khách</span></div><div class="track"><i style="width:'+(x.n?Math.max(3,x.n/mx*100):0)+'%"></i></div></div>'}).join("")+'</section>';
 }
 /* ---------- Payment history: lịch sử khách chuyển khoản, lấy từ cột "Khách chuyển khoản" của bảng chi tiêu ---------- */
-var PHG=[["day","Theo ngày"],["month","Theo tháng"],["year","Theo năm"]];
+var PHG=[["today","Hôm nay"],["day","Theo ngày"],["month","Theo tháng"],["year","Theo năm"]];
 function vHistory(){
-  var g=ui.phg||"day",pc=ui.phc||"";
+  var g=ui.phg||"today",pc=ui.phc||"";
   var all=[],hasEst=false;
   S.spend.forEach(function(r){
     var t=Number(r.transfer)||0;if(!r.date||!cust(r.customerId))return;
@@ -1413,13 +1413,25 @@ function vHistory(){
     (Array.isArray(r.xfLog)?r.xfLog:[]).forEach(function(e){var v=Number(e.v)||0;if(!v||!e.at)return;L+=v;all.push({d:ymd(new Date(e.at)),c:r.customerId,v:v,at:e.at})});
     var rest=t-L;if(rest>0){all.push({d:r.date,c:r.customerId,v:rest,est:true});hasEst=true}
   });
-  var list=all.filter(function(e){return!pc||e.c===pc});
+  var list=all.filter(function(e){return(!pc||e.c===pc)&&(g!=="today"||e.d===todayStr())});
   var tot=0,cs={},last="",cnt=0;list.forEach(function(e){tot+=e.v;cs[e.c]=1;if(e.v>0)cnt++;if(e.d>last)last=e.d});
   var G={};list.forEach(function(e){var k=g==="day"?e.d:g==="month"?e.d.slice(0,7):e.d.slice(0,4);var o=G[k]||(G[k]={k:k,v:0,n:0,by:{}});o.v+=e.v;if(e.v>0)o.n++;o.by[e.c]=(o.by[e.c]||0)+e.v;if(e.est){o.est=o.est||{};o.est[e.c]=true}});
   var keys=Object.keys(G).sort().reverse();
   var lbl=function(k){return g==="day"?fmtDate(k):g==="month"?"Tháng "+(+k.slice(5))+"/"+k.slice(0,4):"Năm "+k};
-  var h='<div class="tools"><div class="tabs" role="group" aria-label="Thống kê theo">'+PHG.map(function(x){return '<button data-act="phg" data-v="'+x[0]+'" aria-pressed="'+(g===x[0])+'">'+x[1]+'</button>'}).join("")+'</div>'
-   +'<select id="phc" aria-label="Lọc theo khách hàng"><option value="">Mọi khách hàng</option>'+S.customers.slice().sort(function(a,b){return String(a.name).localeCompare(String(b.name),"vi")}).map(function(c){return '<option value="'+esc(c.id)+'"'+(pc===c.id?" selected":"")+'>'+esc(c.name)+'</option>'}).join("")+'</select></div>'
+  var tabsH='<div class="tools"><div class="tabs" role="group" aria-label="Thống kê theo">'+PHG.map(function(x){return '<button data-act="phg" data-v="'+x[0]+'" aria-pressed="'+(g===x[0])+'">'+x[1]+'</button>'}).join("")+'</div>'
+   +'<select id="phc" aria-label="Lọc theo khách hàng"><option value="">Mọi khách hàng</option>'+S.customers.slice().sort(function(a,b){return String(a.name).localeCompare(String(b.name),"vi")}).map(function(c){return '<option value="'+esc(c.id)+'"'+(pc===c.id?" selected":"")+'>'+esc(c.name)+'</option>'}).join("")+'</select></div>';
+  if(g==="today"){
+    var TB={};list.forEach(function(e){var o=TB[e.c]||(TB[e.c]={v:0,at:0,est:false});o.v+=e.v;if(e.at&&e.at>o.at)o.at=e.at;if(e.est)o.est=true});
+    var tids=Object.keys(TB).sort(function(a,b){return TB[b].v-TB[a].v}),ttot=0,tn=0;tids.forEach(function(id){ttot+=TB[id].v});list.forEach(function(e){if(e.v>0)tn++});
+    var lastAt=0;tids.forEach(function(id){if(TB[id].at>lastAt)lastAt=TB[id].at});
+    var th=tabsH+'<div class="kpis"><div class="kpi"><span>Số khách chuyển hôm nay</span><b>'+tids.length+'</b><small>Trên '+S.customers.length+' khách · '+fmtDate(todayStr())+'</small></div>'
+     +'<div class="kpi"><span>Tổng tiền chuyển hôm nay</span><b>'+vnd(ttot)+'</b><small>'+tn+' lượt chuyển</small></div>'
+     +'<div class="kpi"><span>Lần chuyển gần nhất</span><b>'+(lastAt?pad(new Date(lastAt).getHours())+':'+pad(new Date(lastAt).getMinutes()):"—")+'</b><small>&nbsp;</small></div></div>';
+    if(!tids.length)return{title:"Payment history",sub:"Hôm nay "+fmtDate(todayStr()),html:th+'<div class="tablewrap">'+emptyBlock("Hôm nay chưa có khách nào chuyển","Khi bạn nhập tiền vào cột “Khách chuyển khoản” trong bảng chi tiêu của khách, khách đó sẽ hiện ở đây.")+'</div>'};
+    th+='<section class="panel"><h2>Khách đã chuyển hôm nay <small>'+tids.length+' khách · tổng '+vnd(ttot)+'</small></h2><div class="list">'+tids.map(function(id){var o=TB[id];return '<div class="row"><div class="l"><button class="link" data-act="goc" data-id="'+esc(id)+'">'+esc(custName(id))+'</button><span>'+(o.at?'Lúc '+pad(new Date(o.at).getHours())+':'+pad(new Date(o.at).getMinutes()):'Nhập trước khi app ghi giờ')+'</span></div><div class="r"><b>'+vnd(o.v)+'</b></div></div>'}).join("")+'</div></section>';
+    return{title:"Payment history",sub:"Hôm nay "+fmtDate(todayStr()),html:th};
+  }
+  var h=tabsH
    +'<div class="kpis"><div class="kpi"><span>Tổng đã chuyển</span><b>'+vnd(tot)+'</b><small>'+(pc?esc(custName(pc)):"Tất cả khách hàng")+'</small></div>'
    +'<div class="kpi"><span>Số lượt chuyển</span><b>'+cnt+'</b><small>Mỗi lần bạn nhập tiền chuyển là một lượt</small></div>'
    +'<div class="kpi"><span>Số khách đã chuyển</span><b>'+Object.keys(cs).length+'</b><small>Trên '+S.customers.length+' khách</small></div>'
