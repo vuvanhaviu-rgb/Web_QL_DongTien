@@ -1428,13 +1428,13 @@ document.addEventListener("click",function(e){
   else if(a==="spref"){
     var GHU="https://github.com/vuvanhaviu-rgb/Web_QL_DongTien/actions/workflows/fb-sync.yml";
     var fn=null;try{fn=window.firebase&&firebase.app().functions("asia-southeast1").httpsCallable("kichHoatDongBo")}catch(e){fn=null}
-    if(!fn){render();toast("Đã làm mới số liệu. Chưa cài xong chức năng tự kéo, đang mở trang GitHub để bạn bấm Run workflow.");window.open(GHU,"_blank","noopener");return}
+    if(!fn){render();toast("Đã làm mới số liệu. Chưa bật chức năng tự kéo từ Facebook nên số mới sẽ về theo lịch 30 phút một lần.");return}
     ui.pullAt=Date.now();render();toast("Đang gửi lệnh kéo dữ liệu từ Facebook…");
     setTimeout(function(){render()},181000);
     fn().then(function(){toast("Đã gửi lệnh. Số liệu sẽ tự cập nhật sau khoảng 3 phút.")})
       .catch(function(er){var c=er&&er.code||"";ui.pullAt=0;render();
         if(/resource-exhausted/.test(c))toast("Vừa kéo xong, đợi 1 phút rồi bấm lại.");
-        else{toast("Chưa gọi được chức năng tự động. Đang mở trang GitHub để bạn bấm Run workflow.");window.open(GHU,"_blank","noopener")}});
+        else toast("Chưa gọi được chức năng tự kéo. Số mới sẽ về theo lịch 30 phút một lần.")});
   }
   else if(a==="ovp"){ui.ovp=el.dataset.v;render()}
   else if(a==="spaid"){if(el.dataset.id.indexOf("new:")===0)setPaidBlank(el.dataset.id.slice(4),el.dataset.v==="1");else save("spend",el.dataset.id,{paid:el.dataset.v==="1"})}
