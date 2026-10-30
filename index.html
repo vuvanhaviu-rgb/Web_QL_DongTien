@@ -333,8 +333,9 @@ td.net,th.net{color:var(--accent);font-weight:700}
   .nav a:nth-child(2){--ic:url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 24 24%27 fill=%27none%27 stroke=%27black%27 stroke-width=%272%27 stroke-linecap=%27round%27 stroke-linejoin=%27round%27%3E%3Cpath d=%27M3 12h4l3-8 4 16 3-8h4%27/%3E%3C/svg%3E")}
   .nav a:nth-child(3){--ic:url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 24 24%27 fill=%27none%27 stroke=%27black%27 stroke-width=%272%27 stroke-linecap=%27round%27 stroke-linejoin=%27round%27%3E%3Ccircle cx=%279%27 cy=%278%27 r=%273.2%27/%3E%3Cpath d=%27M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6%27/%3E%3Cpath d=%27M16 5a3 3 0 0 1 0 6%27/%3E%3Cpath d=%27M18 14c2 .6 3 2.4 3 6%27/%3E%3C/svg%3E")}
   .nav a:nth-child(4){--ic:url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 24 24%27 fill=%27none%27 stroke=%27black%27 stroke-width=%272%27 stroke-linecap=%27round%27 stroke-linejoin=%27round%27%3E%3Crect x=%273%27 y=%276%27 width=%2718%27 height=%2713%27 rx=%272%27/%3E%3Cpath d=%27M3 10h18%27/%3E%3Cpath d=%27M7 15h4%27/%3E%3C/svg%3E")}
-  .nav a:nth-child(5){--ic:url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 24 24%27 fill=%27none%27 stroke=%27black%27 stroke-width=%272%27 stroke-linecap=%27round%27 stroke-linejoin=%27round%27%3E%3Cpath d=%27M20 12 12 20 4 12V4h8z%27/%3E%3Ccircle cx=%278%27 cy=%278%27 r=%271.2%27/%3E%3C/svg%3E")}
-  .nav a:nth-child(6){--ic:url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 24 24%27 fill=%27none%27 stroke=%27black%27 stroke-width=%272%27 stroke-linecap=%27round%27 stroke-linejoin=%27round%27%3E%3Cpath d=%27M4 20V10M10 20V4M16 20v-8M22 20H2%27/%3E%3C/svg%3E")}
+  .nav a[href="#bang-gia"]{--ic:url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 24 24%27 fill=%27none%27 stroke=%27black%27 stroke-width=%272%27 stroke-linecap=%27round%27 stroke-linejoin=%27round%27%3E%3Cpath d=%27M20 12 12 20 4 12V4h8z%27/%3E%3Ccircle cx=%278%27 cy=%278%27 r=%271.2%27/%3E%3C/svg%3E")}
+  .nav a[href="#thong-ke"]{--ic:url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 24 24%27 fill=%27none%27 stroke=%27black%27 stroke-width=%272%27 stroke-linecap=%27round%27 stroke-linejoin=%27round%27%3E%3Cpath d=%27M4 20V10M10 20V4M16 20v-8M22 20H2%27/%3E%3C/svg%3E")}
+  .nav a[href="#lich-su"]{--ic:url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 24 24%27 fill=%27none%27 stroke=%27black%27 stroke-width=%272%27 stroke-linecap=%27round%27 stroke-linejoin=%27round%27%3E%3Ccircle%20cx=%2712%27%20cy=%2712%27%20r=%279%27/%3E%3Cpath%20d=%27M12%207v5l3%202%27/%3E%3C/svg%3E")}
   .head{padding:4px 0}
   .head h1{font-size:18px}
   .panel h2{font-size:14px;padding-bottom:6px;border-bottom:1px solid var(--line)}
@@ -543,7 +544,7 @@ var fmtDate=function(s){return s?String(s).split("-").reverse().join("/"):"—"}
 var sum=function(a){return a.reduce(function(t,p){return t+(Number(p.amount)||0)},0)};
 var short=function(n){if(n>=1e9)return +(n/1e9).toFixed(1)+" tỷ";if(n>=1e6)return +(n/1e6).toFixed(1)+" tr";if(n>=1e3)return +(n/1e3).toFixed(0)+"k";return String(n)};
 
-var VIEWS=[["tong-quan","Tổng quan"],["spend","Spend hiện tại"],["khach-hang","Khách hàng"],["cong-no","Quản lý TKQC Meta","TKQC Meta"],["bang-gia","Bảng giá"],["thong-ke","Thống kê"],["cai-dat","Cài đặt","Cài đặt","hide"]];
+var VIEWS=[["tong-quan","Tổng quan"],["spend","Spend hiện tại"],["khach-hang","Khách hàng"],["cong-no","Quản lý TKQC Meta","TKQC Meta"],["lich-su","Payment history","Lịch sử"],["bang-gia","Bảng giá"],["thong-ke","Thống kê"],["cai-dat","Cài đặt","Cài đặt","hide"]];
 var COLS=["customers","prices","payments","spend","hidden","fbspend","fbaccounts"];
 var S={customers:[],prices:[],payments:[],spend:[],hidden:[],fbspend:[],fbaccounts:[]};
 var loaded={customers:false,prices:false,payments:false,spend:false,hidden:false,fbspend:false,fbaccounts:false};
@@ -1390,6 +1391,33 @@ function newCustHtml(){
    +'<section class="panel"><h2>Khách hàng mới theo tháng <small>6 tháng gần nhất</small></h2>'
    +months.map(function(x){return '<div class="hbar"><div class="t"><span>'+x.l+'</span><span>'+x.n+' khách</span></div><div class="track"><i style="width:'+(x.n?Math.max(3,x.n/mx*100):0)+'%"></i></div></div>'}).join("")+'</section>';
 }
+/* ---------- Payment history: lịch sử khách chuyển khoản, lấy từ cột "Khách chuyển khoản" của bảng chi tiêu ---------- */
+var PHG=[["day","Theo ngày"],["month","Theo tháng"],["year","Theo năm"]];
+function vHistory(){
+  var g=ui.phg||"day",pc=ui.phc||"";
+  var all=[];
+  S.spend.forEach(function(r){var t=Number(r.transfer)||0;if(!(t>0)||!r.date||!cust(r.customerId))return;all.push({d:r.date,c:r.customerId,v:t})});
+  var list=all.filter(function(e){return!pc||e.c===pc});
+  var tot=0,cs={},last="";list.forEach(function(e){tot+=e.v;cs[e.c]=1;if(e.d>last)last=e.d});
+  var G={};list.forEach(function(e){var k=g==="day"?e.d:g==="month"?e.d.slice(0,7):e.d.slice(0,4);var o=G[k]||(G[k]={k:k,v:0,n:0,by:{}});o.v+=e.v;o.n++;o.by[e.c]=(o.by[e.c]||0)+e.v});
+  var keys=Object.keys(G).sort().reverse();
+  var lbl=function(k){return g==="day"?fmtDate(k):g==="month"?"Tháng "+(+k.slice(5))+"/"+k.slice(0,4):"Năm "+k};
+  var h='<div class="tools"><div class="tabs" role="group" aria-label="Thống kê theo">'+PHG.map(function(x){return '<button data-act="phg" data-v="'+x[0]+'" aria-pressed="'+(g===x[0])+'">'+x[1]+'</button>'}).join("")+'</div>'
+   +'<select id="phc" aria-label="Lọc theo khách hàng"><option value="">Mọi khách hàng</option>'+S.customers.slice().sort(function(a,b){return String(a.name).localeCompare(String(b.name),"vi")}).map(function(c){return '<option value="'+esc(c.id)+'"'+(pc===c.id?" selected":"")+'>'+esc(c.name)+'</option>'}).join("")+'</select></div>'
+   +'<div class="kpis"><div class="kpi"><span>Tổng đã chuyển</span><b>'+vnd(tot)+'</b><small>'+(pc?esc(custName(pc)):"Tất cả khách hàng")+'</small></div>'
+   +'<div class="kpi"><span>Số lượt chuyển</span><b>'+list.length+'</b><small>Mỗi dòng có tiền chuyển là một lượt</small></div>'
+   +'<div class="kpi"><span>Số khách đã chuyển</span><b>'+Object.keys(cs).length+'</b><small>Trên '+S.customers.length+' khách</small></div>'
+   +'<div class="kpi"><span>Lần chuyển gần nhất</span><b>'+(last?fmtDate(last):"—")+'</b><small>&nbsp;</small></div></div>';
+  if(!list.length){return{title:"Payment history",sub:"Lịch sử khách chuyển khoản",html:h+'<div class="tablewrap">'+emptyBlock("Chưa có lịch sử chuyển khoản","Khi bạn điền số tiền vào cột “Khách chuyển khoản” trong bảng chi tiêu của khách, lịch sử sẽ hiện ở đây.")+'</div>'}}
+  var asc=keys.slice(0,g==="day"?14:g==="month"?12:10).reverse();
+  var groups=asc.map(function(k){return{l:lbl(k),t:g==="day"?k.slice(8)+"/"+k.slice(5,7):g==="month"?"T"+(+k.slice(5)):k,a:G[k].v}});
+  h+='<section class="panel"><h2>Tiền khách chuyển '+(g==="day"?"theo ngày":g==="month"?"theo tháng":"theo năm")+' <small>'+(g==="day"?"14 ngày có chuyển khoản gần nhất":g==="month"?"12 tháng gần nhất":"Các năm có chuyển khoản")+'</small></h2>'+groupedSvg(groups,"Khách chuyển")+'</section>';
+  var cap=g==="day"?60:g==="month"?24:50;
+  h+=keys.slice(0,cap).map(function(k){var o=G[k],ids=Object.keys(o.by).sort(function(a,b){return o.by[b]-o.by[a]});
+    return '<section class="panel"><h2>'+lbl(k)+' <small>'+o.n+' lượt chuyển · '+ids.length+' khách · tổng '+vnd(o.v)+'</small></h2><div class="list">'+ids.map(function(id){return '<div class="row"><div class="l"><button class="link" data-act="goc" data-id="'+esc(id)+'">'+esc(custName(id))+'</button></div><div class="r"><b>'+vnd(o.by[id])+'</b></div></div>'}).join("")+'</div></section>'}).join("");
+  if(keys.length>cap)h+='<p class="hint">Chỉ hiện '+cap+' mục gần nhất. Chọn một khách hàng hoặc đổi sang xem theo tháng/năm để xem số liệu cũ hơn.</p>';
+  return{title:"Payment history",sub:"Lịch sử khách chuyển khoản, lấy từ bảng chi tiêu của từng khách",html:h};
+}
 function pctTxt(a,b){return b?(Math.round(a/b*1000)/10).toString().replace(".",",")+"%":"0%"}
 function deltaTxt(cur,prev){
   if(!prev)return cur?"Tháng trước chưa có số liệu":"";
@@ -1505,7 +1533,7 @@ function bkRemind(){
 }
 function render(){
   if(pointerDown){pendingRender=true;return}
-  var v=(ui.view==="khach-hang"&&ui.cid&&cust(ui.cid))?vCustomerDetail:(({"tong-quan":vOverview,"spend":vSpend,"khach-hang":vCustomers,"cong-no":vPayments,"bang-gia":vPrices,"thong-ke":vStats,"cai-dat":vSettings})[ui.view]||vOverview);
+  var v=(ui.view==="khach-hang"&&ui.cid&&cust(ui.cid))?vCustomerDetail:(({"tong-quan":vOverview,"spend":vSpend,"khach-hang":vCustomers,"cong-no":vPayments,"bang-gia":vPrices,"lich-su":vHistory,"thong-ke":vStats,"cai-dat":vSettings})[ui.view]||vOverview);
   var overdue=ready()?dueSoon().length:0;
   $("#nav").innerHTML=VIEWS.filter(function(x){return x[3]!=="hide"}).map(function(x){return '<a href="#'+x[0]+'"'+(x[0]===ui.view?' aria-current="page"':"")+'>'+(x[2]||x[1])+(x[0]==="cong-no"&&overdue?'<span class="badge" title="Khoản quá hạn">'+overdue+'</span>':"")+'</a>'}).join("");
   var r;
@@ -1673,6 +1701,7 @@ document.addEventListener("click",function(e){
   else if(a==="apnow"){ui.anchor=todayStr();render()}
   else if(a==="spt"){ui.spt=el.dataset.v;render()}
   else if(a==="ovp"){ui.ovp=el.dataset.v;render()}
+  else if(a==="phg"){ui.phg=el.dataset.v;render()}
   else if(a==="spaid"){if(el.dataset.id.indexOf("new:")===0)setPaidBlank(el.dataset.id.slice(4),el.dataset.v==="1");else save("spend",el.dataset.id,{paid:el.dataset.v==="1"})}
 });
 function releasePointer(){pointerDown=false;if(pendingRender){pendingRender=false;render()}}
@@ -1720,7 +1749,8 @@ document.addEventListener("change",function(e){
     db.collection("fbaccounts").doc(aid).set({thresholdManual:raw?Number(raw):null},{merge:true}).catch(function(er){toast("Không lưu được ngưỡng: "+((er&&(er.message||er.code))||"lỗi"))});
     return;
   }
-  if(id==="pc"){ui.pc=v;render()}
+  if(id==="phc"){ui.phc=v;render()}
+  else if(id==="pc"){ui.pc=v;render()}
   else if(id==="vw-day"){ui.vday=v;if(ui.vdata){$("#main").innerHTML=viewerHtml(ui.vdata);tagKpis($("#main"))}}
   else if(id==="ov-day"){var iv=parseDmy(v);if(iv){ui.ovd=iv;ui.ovp="day";render()}else if(v){toast("Nhập ngày theo dạng dd/mm/yyyy, ví dụ 28/10/2026")}}
   else if(id==="ov-month"){if(v){ui.ovmo=v;render()}}
