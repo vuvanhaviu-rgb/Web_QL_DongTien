@@ -980,7 +980,7 @@ function vCustomers(){
   owed=custBalances();
   var linkCell=function(u){u=String(u||"").trim();if(!u)return "—";var href=/^https?:\/\//i.test(u)?u:"https://"+u,txt=u.replace(/^https?:\/\/(www\.)?/i,"");if(txt.length>34)txt=txt.slice(0,32)+"…";return '<a class="ext" href="'+esc(href)+'" target="_blank" rel="noopener noreferrer">'+esc(txt)+'</a>'};
   var list=S.customers.filter(function(c){return!q||[c.name,c.contact,c.phone,c.note,c.product,c.pageLink].join(" ").toLowerCase().indexOf(q)>=0})
-    .sort(function(a,b){return String(a.name).localeCompare(String(b.name),"vi")});
+    .sort(function(a,b){return (budget[b.id]||0)-(budget[a.id]||0)||String(a.name).localeCompare(String(b.name),"vi")});
   var h='<div class="tools"><input type="search" id="q" placeholder="Tìm theo tên, số điện thoại…" value="'+esc(ui.q)+'" aria-label="Tìm khách hàng"></div>';
   if(!S.customers.length)h+='<div class="tablewrap">'+emptyBlock("Chưa có khách hàng","Thêm khách hàng đầu tiên để bắt đầu ghi nhận công nợ.",'<button class="btn primary" data-act="add" data-type="customers">Thêm khách hàng</button>')+'</div>';
   else if(!list.length)h+='<div class="tablewrap">'+emptyBlock("Không tìm thấy","Thử từ khóa khác.")+'</div>';
