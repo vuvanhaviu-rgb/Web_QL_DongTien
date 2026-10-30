@@ -16,25 +16,25 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap">
 <style>
 /* Layout: sidebar with 5 sections on the left (tab strip on phones), one working area on the right.
-   Palette: pine-teal accent on a faintly green-grey ground; amber and red are status colors only.
+   Palette: Meta-blue accent (#0B66FF) on a faintly green-grey ground; amber and red are status colors only.
    Type: Be Vietnam Pro throughout (drawn for Vietnamese), weights 400-700, tabular figures for money. */
 :root{
   --bg:#F2F5F4; --surface:#FFFFFF; --surface-2:#F7F9F8; --fg:#14211F; --muted:#5A6B68; --line:#D8E0DE;
-  --accent:#0B6E5F; --accent-fg:#FFFFFF; --accent-soft:#DCEFEB;
+  --accent:#0B66FF; --accent-fg:#FFFFFF; --accent-soft:#E1ECFF;
   --ok:#1B7F4B; --ok-soft:#DDF2E5; --wait:#8A5A00; --wait-soft:#FBEFD2; --bad:#B42318; --bad-soft:#FBE4E1;
-  --bar-a:#9DB5B0; --bar-b:#0B6E5F; --shadow:0 1px 2px rgba(20,33,31,.06);
+  --bar-a:#A9BEDF; --bar-b:#0B66FF; --shadow:0 1px 2px rgba(20,33,31,.06);
   --font:"Be Vietnam Pro",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
 }
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
   --bg:#0D1413; --surface:#152120; --surface-2:#1A2928; --fg:#E5EEEC; --muted:#93A8A4;
-  --line:#273937; --accent:#3FCDB4; --accent-fg:#06201B; --accent-soft:#18413A;
+  --line:#273937; --accent:#5B9BFF; --accent-fg:#06142B; --accent-soft:#1A2C4D;
   --ok:#5FD58F; --ok-soft:#173A27; --wait:#F0B94D; --wait-soft:#3B2E10; --bad:#FF8A7D; --bad-soft:#42201C;
-  --bar-a:#4B6661; --bar-b:#3FCDB4; --shadow:none; color-scheme:dark}}
+  --bar-a:#4B5F80; --bar-b:#5B9BFF; --shadow:none; color-scheme:dark}}
 :root[data-theme="dark"]{
   --bg:#0D1413; --surface:#152120; --surface-2:#1A2928; --fg:#E5EEEC; --muted:#93A8A4;
-  --line:#273937; --accent:#3FCDB4; --accent-fg:#06201B; --accent-soft:#18413A;
+  --line:#273937; --accent:#5B9BFF; --accent-fg:#06142B; --accent-soft:#1A2C4D;
   --ok:#5FD58F; --ok-soft:#173A27; --wait:#F0B94D; --wait-soft:#3B2E10; --bad:#FF8A7D; --bad-soft:#42201C;
-  --bar-a:#4B6661; --bar-b:#3FCDB4; --shadow:none; color-scheme:dark}
+  --bar-a:#4B5F80; --bar-b:#5B9BFF; --shadow:none; color-scheme:dark}
 
 *{box-sizing:border-box}
 body{background:var(--bg);color:var(--fg);font-family:var(--font);font-size:10px;line-height:1.5;
@@ -107,7 +107,7 @@ input[type=search],input[type=text],input[type=number],input[type=date],select,t
 .legend{display:flex;flex-wrap:wrap;gap:14px;color:var(--muted);font-size:10px}
 .legend i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:6px;vertical-align:-1px}
 svg.chart{width:100%;height:auto;display:block}
-svg.chart text{fill:var(--muted);font-family:var(--font);font-size:10px}
+svg.chart text{fill:var(--muted);font-family:var(--font);font-size:var(--fs,12px)}
 svg.chart line{stroke:var(--line)}
 .hbar{display:flex;flex-direction:column;gap:4px;padding:6px 0}
 .hbar .t{display:flex;justify-content:space-between;gap:12px}
@@ -149,6 +149,7 @@ input[type=month]{width:100%;background:var(--surface);border:1px solid var(--li
 .pick{gap:8px}
 .pick input,.pick select{width:auto;min-width:0}
 .pick input[type=number]{width:92px}
+input.dmy{width:128px!important;min-width:0;text-align:center}
 .kpis.in .kpi{background:var(--surface-2);box-shadow:none}
 table.ledger{min-width:1120px}
 table.ledger th,table.ledger td{border:1px solid var(--line)}
@@ -404,6 +405,31 @@ a.ext{color:var(--accent);text-decoration:underline;word-break:break-all}
   .tools>*,.ph>*,.panel>*{min-width:0;max-width:100%}
   .ph,.tools{min-width:0;max-width:100%}
 }
+
+/* ===== Quy tắc màu và biểu tượng (nhóm 3) =====
+   Xanh dương = trung tính, xanh lá = số tốt, đỏ = cảnh báo (nợ, quá hạn). Mỗi thẻ có biểu tượng đúng nghĩa. */
+.kpis .kpi.t-info{--kc:11,102,255!important;--kd:11,80,210!important}
+.kpis .kpi.t-ok{--kc:22,163,74!important;--kd:21,128,61!important}
+.kpis .kpi.t-bad{--kc:220,38,38!important;--kd:185,28,28!important}
+.kpis .kpi.t-info b,.kpis .kpi.t-ok b,.kpis .kpi.t-bad b{color:rgb(var(--kd))}
+.kpis .kpi[class*="ic-"]::before{background-image:var(--icon)!important}
+.kpi.ic-spend{--icon:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22white%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M3%2011v3a1%201%200%200%200%201%201h2l5%204V7L6%2010H4a1%201%200%200%200-1%201z%22%2F%3E%3Cpath%20d%3D%22M15%209a4%204%200%200%201%200%206%22%2F%3E%3Cpath%20d%3D%22M18%206a8%208%200%200%201%200%2012%22%2F%3E%3C%2Fsvg%3E")}
+.kpi.ic-live{--icon:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22white%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Crect%20x%3D%222%22%20y%3D%226%22%20width%3D%2214%22%20height%3D%2212%22%20rx%3D%222%22%2F%3E%3Cpath%20d%3D%22m22%208-6%204%206%204z%22%2F%3E%3C%2Fsvg%3E")}
+.kpi.ic-post{--icon:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22white%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M14%203H7a2%202%200%200%200-2%202v14a2%202%200%200%200%202%202h10a2%202%200%200%200%202-2V8z%22%2F%3E%3Cpath%20d%3D%22M14%203v5h5%22%2F%3E%3Cpath%20d%3D%22M9%2013h6M9%2017h6%22%2F%3E%3C%2Fsvg%3E")}
+.kpi.ic-fee{--icon:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22white%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Ccircle%20cx%3D%2212%22%20cy%3D%2212%22%20r%3D%229%22%2F%3E%3Cpath%20d%3D%22M14.5%209c-.5-1-1.5-1.5-2.5-1.5-1.4%200-2.5.8-2.5%202s1%201.7%202.5%202%202.5.8%202.5%202-1.1%202-2.5%202c-1%200-2-.5-2.5-1.5%22%2F%3E%3Cpath%20d%3D%22M12%206v1.5M12%2016.5V18%22%2F%3E%3C%2Fsvg%3E")}
+.kpi.ic-userplus{--icon:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22white%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Ccircle%20cx%3D%229%22%20cy%3D%228%22%20r%3D%223.5%22%2F%3E%3Cpath%20d%3D%22M2.5%2020c0-3.6%202.9-6.5%206.5-6.5s6.5%202.9%206.5%206.5%22%2F%3E%3Cpath%20d%3D%22M19%208v6M16%2011h6%22%2F%3E%3C%2Fsvg%3E")}
+.kpi.ic-users{--icon:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22white%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Ccircle%20cx%3D%229%22%20cy%3D%228%22%20r%3D%223.2%22%2F%3E%3Cpath%20d%3D%22M3%2020c0-3.3%202.7-6%206-6s6%202.7%206%206%22%2F%3E%3Cpath%20d%3D%22M16%205a3%203%200%200%201%200%206%22%2F%3E%3Cpath%20d%3D%22M18%2014c2%20.6%203%202.4%203%206%22%2F%3E%3C%2Fsvg%3E")}
+.kpi.ic-warn{--icon:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22white%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M10.3%203.9%201.8%2018a2%202%200%200%200%201.7%203h17a2%202%200%200%200%201.7-3L13.7%203.9a2%202%200%200%200-3.4%200z%22%2F%3E%3Cpath%20d%3D%22M12%209v4M12%2017h.01%22%2F%3E%3C%2Fsvg%3E")}
+.kpi.ic-debt{--icon:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22white%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M20%207H5a2%202%200%200%201%200-4h13v4z%22%2F%3E%3Cpath%20d%3D%22M3%205v14a2%202%200%200%200%202%202h15V7%22%2F%3E%3Ccircle%20cx%3D%2216%22%20cy%3D%2214%22%20r%3D%221.2%22%2F%3E%3C%2Fsvg%3E")}
+.kpi.ic-gauge{--icon:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22white%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M4%2018a8%208%200%201%201%2016%200%22%2F%3E%3Cpath%20d%3D%22m12%2018%204-6%22%2F%3E%3C%2Fsvg%3E")}
+.kpi.ic-bank{--icon:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22white%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M3%2010%2012%204l9%206%22%2F%3E%3Cpath%20d%3D%22M5%2010v8M9.5%2010v8M14.5%2010v8M19%2010v8%22%2F%3E%3Cpath%20d%3D%22M3%2021h18%22%2F%3E%3C%2Fsvg%3E")}
+.kpi.ic-percent{--icon:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22white%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M19%205%205%2019%22%2F%3E%3Ccircle%20cx%3D%227%22%20cy%3D%227%22%20r%3D%222.2%22%2F%3E%3Ccircle%20cx%3D%2217%22%20cy%3D%2217%22%20r%3D%222.2%22%2F%3E%3C%2Fsvg%3E")}
+.kpi.ic-wallet{--icon:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22white%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Crect%20x%3D%223%22%20y%3D%226%22%20width%3D%2218%22%20height%3D%2214%22%20rx%3D%222%22%2F%3E%3Cpath%20d%3D%22M16%2012h5v4h-5a2%202%200%200%201%200-4z%22%2F%3E%3Cpath%20d%3D%22M5%206l11-3v3%22%2F%3E%3C%2Fsvg%3E")}
+.kpi.ic-chart{--icon:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22white%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M4%2020V10M10%2020V4M16%2020v-8M22%2020H2%22%2F%3E%3C%2Fsvg%3E")}
+.kpi.ic-check{--icon:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22white%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Ccircle%20cx%3D%2212%22%20cy%3D%2212%22%20r%3D%229%22%2F%3E%3Cpath%20d%3D%22m8%2012%203%203%205-6%22%2F%3E%3C%2Fsvg%3E")}
+.kpi.ic-doc{--icon:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22white%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M14%203H7a2%202%200%200%200-2%202v14a2%202%200%200%200%202%202h10a2%202%200%200%200%202-2V8z%22%2F%3E%3Cpath%20d%3D%22M14%203v5h5%22%2F%3E%3Cpath%20d%3D%22M9%2014h6%22%2F%3E%3C%2Fsvg%3E")}
+.panel h2 small{display:block;margin:2px 0 0;font-size:11px;font-weight:400;color:var(--muted)}
+td .link,.tablewrap .link{text-decoration:none}
 </style>
 
 <div class="app">
@@ -622,7 +648,7 @@ async function viewerInit(){
   try{
     var snap=await db.collection("shares").doc(VIEW_TOKEN).get();
     if(!snap.exists){main.innerHTML=emptyBlock("Link không còn hiệu lực","Người gửi đã tắt chia sẻ hoặc link chưa đúng.");return}
-    ui.vdata=snap.data();main.innerHTML=viewerHtml(ui.vdata);
+    ui.vdata=snap.data();main.innerHTML=viewerHtml(ui.vdata);tagKpis(main);
   }catch(e){main.innerHTML=emptyBlock("Không mở được link","Chủ trang có thể chưa bật quyền xem công khai cho link chia sẻ.")}
 }
 
@@ -683,7 +709,7 @@ function adChart(buckets,bk){
     var v=bk[b.k]||{live:0,post:0},cx=L+gw*i+gw/2,h1=ph*v.live/mx,h2=ph*v.post/mx;
     if(v.live)s+='<rect x="'+(cx-bw/2)+'" y="'+(T+ph-h1)+'" width="'+bw+'" height="'+h1+'" fill="var(--bar-b)"><title>'+esc(b.t)+' · Live: '+vnd(v.live)+'</title></rect>';
     if(v.post)s+='<rect x="'+(cx-bw/2)+'" y="'+(T+ph-h1-h2)+'" width="'+bw+'" height="'+h2+'" fill="var(--bar-a)"><title>'+esc(b.t)+' · Bài viết: '+vnd(v.post)+'</title></rect>';
-    if(b.show)s+='<text x="'+cx+'" y="'+(H-8)+'" text-anchor="middle">'+esc(b.l)+'</text>';
+    if(b.show)s+='<text x="'+cx+'" y="'+(H-10)+'" text-anchor="middle">'+esc(b.l)+'</text>';
   });
   return s+'</svg>';
 }
@@ -699,8 +725,8 @@ function adSection(){
     var key=r.date.slice(0,P.keyLen),q=bk[key]||(bk[key]={live:0,post:0});q.live+=x.live;q.post+=x.post;
   });
   var pick;
-  if(ui.ap==="day")pick='<input type="date" id="ap-date" value="'+esc(ui.anchor)+'" aria-label="Chọn ngày">';
-  else if(ui.ap==="month")pick='<input type="month" id="ap-month" value="'+esc(ui.anchor.slice(0,7))+'" aria-label="Chọn tháng">';
+  if(ui.ap==="day")pick=dateText("ap-date",ui.anchor,"Chọn ngày");
+  else if(ui.ap==="month")pick=monthSelect("ap-month",ui.anchor.slice(0,7),"Chọn tháng");
   else if(ui.ap==="quarter")pick='<select id="ap-q" aria-label="Chọn quý">'+[1,2,3,4].map(function(q){return '<option value="'+q+'"'+(q===Math.floor((m-1)/3)+1?" selected":"")+'>Quý '+q+'</option>'}).join("")+'</select><input type="number" id="ap-year" min="2000" max="2100" value="'+y+'" aria-label="Năm">';
   else pick='<input type="number" id="ap-year" min="2000" max="2100" value="'+y+'" aria-label="Chọn năm">';
   var buckets=[];
@@ -735,6 +761,16 @@ function adSection(){
    Mọi nơi (Tổng quan, Cần thu sớm, Quản lý TKQC Meta, Thống kê, số đỏ trên menu) đều dùng dueSoon() này. */
 var OVERDUE_DAYS=3;
 var OVERDUE_DEF="Quá hạn = khách còn nợ và có khoản chưa thanh toán từ "+OVERDUE_DAYS+" ngày trở lên.";
+
+/* ô ngày kiểu dd/mm/yyyy và ô chọn tháng tiếng Việt (không phụ thuộc ngôn ngữ trình duyệt) */
+function dmy(iso){return iso&&/^\d{4}-\d{2}-\d{2}/.test(iso)?iso.slice(8,10)+"/"+iso.slice(5,7)+"/"+iso.slice(0,4):""}
+function parseDmy(v){var m=String(v).trim().match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{4})$/);if(!m)return"";var d=+m[1],mo=+m[2],y=+m[3];if(mo<1||mo>12||d<1||d>31||y<2000||y>2100)return"";var dt=new Date(y,mo-1,d);if(dt.getMonth()!==mo-1)return"";return y+"-"+pad(mo)+"-"+pad(d)}
+function dateText(id,iso,label){return '<input type="text" inputmode="numeric" id="'+id+'" class="dmy" placeholder="dd/mm/yyyy" maxlength="10" value="'+esc(dmy(iso))+'" aria-label="'+esc(label)+'">'}
+function monthSelect(id,val,label){var n=new Date(),o="";
+  var list=[];for(var j=3;j>=-36;j--){var d2=new Date(n.getFullYear(),n.getMonth()+j,1);list.push(d2.getFullYear()+"-"+pad(d2.getMonth()+1))}
+  if(list.indexOf(val)<0)list.push(val);
+  list.forEach(function(k){o+='<option value="'+k+'"'+(k===val?" selected":"")+'>Tháng '+(+k.slice(5,7))+'/'+k.slice(0,4)+'</option>'});
+  return '<select id="'+id+'" aria-label="'+esc(label)+'">'+o+'</select>'}
 function dueSoon(){
   var now=new Date(),t0=new Date(now.getFullYear(),now.getMonth(),now.getDate()).getTime(),by={};
   S.spend.forEach(function(r){
@@ -789,8 +825,8 @@ function ovAmounts(){var A=[];S.spend.forEach(function(r){if(!r.date||!cust(r.cu
 function groupedSvg(groups,nameA,nameB){
   var mx0=0;groups.forEach(function(g){mx0=Math.max(mx0,g.a,g.b||0)});
   if(!mx0)return'';
-  var mx=niceMax(mx0),W=720,H=250,L=56,R=10,T=12,B=28,pw=W-L-R,ph=H-T-B,n=groups.length,gw=pw/n,two=groups.some(function(g){return g.b!=null}),bw=Math.min(two?22:34,gw*(two?.4:.7));
-  var s='<svg class="chart" viewBox="0 0 '+W+' '+H+'" role="img" aria-label="Biểu đồ chi quảng cáo">';
+  var narrow=window.innerWidth<700,mx=niceMax(mx0),W=narrow?420:720,H=narrow?330:300,fs=narrow?17:13,L=narrow?64:60,R=10,T=14,B=narrow?36:34,pw=W-L-R,ph=H-T-B,n=groups.length,gw=pw/n,two=groups.some(function(g){return g.b!=null}),bw=Math.min(two?22:34,gw*(two?.4:.7));
+  var s='<svg class="chart" viewBox="0 0 '+W+' '+H+'" role="img" aria-label="Biểu đồ chi quảng cáo" style="--fs:'+fs+'px">';
   for(var t=0;t<=4;t++){var y=T+ph-ph*t/4;s+='<line x1="'+L+'" x2="'+(W-R)+'" y1="'+y+'" y2="'+y+'"/><text x="'+(L-8)+'" y="'+(y+4)+'" text-anchor="end">'+short(mx*t/4)+'</text>'}
   groups.forEach(function(g,i){
     var cx=L+gw*i+gw/2,ha=ph*g.a/mx,hb=ph*(g.b||0)/mx;
@@ -815,7 +851,7 @@ function ovChart(){
     var best=0,bd=0;for(var k in dayA){if(dayA[k]>best){best=dayA[k];bd=k}}
     var act=Object.keys(dayA).length;
     extra='<span>Trung bình/ngày có chi: <b>'+vnd(act?Math.round(tA/act):0)+'</b></span><span>Ngày cao nhất: <b>'+(bd?bd+'/'+M+' · '+vnd(best):'—')+'</b></span>';
-    pick='<input type="month" id="ov-month" value="'+esc(mo)+'" aria-label="Chọn tháng">';
+    pick=monthSelect("ov-month",mo,"Chọn tháng");
   }else if(m==="month"){
     nameA="Năm "+y;nameB="Năm "+(y-1);
     for(var i=1;i<=12;i++)groups.push({l:"Tháng "+i+"/"+y,t:"T"+i,a:sum(y+"-"+pad(i)),b:sum((y-1)+"-"+pad(i))});
@@ -844,7 +880,7 @@ function ovChart(){
   var svg=groupedSvg(groups,nameA,nameB);
   if(!svg)h+=emptyBlock("Chưa có chi phí quảng cáo trong kỳ này","Chi phí lấy từ bảng chi tiêu của từng khách. Chọn kỳ khác hoặc nhập số ở mục Khách hàng.");
   else{
-    h+=(m==="year"?'<div class="legend"><span><i style="background:var(--bar-b)"></i>Tổng chi quảng cáo mỗi năm</span></div>':'<div class="legend"><span><i style="background:var(--bar-b)"></i>'+esc(nameA)+'</span><span><i style="background:var(--bar-a)"></i>'+esc(nameB)+'</span></div>')+svg;
+    h+=(m==="year"?'<div class="legend"><span><i style="background:var(--bar-b)"></i>Tổng chi quảng cáo mỗi năm</span></div>':'<div class="legend"><span><i style="background:var(--bar-b)"></i>'+esc(nameA)+'</span>'+(tB>0?'<span><i style="background:var(--bar-a)"></i>'+esc(nameB)+'</span>':'')+'</div>')+svg;
   }
   return h+'</section>';
 }
@@ -885,7 +921,7 @@ function vOverview(){
     P.live+=x.live;P.post+=x.post;P.net+=x.net;P.d+=x.xf-x.tot;if(x.live+x.post>0)P.set[r.customerId]=1;
   });
   var dn=0,nOwe=0,nOver=0;Object.keys(cb).forEach(function(k){dn+=cb[k];if(cb[k]<0)nOwe++;else if(cb[k]>0)nOver++});
-  var h='<div class="tools"><div class="tabs" role="group" aria-label="Xem số liệu theo">'+OVP.map(function(t){return '<button data-act="ovp" data-v="'+t[0]+'" aria-pressed="'+(opt===t[0])+'">'+t[1]+'</button>'}).join("")+'</div><label class="dayp"><span>Chọn ngày</span><input type="date" id="ov-day" value="'+(opt==="day"?esc(OR[0]):"")+'" max="'+todayStr()+'" aria-label="Chọn một ngày để xem"></label></div><div class="kpis top">'
+  var h='<div class="tools"><div class="tabs" role="group" aria-label="Xem số liệu theo">'+OVP.map(function(t){return '<button data-act="ovp" data-v="'+t[0]+'" aria-pressed="'+(opt===t[0])+'">'+t[1]+'</button>'}).join("")+'</div><label class="dayp"><span>Chọn ngày</span>'+dateText("ov-day",opt==="day"?OR[0]:"","Chọn một ngày để xem (dd/mm/yyyy)")+'</label></div><div class="kpis top">'
    +'<div class="kpi c-thu"><span>Tổng chi tiêu quảng cáo</span><b>'+vnd(P.live+P.post)+'</b><small>'+esc(OR[2])+' · Live '+num(P.live)+' · Bài viết '+num(P.post)+'</small></div>'
    +'<div class="kpi c-no '+((opt==="all"?balSum:-P.d)>0?"bad":"")+'"><span>'+(opt==="all"?"Khách đang nợ bạn":"Nợ phát sinh trong kỳ")+'</span><b>'+vnd(opt==="all"?balSum:Math.max(0,-P.d))+'</b><small>'+(opt==="all"?balN+' khách còn nợ':esc(OR[2])+(P.d>0?' · khách đã trả thêm '+vnd(P.d):'')+' · hiện tất cả khách đang nợ bạn '+vnd(balSum))+'</small></div>'
    +'<div class="kpi c-net"><span>Fee thực nhận</span><b>'+vnd(P.net)+'</b><small>'+esc(OR[2])+' · Phí dịch vụ − phí ngân hàng</small></div>'
@@ -1151,7 +1187,7 @@ function adAccHtml(){
      +'<td class="num"><b>'+(a.balance==null?"—":vnd(a.balance))+'</b></td>'
      +'<td class="num">'+(a.threshold!=null?vnd(a.threshold):'<input class="thr-in" data-id="'+esc(a.id||a.accountId)+'" inputmode="numeric" placeholder="Nhập ngưỡng" value="'+(a.thresholdManual!=null?num(a.thresholdManual):"")+'" aria-label="Ngưỡng thanh toán">')+'</td>'
      +'<td class="num '+cls+'">'+(i.left==null?"—":vnd(i.left))+tag+'</td>'
-     +'<td>'+(a.nextBill?esc(a.nextBill.split("-").reverse().join("/")):'<input type="date" class="bill-in" data-id="'+esc(a.id||a.accountId)+'" value="'+esc(a.billManual||"")+'" aria-label="Ngày thanh toán dự kiến">')+'</td>'
+     +'<td>'+(a.nextBill?esc(a.nextBill.split("-").reverse().join("/")):'<input type="text" inputmode="numeric" class="bill-in dmy" placeholder="dd/mm/yyyy" maxlength="10" data-id="'+esc(a.id||a.accountId)+'" value="'+esc(dmy(a.billManual||""))+'" aria-label="Ngày thanh toán dự kiến (dd/mm/yyyy)">')+'</td>'
      +'<td>'+(a.cardLast4?'•••• '+esc(a.cardLast4):"Chưa xác định")+'</td></tr>'}).join("")
    +'</tbody><tfoot><tr><td><b>Tổng cộng</b><span class="sub">'+info.length+' tài khoản</span></td><td class="num"><b>'+vnd(info.reduce(function(t,i){return t+(i.a.balance||0)},0))+'</b></td><td class="num"><b>'+vnd(info.reduce(function(t,i){return t+(i.th||0)},0))+'</b></td><td class="num"><b>'+vnd(info.reduce(function(t,i){return t+(i.left!=null?i.left:0)},0))+'</b></td><td></td><td></td></tr></tfoot></table></div><p class="hint">Ngưỡng thanh toán là mức dư nợ Facebook sẽ tự trừ tiền (nếu Facebook không trả về, bạn tự nhập ngưỡng và ngày thanh toán vào ô, xem ở Ads Manager → Thanh toán), không phải số dư thẻ ngân hàng. Còn lại = Ngưỡng − Dư nợ; cảnh báo khi còn dưới 20% ngưỡng. “Chưa xác định” nghĩa là Facebook chưa trả về dữ liệu đó. Cập nhật lần cuối: '+new Date(Math.max.apply(null,AC.map(function(a){return a.updatedAt||0}))).toLocaleString("vi-VN")+'.</p></section>';
   return h;
@@ -1294,6 +1330,17 @@ function vStats(){
 }
 
 /* ---------- shell ---------- */
+
+/* gán màu (info/ok/bad) và biểu tượng cho từng thẻ KPI theo nhãn */
+var KPI_IC=[[/nợ bạn|nợ phát sinh|dư nợ/i,"debt"],[/quá hạn/i,"warn"],[/khách mới/i,"userplus"],[/thực nhận/i,"fee"],[/ngưỡng/i,"gauge"],[/số dư ngân hàng/i,"bank"],[/phí thanh toán/i,"percent"],[/số dư thực tế/i,"wallet"],[/tỷ lệ/i,"chart"],[/đã thu/i,"check"],[/live/i,"live"],[/bài viết/i,"post"],[/tổng (chi tiêu|spend)/i,"spend"],[/tổng đã xuất/i,"doc"],[/khách|trung bình/i,"users"]];
+var KPI_OK=/thực nhận|đã thu|tỷ lệ|số dư thực tế/i;
+function tagKpis(root){
+  (root||document).querySelectorAll(".kpis .kpi").forEach(function(k){
+    var sp=k.querySelector("span");if(!sp)return;var t=sp.textContent||"",ic="chart";
+    for(var i=0;i<KPI_IC.length;i++){if(KPI_IC[i][0].test(t)){ic=KPI_IC[i][1];break}}
+    k.className=k.className.replace(/\b(ic|t)-\S+/g,"").replace(/\s+/g," ").trim()+" ic-"+ic+" "+(k.classList.contains("bad")?"t-bad":(KPI_OK.test(t)?"t-ok":"t-info"));
+  });
+}
 function render(){
   if(pointerDown){pendingRender=true;return}
   var v=(ui.view==="khach-hang"&&ui.cid&&cust(ui.cid))?vCustomerDetail:(({"tong-quan":vOverview,"spend":vSpend,"khach-hang":vCustomers,"cong-no":vPayments,"bang-gia":vPrices,"thong-ke":vStats})[ui.view]||vOverview);
@@ -1315,6 +1362,7 @@ function render(){
 
   (function(){
     var L=["Ngày","Quảng cáo Live","Quảng cáo Bài viết","Phí %","Phí dịch vụ","Tổng","Note","Khách chuyển khoản",""];
+    tagKpis($("#main"));
     document.querySelectorAll("#main table").forEach(function(t){
       var led=t.classList.contains("ledger"),ths=[];
       if(!led)t.querySelectorAll("thead th").forEach(function(th){ths.push(th.textContent.trim())});
@@ -1499,7 +1547,7 @@ document.addEventListener("change",function(e){
     return;
   }
   if(e.target.classList&&e.target.classList.contains("bill-in")){
-    db.collection("fbaccounts").doc(e.target.dataset.id).set({billManual:v||null},{merge:true}).catch(function(er){toast("Không lưu được ngày: "+((er&&(er.message||er.code))||"lỗi"))});
+    db.collection("fbaccounts").doc(e.target.dataset.id).set({billManual:parseDmy(v)||null},{merge:true}).catch(function(er){toast("Không lưu được ngày: "+((er&&(er.message||er.code))||"lỗi"))});
     return;
   }
   if(e.target.classList&&e.target.classList.contains("thr-in")){
@@ -1508,11 +1556,11 @@ document.addEventListener("change",function(e){
     return;
   }
   if(id==="pc"){ui.pc=v;render()}
-  else if(id==="vw-day"){ui.vday=v;if(ui.vdata)$("#main").innerHTML=viewerHtml(ui.vdata)}
-  else if(id==="ov-day"){if(v){ui.ovd=v;ui.ovp="day";render()}}
+  else if(id==="vw-day"){ui.vday=v;if(ui.vdata){$("#main").innerHTML=viewerHtml(ui.vdata);tagKpis($("#main"))}}
+  else if(id==="ov-day"){var iv=parseDmy(v);if(iv){ui.ovd=iv;ui.ovp="day";render()}else if(v){toast("Nhập ngày theo dạng dd/mm/yyyy, ví dụ 28/10/2026")}}
   else if(id==="ov-month"){if(v){ui.ovmo=v;render()}}
   else if(id==="ov-year"){var yy=Math.round(Number(v));if(yy>=2000&&yy<=2100){ui.ovy=yy;render()}}
-  else if(id==="ap-date"){if(v){ui.anchor=v;render()}}
+  else if(id==="ap-date"){var iv2=parseDmy(v);if(iv2){ui.anchor=iv2;render()}else if(v){toast("Nhập ngày theo dạng dd/mm/yyyy, ví dụ 28/10/2026")}}
   else if(id==="ap-month"){if(v){ui.anchor=v+"-01";render()}}
   else if(id==="ap-q"||id==="ap-year"){
     var yEl=$("#ap-year"),yr=Math.round(Number(yEl&&yEl.value));
