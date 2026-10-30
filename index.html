@@ -1240,21 +1240,8 @@ function debtRows(){
   }).sort(function(a,b){var o={overdue:0,pending:1,paid:2};return o[a.st]-o[b.st]||b.bal-a.bal});
 }
 function vPayments(){
-  var f=ui.pf,pc=ui.pc,all=debtRows().filter(function(r){return!pc||r.id===pc});
-  var cnt={all:all.length,pending:0,overdue:0,paid:0};all.forEach(function(r){cnt[r.st]++});
-  var list=all.filter(function(r){return f==="all"||r.st===f});
-  var tabs=[["all","Tất cả"],["pending","Chờ thu"],["overdue","Quá hạn"],["paid","Đã thu"]];
-  var h='<div class="tools"><div class="tabs" role="group" aria-label="Lọc theo trạng thái">'
-    +tabs.map(function(t){return '<button data-act="pf" data-v="'+t[0]+'" aria-pressed="'+(f===t[0])+'">'+t[1]+' ('+cnt[t[0]]+')</button>'}).join("")+'</div>'
-    +'<select id="pc" aria-label="Lọc theo khách hàng"><option value="">Mọi khách hàng</option>'+S.customers.map(function(c){return '<option value="'+esc(c.id)+'"'+(pc===c.id?" selected":"")+'>'+esc(c.name)+'</option>'}).join("")+'</select></div>';
-  var ST={paid:["Đã thu","ok"],pending:["Chờ thu","wait"],overdue:["Quá hạn","bad"]};
-  if(!debtRows().length)h+='<div class="tablewrap">'+emptyBlock("Chưa có công nợ","Khi khách có chi phí quảng cáo trong bảng chi tiêu, số tiền đã xuất, đã chuyển và còn nợ sẽ hiện ở đây.")+'</div>';
-  else if(!list.length)h+='<div class="tablewrap">'+emptyBlock("Không có khách nào","Không có khách nào khớp bộ lọc này.")+'</div>';
-  else h+='<div class="tablewrap"><table><thead><tr><th>Khách hàng</th><th class="num">Đã xuất</th><th class="num">Đã chuyển</th><th class="num">Còn nợ</th><th>Chưa thanh toán từ</th><th>Trạng thái</th><th></th></tr></thead><tbody>'
-    +list.map(function(r){var s=ST[r.st];return '<tr><td><b>'+esc(custName(r.id))+'</b></td><td class="num">'+num(r.tot)+'</td><td class="num">'+nz(r.xf)+'</td><td class="num">'+(r.bal>0?'<b>'+num(r.bal)+'</b>':(r.bal<0?'<span class="sub">Dư '+num(-r.bal)+'</span>':"—"))+'</td><td>'+(r.oldest?fmtDate(r.oldest)+'<span class="sub">'+r.days+' ngày</span>':"—")+'</td><td><span class="pill '+s[1]+'">'+s[0]+'</span></td><td class="act"><button class="btn small" data-act="goc" data-id="'+esc(r.id)+'">Bảng chi tiêu</button></td></tr>'}).join("")
-    +'</tbody></table></div><details class="calc"><summary>ⓘ Cách tính</summary><p class="hint">Số liệu lấy từ bảng chi tiêu của từng khách. Còn nợ = (chi phí quảng cáo + phí dịch vụ) − số khách đã chuyển. '+OVERDUE_DEF+'</p></details>';
   var owe=0;debtRows().forEach(function(r){if(r.bal>0)owe+=r.bal});
-  return{title:"Quản lý TKQC Meta",sub:"Khách còn nợ "+vnd(owe),html:adAccHtml()+h};
+  return{title:"Quản lý TKQC Meta",sub:"Khách còn nợ "+vnd(owe),html:adAccHtml()};
 }
 
 var PLANS=[
