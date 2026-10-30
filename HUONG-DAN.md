@@ -46,6 +46,15 @@ service cloud.firestore {
 
 **Đổi mã Facebook (`FB_TOKEN`):** Business Settings → Người dùng hệ thống → Tạo mã, tick `ads_read`, `ads_management`, `business_management`. Dán vào GitHub Secrets, ghi đè `FB_TOKEN`. Không gửi mã vào chat hay file công khai.
 
+**Nút Làm mới ở mục Spend hiện tại (kéo chi phí ngay, khoảng 30 giây):** là một hàm Firebase (thư mục `functions/`, vùng asia-southeast1) chạy cùng lõi đồng bộ với GitHub (`functions/sync.js`). Cài một lần trên máy tính có Node.js:
+1. Tải mã nguồn (GitHub → Code → Download ZIP), mở cửa sổ lệnh trong thư mục đó.
+2. `npm install -g firebase-tools`, rồi `firebase login` (đăng nhập đúng Gmail chủ dự án qldt-188a5).
+3. `cd functions`, `npm install`, `cd ..`
+4. `firebase functions:secrets:set FB_TOKEN --project qldt-188a5`, dán mã Facebook khi được hỏi (mã không hiện lên màn hình).
+5. `firebase deploy --only functions --project qldt-188a5` (cần gói Blaze; nếu hỏi số ngày giữ bản cài cũ thì gõ 1).
+Khi đổi mã Facebook, nhớ cập nhật cả GitHub Secrets (`FB_TOKEN`) và Firebase (`firebase functions:secrets:set FB_TOKEN`, rồi deploy lại).
+Chưa cài hàm này thì nút Làm mới chỉ làm mới số liệu đang hiển thị; số mới vẫn về theo lịch 30 phút.
+
 ## 5. Mục Quản Lý TKQC META
 - **Bảng tài khoản quảng cáo:** dư nợ hiện tại và 4 số cuối thẻ lấy tự động từ Facebook. **Ngưỡng thanh toán** và **ngày thanh toán dự kiến** Facebook không trả về, nên bạn tự nhập từ Ads Manager → Thanh toán. Ô nào chưa có dữ liệu hiện "Chưa xác định", web không tự đoán.
 - **Cảnh báo:** báo "Sắp chạm ngưỡng" khi còn dưới 20% ngưỡng, "Đã chạm ngưỡng" khi dư nợ ≥ ngưỡng.
