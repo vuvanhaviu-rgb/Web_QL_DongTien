@@ -9,6 +9,9 @@ on:
         description: "Tick để quét đủ 30 ngày và dọn số cũ (tốn hạn mức, chỉ dùng khi cần)"
         type: boolean
         default: false
+      days:
+        description: "Số ngày quét khi tick full (ví dụ 365)"
+        default: "40"
 
 permissions:
   contents: read
@@ -20,7 +23,7 @@ concurrency:
 jobs:
   sync:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -32,4 +35,5 @@ jobs:
           FB_TOKEN: ${{ secrets.FB_TOKEN }}
           FIREBASE_SA: ${{ secrets.FIREBASE_SA }}
           FULL: ${{ inputs.full }}
+          SYNC_DAYS: ${{ inputs.days }}
           LIVE_WORD: ${{ vars.LIVE_WORD }}

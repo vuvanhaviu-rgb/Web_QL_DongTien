@@ -4,7 +4,7 @@ const admin = require("firebase-admin");
 
 const TOKEN = process.env.FB_TOKEN;
 const SA = process.env.FIREBASE_SA;
-const DAYS = Number(process.env.SYNC_DAYS || 40);       // quét lại N ngày gần nhất (đủ cho tab Tháng này và số Facebook điều chỉnh)
+const DAYS = Math.min(1100, Math.max(2, Number(process.env.SYNC_DAYS) || 40));       // quét lại N ngày gần nhất (đủ cho tab Tháng này và số Facebook điều chỉnh)
 const LIVE_WORDS = (process.env.LIVE_WORD || "live, livestream").toLowerCase().split(",").map(x => x.trim()).filter(Boolean); // tên chiến dịch có một trong các chữ này => Live
 const API = "https://graph.facebook.com/v21.0";
 
@@ -12,7 +12,8 @@ if (!TOKEN || !SA) { console.error("Thiếu FB_TOKEN hoặc FIREBASE_SA trong Gi
 admin.initializeApp({ credential: admin.credential.cert(JSON.parse(SA)) });
 const db = admin.firestore();
 // Nếu chạy quá 12 phút thì tự dừng, để lần sau chạy lại thay vì treo mãi
-setTimeout(() => { console.error("QUÁ 12 PHÚT: tự dừng"); process.exit(2); }, 12 * 60e3).unref();
+const LIMIT_MIN = DAYS > 60 ? 40 : 12;
+setTimeout(() => { console.error(`QUÁ ${LIMIT_MIN} PHÚT: tự dừng`); process.exit(2); }, LIMIT_MIN * 60e3).unref();
 
 // Thông tin tài khoản quảng cáo: dư nợ, ngưỡng thanh toán, thẻ, ngày thanh toán (chỉ ghi khi Facebook trả về)
 const OFFSET1 = ["VND", "JPY", "KRW", "CLP", "ISK", "HUF", "PYG", "TWD", "UGX"];
