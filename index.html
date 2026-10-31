@@ -654,6 +654,7 @@ table.sp td:first-child,table.sp td:first-child .link{font-size:16px}
 .sq-r .d.red{color:#B42318;font-weight:600}
 .sq-r.old{background:#FAFAFB}
 .sq-r.old>span:first-child{font-size:14px;line-height:1.1;white-space:normal}
+.sq-r>span.f{display:grid;justify-content:end;justify-items:center;text-align:center}
 .sq-r .f small{display:block;font-size:11px;font-weight:500;color:#5B6472;line-height:1;margin-top:2px}
 .sq-r .p small{display:block;font-size:11px;font-weight:500;color:#5B6472;line-height:1}
 .sq-r.t{margin-top:auto;height:50px;background:#F7F8FA;border-bottom:0;font-weight:700}
@@ -1789,7 +1790,7 @@ function reportHtml(c,o){
     /* % phí dịch vụ lấy theo từng ngày (theo bảng Khách hàng / Bảng chi tiêu), ghi ngay dưới số tiền phí */
     var rts={};D.rem.forEach(function(r){rts[r.rt]=1});if(D.y.tot>0&&D.y.rt!==null)rts[D.y.rt]=1;
     var rk=Object.keys(rts),uni=rk.length===1&&rk[0]!=="-1"&&rk[0]!=="null"?Number(rk[0]):null;
-    var cF=function(f,rt){return '<span class="f">'+num(f)+(rt===null||rt===undefined?"":'<small>'+(rt<0?"nhiều mức":pct(rt))+'</small>')+'</span>'};
+    var cF=function(f,rt){return '<span class="f">'+num(f)+(rt===null||rt===undefined?"":'<small>('+(rt<0?"nhiều mức":pct(rt))+')</small>')+'</span>'};
     var cL=hasL?function(v){return '<span>'+num(v)+'</span>'}:function(){return ""},cP=hasP?function(v){return '<span class="m">'+num(v)+'</span>'}:function(){return ""};
     var shown=list,oldG=null;
     if(list.length>MAXR){shown=list.slice(0,MAXR-1);oldG=list.slice(MAXR-1)} /* quá nhiều ngày: gộp các ngày cũ nhất thành một dòng để ảnh luôn vuông */
