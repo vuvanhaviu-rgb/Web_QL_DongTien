@@ -672,6 +672,7 @@ table.sp td:first-child,table.sp td:first-child .link{font-size:16px}
 .sq-am span:first-child{font-size:14px;color:#7A271A}
 .sq-am span:last-child{font-size:28px;font-weight:800;color:#B42318;letter-spacing:-0.6px;white-space:nowrap}
 .sq-qr{align-self:center;width:100%;height:auto;border-radius:12px;border:1px solid #E4E6EB;display:block;background:#fff}
+.sq-note{margin:0;text-align:center;font-size:16px;font-style:italic;font-weight:700;line-height:1.35;color:#B42318}
 .sq-bk{display:flex;flex-direction:column;gap:7px;font-size:15px;margin-top:auto}
 .sq-bk div{display:flex;justify-content:space-between;gap:10px}
 .sq-bk div span:first-child{color:#5B6472}
@@ -1813,6 +1814,7 @@ function reportHtml(c,o){
         qr=o.qr||("https://img.vietqr.io/image/"+encodeURIComponent(P.bankCode)+"-"+encodeURIComponent(P.acc)+"-compact2.png?amount="+D.bal+"&addInfo="+encodeURIComponent(info)+"&accountName="+encodeURIComponent(P.owner));
     h+='<aside class="sq-pay"><h2>Thanh toán</h2><div class="sq-am"><span>Số tiền cần chuyển</span><span>'+m(D.bal)+'</span></div>'
       +'<img class="sq-qr" src="'+esc(qr)+'" alt="Mã QR chuyển khoản '+esc(P.bankName)+'" width="228">'
+      +'<p class="sq-note">(Lưu ý: Kiểm tra thông tin trước khi chuyển khoản)</p>'
       +'<div class="sq-bk"><div><span>Ngân hàng</span><span>'+esc(P.bankName)+'</span></div><div class="n"><span>Số tài khoản</span><span>'+esc(groups4(P.acc))+'</span></div><div><span>Chủ tài khoản</span><span>'+esc(P.owner)+'</span></div></div></aside>';
   }else{
     h+='<section class="sq-tbl"><div class="sq-paid"><svg width="150" height="150" viewBox="0 0 24 24" fill="none" stroke="#1B7F4B" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><path d="m7.5 12.5 3 3 6-7"></path></svg><b>Đã thanh toán đủ</b><span>Cảm ơn bạn. Hiện không còn khoản nào cần thanh toán.</span></div></section>';
