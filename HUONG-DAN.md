@@ -65,7 +65,7 @@ Mở https://vhagency.io.vn bằng trình duyệt điện thoại → menu trìn
 
 ## 9. Thẻ Chi Tiêu Gửi Khách (báo cáo gửi Zalo)
 1. Vào **Cài đặt** → mục *Thông tin chuyển khoản*: nhập ngân hàng, mã ngân hàng (Techcombank là TCB), số tài khoản, chủ tài khoản và số điện thoại liên hệ. Sửa xong bấm ra ngoài ô để tự lưu.
-2. Vào thẻ **Chi Tiêu Gửi Khách**, chọn khách ở ô trên cùng (gõ tên để tìm). Mặc định là khách đang nợ nhiều nhất.
+2. Vào thẻ **Chi Tiêu Gửi Khách**, chọn *Ngày chi tiêu* (mặc định hôm qua), rồi chọn khách ở ô bên cạnh (gõ tên để tìm). Danh sách chỉ hiện khách có phát sinh chi phí quảng cáo ngày đó, xếp chi phí cao nhất lên đầu; tick "Hiện cả khách không phát sinh chi phí" nếu cần thấy mọi khách. Báo cáo hiển thị chi phí của đúng ngày đã chọn.
 3. Bấm **Tải ảnh** để tải ảnh PNG của khách đang chọn, hoặc **Tải ảnh tất cả khách** để tải lần lượt ảnh của mọi khách còn nợ (khách đã trả đủ được bỏ qua). Trình duyệt có thể hỏi cho phép tải nhiều file, hãy chọn Cho phép.
 4. Mã QR tự tạo theo số tiền nợ và nội dung `VH <MÃ KHÁCH> <ngàythángnay>`. Nếu mã QR không tải được, báo cáo dùng ảnh QR tĩnh (`assets/ma-qr-techcombank.png`, không có sẵn số tiền).
 5. Tổng cần thanh toán luôn bằng số *Còn nợ* ở thẻ Khách hàng. Khách trả một phần thì được trừ vào ngày cũ nhất trước.

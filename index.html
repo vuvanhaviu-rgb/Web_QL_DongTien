@@ -552,6 +552,12 @@ table.sp td:first-child,table.sp td:first-child .link{font-size:16px}
 /* ===== Chi Tiêu Gửi Khách: báo cáo theo file thiết kế (màu, cỡ chữ, khoảng cách giữ đúng bản mẫu; class bắt đầu bằng rp- để không ảnh hưởng phần khác) ===== */
 .rp-pick{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin:0 0 12px}
 .rp-pick>label{font-weight:600;font-size:12px}
+.rp-pick input[type=date]{height:44px;padding:0 12px;border-radius:10px;border:1px solid #C9CDD3;background:#fff;color:#1C1E21;font-size:14px;font-weight:600;width:auto}
+.rp-pick .rp-all{display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer}
+.rp-pick .rp-all input{width:auto}
+.rp-pick .rp-cnt{font-size:12px;color:var(--muted)}
+.rp-list .rp-sd{display:flex;flex-direction:column;align-items:flex-end;gap:2px}
+.rp-list button small.c{color:#3A4250;font-weight:500}
 .rp-cb{position:relative;flex:1 1 280px;max-width:420px}
 .rp-cb input{width:100%;height:44px;padding:0 14px;border-radius:10px;border:1px solid #C9CDD3;background:#fff;color:#1C1E21;font-size:14px;font-weight:600}
 .rp-list{position:absolute;left:0;right:0;top:48px;z-index:20;max-height:320px;overflow:auto;background:#fff;color:#1C1E21;border:1px solid #C9CDD3;border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.14);display:none}
@@ -1701,8 +1707,10 @@ var groups4=function(s){return String(s).replace(/\D/g,"").replace(/(.{4})/g,"$1
 var WDFULL=["Chủ Nhật","Thứ Hai","Thứ Ba","Thứ Tư","Thứ Năm","Thứ Sáu","Thứ Bảy"];
 /* Số liệu dùng đúng công thức của app: spendRow() cho chi phí/phí/tổng; nợ = Σ"Tổng" − Σ"Khách chuyển khoản" (giống custBalances / "Còn nợ").
    Khách trả một phần thì trừ vào ngày cũ nhất trước; ngày nào trả đủ thì không hiện. */
-function reportData(c){
-  var yd=ymd(new Date(Date.now()-864e5)),td=todayStr(),perDay={},paid=0;
+var dm2=function(d){return d.slice(8,10)+"/"+d.slice(5,7)};
+var yestStr=function(){return ymd(new Date(Date.now()-864e5))};
+function reportData(c,date){
+  var yd=date||yestStr(),td=todayStr(),perDay={},paid=0;
   S.spend.forEach(function(r){
     if(r.customerId!==c.id)return;
     var x=spendRow(r);paid+=x.xf;
@@ -1726,11 +1734,11 @@ function reportData(c){
   rem.forEach(function(o){cum+=o.owe;o.cum=cum});
   var t0=new Date(+td.slice(0,4),+td.slice(5,7)-1,+td.slice(8,10)).getTime();
   rem.forEach(function(o){o.days=Math.max(0,Math.round((t0-new Date(+o.d.slice(0,4),+o.d.slice(5,7)-1,+o.d.slice(8,10)).getTime())/864e5))});
-  return{yd:yd,td:td,y:y,bal:cum,rem:rem,rate:defaultRate(c.id)};
+  return{yd:yd,td:td,y:y,bal:cum,rem:rem,rate:defaultRate(c.id),isY:yd===yestStr()};
 }
 function reportHtml(c,o){
   o=o||{};
-  var D=reportData(c),P=payCfg(),dm=function(d){return d.slice(8,10)+"/"+d.slice(5,7)},m=function(v){return num(v)+" ₫"};
+  var D=reportData(c,o.date),P=payCfg(),dm=function(d){return d.slice(8,10)+"/"+d.slice(5,7)},m=function(v){return num(v)+" ₫"};
   var ydt=new Date(+D.yd.slice(0,4),+D.yd.slice(5,7)-1,+D.yd.slice(8,10)),rate=String(D.rate).replace(".",",")+"%";
   var sy=S.fbaccounts.filter(function(x){return x.id==="__sync"})[0],ut=new Date(sy&&sy.at?sy.at:Date.now());
   var upd;try{var f=new Intl.DateTimeFormat("vi-VN",{timeZone:"Asia/Ho_Chi_Minh",hour:"2-digit",minute:"2-digit",day:"2-digit",month:"2-digit",year:"numeric",hourCycle:"h23"}).formatToParts(ut),g={};f.forEach(function(p){g[p.type]=p.value});upd=g.hour+":"+g.minute+" · "+g.day+"/"+g.month+"/"+g.year}catch(e){upd=pad(ut.getHours())+":"+pad(ut.getMinutes())+" · "+dmy(ymd(ut))}
@@ -1738,14 +1746,14 @@ function reportHtml(c,o){
   var tools=o.tools?'<button type="button" class="rp-btn" data-act="rpimg"'+(rptBusy?" disabled":"")+'>'+dl+'Tải ảnh</button><button type="button" class="rp-btn" data-act="rpall"'+(rptBusy?" disabled":"")+'>'+dl+'Tải ảnh tất cả khách</button>':"";
   var h='<div class="rp"><header class="rp-hd"><div><div class="rp-br"><div class="rp-lg">VH</div><div class="rp-bt"><b>VH Agency</b><span>Báo cáo chi tiêu quảng cáo</span></div></div>'
     +'<div class="rp-rt"><span>Cập nhật '+upd+'</span>'+tools+'</div></div></header><main class="rp-mn">'
-    +'<div class="rp-top"><div><span class="rp-hi">Em gửi chi tiêu quảng cáo hôm qua và dư nợ còn lại nhé.</span><h1>'+esc(c.name)+'</h1></div>'
+    +'<div class="rp-top"><div><span class="rp-hi">Em gửi chi tiêu quảng cáo '+(D.isY?"hôm qua":"ngày "+dm(D.yd))+' và dư nợ còn lại nhé.</span><h1>'+esc(c.name)+'</h1></div>'
     +'<span class="rp-dt">Báo cáo ngày <strong>'+WDFULL[ydt.getDay()]+', '+dmy(D.yd)+'</strong></span></div>';
   /* ba thẻ số liệu */
   var cost=D.y.tot>0
     ?'<span class="rp-big">'+m(D.y.tot)+'</span><div class="rp-ln"><span>Live <strong>'+num(D.y.live)+'</strong></span><span>Bài viết <strong>'+num(D.y.post)+'</strong></span><span>Phí '+rate+' <strong>'+num(D.y.fee)+'</strong></span></div>'
     :'<span class="rp-big sm">Không phát sinh chi phí</span>';
   var owe=D.bal>0;
-  h+='<div class="rp-cards"><section class="rp-cd"><span>Chi phí hôm qua ('+dm(D.yd)+')</span>'+cost+'</section>';
+  h+='<div class="rp-cards"><section class="rp-cd"><span>Chi phí '+(D.isY?"hôm qua":"ngày")+' ('+dm(D.yd)+')</span>'+cost+'</section>';
   if(owe){
     var old=D.rem[0],nw=D.rem[D.rem.length-1];
     h+='<section class="rp-cd red"><span>Tổng cần thanh toán</span><span class="rp-big red">'+m(D.bal)+'</span><span class="rp-sb">Cộng dồn từ '+dm(old.d)+' đến '+dm(nw.d)+'</span></section>'
@@ -1759,7 +1767,7 @@ function reportHtml(c,o){
     var sl=0,sp=0,sf=0;
     var rows=D.rem.slice().reverse().map(function(r){
       sl+=r.live;sp+=r.post;sf+=r.fee;
-      var isNew=r.d===D.yd;
+      var isNew=r.d===yestStr();
       return '<div class="rp-r'+(isNew?" nw":"")+'"><span>'+dm(r.d)+(isNew?' <em>Mới</em>':"")+'</span><span>'+num(r.live)+'</span><span class="m">'+num(r.post)+'</span><span>'+num(r.fee)+'</span>'
         +'<span class="p">'+num(r.owe)+(r.cut>0?'<small>đã trừ '+num(r.cut)+'</small>':"")+'</span><span class="c">'+num(r.cum)+'</span><span class="d'+(r.days>=4?" red":"")+'">'+r.days+' ngày</span></div>';
     }).join("");
@@ -1779,19 +1787,29 @@ function reportHtml(c,o){
     +'<span>Thắc mắc vui lòng liên hệ VH Agency'+(P.phone?': <a href="tel:'+esc(P.phone.replace(/[^0-9+]/g,""))+'">'+esc(P.phone)+'</a>':"")+'</span></section></aside></div></main></div>';
   return h;
 }
+/* chi phí quảng cáo của khách trong một ngày (bảng chi tiêu, nếu chưa chốt thì Spend Facebook) – dùng để lọc danh sách khách theo hoạt động */
+function dayCost(cid,date){
+  var v=0;
+  S.spend.forEach(function(r){if(r.customerId===cid&&r.date===date){var x=spendRow(r);v+=x.live+x.post}});
+  if(!(v>0))S.fbspend.forEach(function(f){if(f.customerId===cid&&f.date===date)v+=(Number(f.live)||0)+(Number(f.post)||0)});
+  return v;
+}
+function rpDate(){return ui.rpDate&&ui.rpDate<=todayStr()?ui.rpDate:yestStr()}
 function vReport(){
   var bal=custBalances(),list=S.customers.slice().sort(function(a,b){return (bal[b.id]||0)-(bal[a.id]||0)||String(a.name).localeCompare(String(b.name),"vi")});
   if(!list.length)return{title:"Chi Tiêu Gửi Khách",sub:"Báo cáo chi tiêu và công nợ để gửi khách",html:'<div class="empty"><span>Chưa có khách hàng nào.</span></div>'};
   var c=cust(ui.rpCid)||list[0];ui.rpCid=c.id;
-  var pick='<div class="rp-pick"><label for="rp-q">Khách hàng</label><div class="rp-cb"><input id="rp-q" type="text" autocomplete="off" spellcheck="false" value="'+esc(c.name)+'" placeholder="Gõ tên khách để tìm" role="combobox" aria-expanded="false" aria-controls="rp-list"><div class="rp-list" id="rp-list" role="listbox"></div></div></div>';
-  return{title:"Chi Tiêu Gửi Khách",sub:"Báo cáo chi tiêu và công nợ để gửi khách",html:pick+reportHtml(c,{tools:true})};
+  var rd=rpDate(),cnt=S.customers.filter(function(x){return dayCost(x.id,rd)>0}).length;
+  var pick='<div class="rp-pick"><label for="rp-date">Ngày chi tiêu</label><input id="rp-date" type="date" value="'+rd+'" max="'+todayStr()+'"><label for="rp-q">Khách hàng</label><div class="rp-cb"><input id="rp-q" type="text" autocomplete="off" spellcheck="false" value="'+esc(c.name)+'" placeholder="Gõ tên khách để tìm" role="combobox" aria-expanded="false" aria-controls="rp-list"><div class="rp-list" id="rp-list" role="listbox"></div></div><label class="rp-all"><input type="checkbox" id="rp-all"'+(ui.rpAll?" checked":"")+'> Hiện cả khách không phát sinh chi phí</label><span class="rp-cnt">'+cnt+' khách có chi phí ngày '+dm2(rd)+'</span></div>';
+  return{title:"Chi Tiêu Gửi Khách",sub:"Báo cáo chi tiêu và công nợ để gửi khách",html:pick+reportHtml(c,{tools:true,date:rd})};
 }
 /* ô chọn khách có tìm theo tên (bỏ dấu) */
 function rpFill(q){
   var box=document.getElementById("rp-list");if(!box)return;
   var bal=custBalances(),k=noAccent(q||"").toLowerCase().trim();
-  var list=S.customers.filter(function(c){return !k||noAccent(c.name).toLowerCase().indexOf(k)>=0}).sort(function(a,b){return (bal[b.id]||0)-(bal[a.id]||0)||String(a.name).localeCompare(String(b.name),"vi")});
-  box.innerHTML=list.length?list.map(function(c,i){return '<button type="button" role="option" data-act="rppick" data-id="'+esc(c.id)+'"'+(i===0?' class="on"':"")+'><span>'+esc(c.name)+'</span>'+(bal[c.id]>0?'<small>'+vnd(bal[c.id])+'</small>':'<small class="z">Đã trả đủ</small>')+'</button>'}).join(""):'<div class="rp-none">Không có khách nào khớp</div>';
+  var rd=rpDate(),cost={};S.customers.forEach(function(c){cost[c.id]=dayCost(c.id,rd)});
+  var list=S.customers.filter(function(c){return (ui.rpAll||cost[c.id]>0)&&(!k||noAccent(c.name).toLowerCase().indexOf(k)>=0)}).sort(function(a,b){return (cost[b.id]||0)-(cost[a.id]||0)||(bal[b.id]||0)-(bal[a.id]||0)||String(a.name).localeCompare(String(b.name),"vi")});
+  box.innerHTML=list.length?list.map(function(c,i){return '<button type="button" role="option" data-act="rppick" data-id="'+esc(c.id)+'"'+(i===0?' class="on"':"")+'><span>'+esc(c.name)+'</span><span class="rp-sd">'+(bal[c.id]>0?'<small>Nợ '+vnd(bal[c.id])+'</small>':'<small class="z">Đã trả đủ</small>')+(cost[c.id]>0?'<small class="c">Chi phí '+vnd(cost[c.id])+'</small>':'')+'</span></button>'}).join(""):'<div class="rp-none">'+(ui.rpAll?"Không có khách nào khớp":"Không có khách nào phát sinh chi phí ngày "+dm2(rd)+" khớp tên này")+'</div>';
   box.classList.add("open");var inp=document.getElementById("rp-q");if(inp)inp.setAttribute("aria-expanded","true");
 }
 function rpClose(){var b=document.getElementById("rp-list"),i=document.getElementById("rp-q");if(b)b.classList.remove("open");if(i){i.setAttribute("aria-expanded","false");var c=cust(ui.rpCid);if(c)i.value=c.name}}
@@ -1832,10 +1850,10 @@ async function qrForExport(c,D){
 var rpLast={fallback:0};
 async function reportPng(c){
   await loadHtmlToImage();
-  var D=reportData(c),qr=null;
+  var D=reportData(c,rpDate()),qr=null;
   if(D.bal>0){qr=await qrForExport(c,D);if(qr.fallback)rpLast.fallback++}
   var st=document.getElementById("rp-stage");if(!st){st=document.createElement("div");st.id="rp-stage";st.setAttribute("aria-hidden","true");document.body.appendChild(st)}
-  st.innerHTML=reportHtml(c,{tools:false,qr:qr&&qr.src});
+  st.innerHTML=reportHtml(c,{tools:false,qr:qr&&qr.src,date:rpDate()});
   try{
     /* chờ font + ảnh mã QR tải xong rồi mới chụp */
     await Promise.all([400,500,600,700,800].map(function(w){return document.fonts.load(w+" 16px 'VH Report'","Ảẫờ₫0123456789")}));
@@ -2082,6 +2100,8 @@ document.addEventListener("input",function(e){
 });
 document.addEventListener("change",function(e){
   var id=e.target.id,v=e.target.value;
+  if(id==="rp-date"){ui.rpDate=/^\d{4}-\d{2}-\d{2}$/.test(v)?v:"";render();return}
+  if(id==="rp-all"){ui.rpAll=!!e.target.checked;render();return}
   if(e.target.classList&&e.target.classList.contains("pay-in")){
     var pk=e.target.dataset.k,pv=String(v).trim();
     if(pk==="acc")pv=pv.replace(/\D/g,"");
