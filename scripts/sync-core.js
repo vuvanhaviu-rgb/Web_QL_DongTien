@@ -107,9 +107,9 @@ async function main() {
           Object.assign({ customerId: c.id, date: day, live: by[day].live, post: by[day].post, updatedAt: Date.now() },
             day >= since7 ? { camps: (by[day].camps || []).slice(0, 40) } : {}), { merge: true });
       }
-      // Cập nhật bảng chi tiêu của khách: hôm nay (và hôm qua nếu chưa chốt) mỗi lần chạy; từ 10h sáng giờ VN chốt hôm qua một lần rồi khóa.
-      // Chỉ đụng vào dòng do Facebook tạo (fromFb). Dòng bạn tự nhập hoặc đã chốt thì không đè.
-      for (const day of [yesterday, until]) {
+      // Bảng chi tiêu của khách chỉ được tự điền MỘT lần mỗi ngày: lần chạy đầu tiên từ 10h sáng giờ VN ghi chi phí của hôm qua rồi khóa (finalized), sau đó không sửa lại nữa.
+      // Trước 10h không đụng vào bảng chi tiêu. Chỉ đụng vào dòng do Facebook tạo (fromFb) hoặc dòng trống; dòng bạn tự nhập hoặc đã chốt thì không đè.
+      for (const day of pastTen ? [yesterday] : []) {
         const v = by[day] || { live: 0, post: 0 };
         const ex = await db.collection("spend").where("customerId", "==", c.id).where("date", "==", day).limit(1).get();
         if (ex.empty) {
@@ -119,7 +119,7 @@ async function main() {
           await db.collection("spend").doc(`fb_${c.id}_${day}`).set({
             customerId: c.id, date: day, adLive: v.live, adPost: v.post,
             feeRate: d.feeRate != null && d.feeRate !== "" ? Number(d.feeRate) : 10, transfer: 0, paid: false,
-            fromFb: true, finalized: day === yesterday && pastTen, createdAt: Date.now()
+            fromFb: true, finalized: true, createdAt: Date.now()
           });
           console.log(`    -> ghi ${day} vào bảng chi tiêu của ${d.name}`);
         } else {
@@ -127,10 +127,9 @@ async function main() {
           // dòng trống do bạn tạo sẵn (chưa nhập tiền) thì nhận làm dòng của Facebook luôn
           const blank = !x.fromFb && !(Number(x.adLive) > 0) && !(Number(x.adPost) > 0);
           if ((!x.fromFb && !blank) || x.finalized) continue;
-          if (x.adLive === v.live && x.adPost === v.post && !(day === yesterday && pastTen) && !blank) continue;
           if (blank && v.live + v.post <= 0) continue;
-          await row.ref.update({ adLive: v.live, adPost: v.post, fromFb: true, finalized: day === yesterday && pastTen });
-          console.log(`    -> cập nhật ${day}${day === yesterday && pastTen ? " (chốt)" : ""} cho ${d.name}`);
+          await row.ref.update({ adLive: v.live, adPost: v.post, fromFb: true, finalized: true });
+          console.log(`    -> chốt ${day} cho ${d.name}`);
         }
       }
       console.log(`OK  ${d.name}: ${Object.keys(by).length} ngày`);
