@@ -634,7 +634,7 @@ table.sp td:first-child,table.sp td:first-child .link{font-size:16px}
 .sq-th h2{font-size:21px;font-weight:700}
 .sq-th span{font-size:14px;color:#5B6472}
 .sq-r.h{align-items:center}
-.sq-r{display:grid;grid-template-columns:110px minmax(0,1fr) minmax(0,1fr) minmax(0,1fr) minmax(0,1.35fr) 80px;gap:8px;padding:0 20px;height:44px;border-bottom:1px solid #EEF0F3;align-items:center;font-size:16px}
+.sq-r{display:grid;grid-template-columns:var(--cols,100px minmax(0,1fr) minmax(0,1fr) minmax(0,1fr) minmax(0,1.12fr) 80px);gap:8px;padding:0 20px;height:44px;border-bottom:1px solid #EEF0F3;align-items:center;font-size:16px}
 .sq-r>span{text-align:right;white-space:nowrap}
 .sq-r>span:first-child{text-align:left;font-weight:600}
 .sq-r.h>span.tcp{white-space:normal;line-height:1.2}
@@ -1763,8 +1763,11 @@ function reportHtml(c,o){
   var h='<div class="sq"><header class="sq-hd"><div class="sq-br"><div class="sq-lg">VH</div><div class="sq-bt"><b>VH Agency</b><span>Báo cáo chi tiêu quảng cáo</span></div></div><span class="sq-up">Cập nhật '+upd+'</span></header><main class="sq-mn">'
     +'<div class="sq-top"><div><span class="sq-hi">Em gửi chi tiêu quảng cáo '+(D.isY?"hôm qua":"ngày "+dm(D.yd))+' và dư nợ còn lại nhé.</span><h1 style="font-size:'+nmPx+'px">'+esc(nm)+'</h1></div>'
     +'<span class="sq-dt">Báo cáo ngày <strong>'+WDFULL[ydt.getDay()]+', '+dmy(D.yd)+'</strong></span></div>';
+  /* shop chạy quảng cáo nào thì hiện cột/mục đó: có Live thì có Live, có bài viết thì có Bài viết (chạy cả hai thì hiện cả hai) */
+  var hasL=D.rem.some(function(r){return r.live>0})||D.y.live>0,hasP=D.rem.some(function(r){return r.post>0})||D.y.post>0;
+  if(!hasL&&!hasP)hasL=true;
   var cost=D.y.tot>0
-    ?'<span class="sq-big">'+m(D.y.tot)+'</span><div class="sq-ln"><span>Live <strong>'+num(D.y.live)+'</strong></span><span>Bài viết <strong>'+num(D.y.post)+'</strong></span><span>Phí '+rate+' <strong>'+num(D.y.fee)+'</strong></span></div>'
+    ?'<span class="sq-big">'+m(D.y.tot)+'</span><div class="sq-ln">'+(hasL?'<span>Live <strong>'+num(D.y.live)+'</strong></span>':'')+(hasP?'<span>Bài viết <strong>'+num(D.y.post)+'</strong></span>':'')+'<span>Phí '+rate+' <strong>'+num(D.y.fee)+'</strong></span></div>'
     :'<span class="sq-big sm">Không phát sinh chi phí</span>';
   var owe=D.bal>0;
   h+='<div class="sq-cards"><section class="sq-cd"><span>Chi phí '+(D.isY?"hôm qua":"ngày")+' ('+dm(D.yd)+')</span>'+cost+'</section>';
@@ -1780,21 +1783,22 @@ function reportHtml(c,o){
   if(owe){
     var MAXR=10,list=D.rem.slice().reverse(),sl=0,sp=0,sf=0,rows="";
     D.rem.forEach(function(r){sl+=r.live;sp+=r.post;sf+=r.fee});
+    var cL=hasL?function(v){return '<span>'+num(v)+'</span>'}:function(){return ""},cP=hasP?function(v){return '<span class="m">'+num(v)+'</span>'}:function(){return ""};
     var shown=list,oldG=null;
     if(list.length>MAXR){shown=list.slice(0,MAXR-1);oldG=list.slice(MAXR-1)} /* quá nhiều ngày: gộp các ngày cũ nhất thành một dòng để ảnh luôn vuông */
     shown.forEach(function(r){
       var isNew=r.d===yestStr();
-      rows+='<div class="sq-r'+(isNew?" nw":"")+'"><span>'+dm(r.d)+(isNew?' <em>Mới</em>':"")+'</span><span>'+num(r.live)+'</span><span class="m">'+num(r.post)+'</span><span>'+num(r.fee)+'</span>'
+      rows+='<div class="sq-r'+(isNew?" nw":"")+'"><span>'+dm(r.d)+(isNew?' <em>Mới</em>':"")+'</span>'+cL(r.live)+cP(r.post)+'<span>'+num(r.fee)+'</span>'
         +'<span class="p">'+num(r.owe)+(r.cut>0?'<small>đã trừ '+num(r.cut)+'</small>':"")+'</span><span class="d'+(r.days>=4?" red":"")+'">'+r.days+' ngày</span></div>';
     });
     if(oldG){
       var gl=0,gp=0,gf=0,go=0;oldG.forEach(function(r){gl+=r.live;gp+=r.post;gf+=r.fee;go+=r.owe});
       var top=oldG[0],mn=oldG[oldG.length-1];
-      rows+='<div class="sq-r old"><span>'+oldG.length+' ngày cũ hơn</span><span>'+num(gl)+'</span><span class="m">'+num(gp)+'</span><span>'+num(gf)+'</span><span class="p">'+num(go)+'</span><span class="d red">'+top.days+'+ ngày</span></div>';
+      rows+='<div class="sq-r old"><span>'+oldG.length+' ngày cũ hơn</span>'+cL(gl)+cP(gp)+'<span>'+num(gf)+'</span><span class="p">'+num(go)+'</span><span class="d red">'+top.days+'+ ngày</span></div>';
     }
-    h+='<section class="sq-tbl"><div class="sq-th"><h2>Chi tiết các ngày chưa thanh toán</h2><span>Đơn vị: ₫</span></div>'
-      +'<div class="sq-r h"><span>Ngày</span><span>Live</span><span>Bài viết</span><span>Phí DV '+rate+'</span><span class="tcp">Tổng chi phí<small>(Phí ads + Dịch vụ)</small></span><span>Đã nợ</span></div>'
-      +rows+'<div class="sq-r t"><span>Tổng '+D.rem.length+' ngày</span><span>'+num(sl)+'</span><span>'+num(sp)+'</span><span>'+num(sf)+'</span><span class="red">'+num(D.bal)+'</span><span></span></div></section>';
+    h+='<section class="sq-tbl" style="--cols:'+(hasL&&hasP?"100px minmax(0,1fr) minmax(0,1fr) minmax(0,1fr) minmax(0,1.12fr) 80px":"110px minmax(0,1fr) minmax(0,1fr) minmax(0,1fr) 84px")+'"><div class="sq-th"><h2>Chi tiết các ngày chưa thanh toán</h2><span>Đơn vị: ₫</span></div>'
+      +'<div class="sq-r h"><span>Ngày</span>'+(hasL?'<span>Live</span>':'')+(hasP?'<span>Bài viết</span>':'')+'<span>Phí DV '+rate+'</span><span class="tcp">Tổng chi phí<small>(Phí ads + Dịch vụ)</small></span><span>Đã nợ</span></div>'
+      +rows+'<div class="sq-r t"><span>Tổng '+D.rem.length+' ngày</span>'+cL(sl)+cP(sp)+'<span>'+num(sf)+'</span><span class="red">'+num(D.bal)+'</span><span></span></div></section>';
     var info="VH "+custCode(c)+" "+D.td.slice(8,10)+D.td.slice(5,7),
         qr=o.qr||("https://img.vietqr.io/image/"+encodeURIComponent(P.bankCode)+"-"+encodeURIComponent(P.acc)+"-compact2.png?amount="+D.bal+"&addInfo="+encodeURIComponent(info)+"&accountName="+encodeURIComponent(P.owner));
     h+='<aside class="sq-pay"><h2>Thanh toán</h2><div class="sq-am"><span>Số tiền cần chuyển</span><span>'+m(D.bal)+'</span></div>'
