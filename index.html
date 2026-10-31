@@ -790,49 +790,6 @@ function adChart(buckets,bk){
   });
   return s+'</svg>';
 }
-function adSection(){
-  var P=periodOf(ui.ap,ui.anchor),y=+ui.anchor.slice(0,4),m=+ui.anchor.slice(5,7),K=["live","post","fee","tot","xf","bank","net"];
-  var T={live:0,post:0,fee:0,tot:0,xf:0,bank:0,net:0},by={},bk={},nrows=0;
-  S.spend.forEach(function(r){
-    if(!r.date||r.date<P.from||r.date>P.to)return;
-    nrows++;
-    var x=spendRow(r);
-    var b=by[r.customerId]||(by[r.customerId]={live:0,post:0,fee:0,tot:0,xf:0,bank:0,net:0});
-    K.forEach(function(k){T[k]+=x[k];b[k]+=x[k]});
-    var key=r.date.slice(0,P.keyLen),q=bk[key]||(bk[key]={live:0,post:0});q.live+=x.live;q.post+=x.post;
-  });
-  var pick;
-  if(ui.ap==="day")pick=dateText("ap-date",ui.anchor,"Chọn ngày");
-  else if(ui.ap==="month")pick=monthSelect("ap-month",ui.anchor.slice(0,7),"Chọn tháng");
-  else if(ui.ap==="quarter")pick='<select id="ap-q" aria-label="Chọn quý">'+[1,2,3,4].map(function(q){return '<option value="'+q+'"'+(q===Math.floor((m-1)/3)+1?" selected":"")+'>Quý '+q+'</option>'}).join("")+'</select><input type="number" id="ap-year" min="2000" max="2100" value="'+y+'" aria-label="Năm">';
-  else pick='<input type="number" id="ap-year" min="2000" max="2100" value="'+y+'" aria-label="Chọn năm">';
-  var buckets=[];
-  if(ui.ap==="month"){for(var d=1;d<=lastDay(y,m);d++)buckets.push({k:y+"-"+pad(m)+"-"+pad(d),l:String(d),t:"Ngày "+d+"/"+m,show:d===1||d%5===0})}
-  else if(ui.ap==="quarter"||ui.ap==="year"){var m0=ui.ap==="year"?1:Math.floor((m-1)/3)*3+1,n=ui.ap==="year"?12:3;for(var i=0;i<n;i++)buckets.push({k:y+"-"+pad(m0+i),l:"T"+(m0+i),t:"Tháng "+(m0+i)+"/"+y,show:true})}
-  var h='<section class="panel"><div class="ph"><h2>Dữ liệu quảng cáo <small>'+esc(P.label)+'</small></h2><div class="tools pick">'
-    +'<div class="tabs" role="group" aria-label="Xem theo">'+APT.map(function(t){return '<button data-act="apt" data-v="'+t[0]+'" aria-pressed="'+(ui.ap===t[0])+'">'+t[1]+'</button>'}).join("")+'</div>'
-    +'<button class="btn small" data-act="apshift" data-v="-1" aria-label="Kỳ trước">‹</button>'+pick+'<button class="btn small" data-act="apshift" data-v="1" aria-label="Kỳ sau">›</button>'
-    +'<button class="btn small" data-act="apnow">Hôm nay</button></div></div>';
-  h+='<div class="kpis in">'
-    +'<div class="kpi"><span>Quảng cáo Live</span><b>'+vnd(T.live)+'</b></div>'
-    +'<div class="kpi"><span>Quảng cáo Bài viết</span><b>'+vnd(T.post)+'</b></div>'
-    +'<div class="kpi"><span>Phí dịch vụ</span><b>'+vnd(T.fee)+'</b></div>'
-    +'<div class="kpi net"><span>Phí thực nhận</span><b>'+vnd(T.net)+'</b><small>Phí dịch vụ − phí ngân hàng '+vnd(T.bank)+'</small></div>'
-    +'<div class="kpi"><span>Tổng cộng</span><b>'+vnd(T.tot)+'</b><small>Quảng cáo + phí dịch vụ</small></div>'
-    +'<div class="kpi"><span>Khách chuyển khoản</span><b>'+vnd(T.xf)+'</b></div>'
-    +'<div class="kpi '+(T.tot-T.xf>0?"bad":"")+'"><span>Còn lại trong kỳ</span><b>'+vnd(T.tot-T.xf)+'</b><small>Tổng − chuyển khoản</small></div></div>';
-  if(!nrows){h+=emptyBlock("Không có dữ liệu quảng cáo trong kỳ này","Chọn kỳ khác hoặc thêm dòng chi tiêu ở mục Khách hàng.")}
-  else{
-    var chart=ui.ap==="day"?"":adChart(buckets,bk);
-    if(chart)h+='<div class="legend"><span><i style="background:var(--bar-b)"></i>Live</span><span><i style="background:var(--bar-a)"></i>Bài viết</span><span>Chi phí quảng cáo theo '+(ui.ap==="month"?"ngày":"tháng")+'</span></div>'+chart;
-    var ids=Object.keys(by).sort(function(a,b){return by[b].tot-by[a].tot});
-    h+='<div class="tablewrap"><table><thead><tr><th>Khách hàng</th><th class="num">Live</th><th class="num">Bài viết</th><th class="num">Phí dịch vụ</th><th class="num net">Phí thực nhận</th><th class="num">Tổng</th><th class="num">Chuyển khoản</th><th class="num">Còn lại</th></tr></thead><tbody>'
-      +ids.map(function(id){var b=by[id];return '<tr><td><b>'+esc(custName(id))+'</b></td><td class="num">'+nz(b.live)+'</td><td class="num">'+nz(b.post)+'</td><td class="num">'+nz(b.fee)+'</td><td class="num net">'+num(b.net)+'</td><td class="num"><b>'+num(b.tot)+'</b></td><td class="num">'+nz(b.xf)+'</td><td class="num '+(b.tot-b.xf>0?"owe":"clear")+'">'+num(b.tot-b.xf)+'</td></tr>'}).join("")
-      +'</tbody><tfoot><tr><td>Tổng cộng</td><td class="num">'+num(T.live)+'</td><td class="num">'+num(T.post)+'</td><td class="num">'+num(T.fee)+'</td><td class="num net">'+num(T.net)+'</td><td class="num">'+num(T.tot)+'</td><td class="num">'+num(T.xf)+'</td><td class="num">'+num(T.tot-T.xf)+'</td></tr></tfoot></table></div>';
-  }
-  return h+'<p class="hint">Phí ngân hàng = (Live + Bài viết) × '+String(BANK_FEE).replace('.',',')+'%. Phí thực nhận = phí dịch vụ − phí ngân hàng.</p></section>';
-}
-
 /* ĐỊNH NGHĨA DUY NHẤT của "Quá hạn" cho toàn bộ ứng dụng:
    khách còn nợ (tổng đã xuất − đã chuyển > 0) và có ít nhất một dòng chi tiêu chưa thanh toán đã từ OVERDUE_DAYS ngày trở lên.
    Mọi nơi (Tổng quan, Cần thu sớm, Quản lý TKQC Meta, Thống kê, số đỏ trên menu) đều dùng dueSoon() này. */
@@ -866,7 +823,6 @@ function dueSoon(){
 }
 
 /* các dòng chi tiêu đang để "Chưa thanh toán" và khách còn phải chuyển (tổng − đã chuyển) */
-function sum2(a){return a.reduce(function(t,o){return t+o.owe},0)}
 function owedRows(){
   var now=new Date(),t0=new Date(now.getFullYear(),now.getMonth(),now.getDate()).getTime(),out=[];
   S.spend.forEach(function(r){
@@ -885,18 +841,6 @@ function custBalances(){
   return b;
 }
 /* khách có phát sinh chi phí quảng cáo nhưng từ ngày cập nhật gần nhất đến nay đã từ 2 ngày trở lên không có chi phí mới */
-function idleCustomers(){
-  var now=new Date(),t0=new Date(now.getFullYear(),now.getMonth(),now.getDate()).getTime(),last={};
-  S.spend.forEach(function(r){
-    if(!r.date||!cust(r.customerId))return;
-    var x=spendRow(r);if(!(x.live+x.post>0))return;
-    if(!last[r.customerId]||r.date>last[r.customerId])last[r.customerId]=r.date;
-  });
-  return Object.keys(last).map(function(id){
-    var d=last[id],t=new Date(+d.slice(0,4),+d.slice(5,7)-1,+d.slice(8,10)).getTime();
-    return{id:id,last:d,days:Math.round((t0-t)/86400000)};
-  }).filter(function(o){return o.days>=2}).sort(function(a,b){return b.days-a.days});
-}
 var OVM=[["day","Theo ngày"],["month","Theo tháng"],["quarter","Theo quý"],["year","Theo năm"]];
 function ovAmounts(){var A=[];S.spend.forEach(function(r){if(!r.date||!cust(r.customerId))return;var x=spendRow(r);A.push({d:r.date,v:x.live+x.post})});return A}
 function groupedSvg(groups,nameA,nameB){
@@ -972,45 +916,6 @@ function ovpRange(t){
   if(t==="month")return[ymd(new Date(n.getFullYear(),n.getMonth(),1)),d0(0),"Tháng "+(n.getMonth()+1)+"/"+n.getFullYear()];
   if(t==="year")return[ymd(new Date(n.getFullYear(),0,1)),d0(0),"Năm "+n.getFullYear()];
   return["0000-01-01","9999-12-31","Toàn bộ thời gian"];
-}
-/* so sánh số Facebook (Spend hiện tại) với bảng chi tiêu trong một khoảng ngắn, để phát hiện lệch */
-function fbDiff(from,to){
-  var a=new Date(+from.slice(0,4),+from.slice(5,7)-1,+from.slice(8,10)),b=new Date(+to.slice(0,4),+to.slice(5,7)-1,+to.slice(8,10));
-  if(Math.round((b-a)/86400000)>6)return null;
-  var F={},L={},keys={};
-  S.fbspend.forEach(function(r){if(!r.date||r.date<from||r.date>to||!cust(r.customerId))return;var k=r.customerId+"|"+r.date,o=F[k]||(F[k]={live:0,post:0});o.live+=Number(r.live)||0;o.post+=Number(r.post)||0;keys[k]=1});
-  S.spend.forEach(function(r){if(!r.date||r.date<from||r.date>to||!cust(r.customerId))return;var k=r.customerId+"|"+r.date,o=L[k]||(L[k]={live:0,post:0,n:0});o.live+=Number(r.adLive)||0;o.post+=Number(r.adPost)||0;o.n++;keys[k]=1});
-  var items=[],fb=0,led=0;
-  Object.keys(keys).forEach(function(k){
-    var f=F[k]||{live:0,post:0},l=L[k]||{live:0,post:0,n:0},ft=f.live+f.post,lt=l.live+l.post;
-    if(!F[k])return; /* chỉ so khi Facebook có số; ngày không có số Facebook là dòng nhập tay */
-    fb+=ft;led+=lt;
-    if(Math.abs(ft-lt)>=1)items.push({c:k.split("|")[0],d:k.split("|")[1],f:f,l:l,ft:ft,lt:lt});
-  });
-  return{fb:fb,led:led,items:items};
-}
-async function fbFix(from,to){
-  var D=fbDiff(from,to);if(!D||!D.items.length)return;
-  var n=0;
-  for(var i=0;i<D.items.length;i++){
-    var it=D.items[i],rows=S.spend.filter(function(r){return r.customerId===it.c&&r.date===it.d});
-    if(rows.length){
-      var others=rows.slice(1).reduce(function(t,r){return{l:t.l+(Number(r.adLive)||0),p:t.p+(Number(r.adPost)||0)}},{l:0,p:0});
-      await save("spend",rows[0].id,{adLive:Math.max(0,it.f.live-others.l),adPost:Math.max(0,it.f.post-others.p),fromFb:true});
-    }else{
-      S.hidden.filter(function(h){return h.customerId===it.c&&h.date===it.d}).forEach(function(h){remove("hidden",h.id)});
-      await save("spend",null,{customerId:it.c,date:it.d,adLive:it.f.live,adPost:it.f.post,feeRate:defaultRate(it.c),transfer:0,paid:false,fromFb:true});
-    }
-    n++;
-  }
-  toast("Đã cập nhật "+n+" dòng theo số Facebook");
-}
-function fbDiffHtml(from,to){
-  var D=fbDiff(from,to);if(!D||!D.items.length)return"";
-  return '<div class="notice warn"><b>Số liệu đang lệch với Spend hiện tại.</b> Facebook báo '+vnd(D.fb)+', bảng chi tiêu ghi '+vnd(D.led)+' (lệch '+vnd(Math.abs(D.fb-D.led))+').<br>'
-   +D.items.slice(0,8).map(function(it){return esc(custName(it.c))+(from!==to?' ('+fmtDate(it.d)+')':'')+': Facebook '+vnd(it.ft)+' · bảng chi tiêu '+(it.l.n?vnd(it.lt):'chưa có dòng')}).join('<br>')
-   +(D.items.length>8?'<br>… và '+(D.items.length-8)+' khách khác':'')
-   +'<br><button class="btn small" data-act="fbfix" data-from="'+from+'" data-to="'+to+'" type="button" style="margin-top:8px">Cập nhật bảng chi tiêu theo Facebook</button></div>';
 }
 /* Số thực từ Facebook cho hôm nay (và hôm qua trước khi được chốt lúc 10h) chưa có trong bảng chi tiêu: chỉ để HIỂN THỊ ở Tổng quan và link chia sẻ, không ghi vào bảng chi tiêu của khách */
 function liveRows(cid){
@@ -1173,11 +1078,6 @@ async function addSpendRow(){
 function slMonth(allM){
   var open=allM.filter(monthOpen);
   return open.length?open[open.length-1]:allM[allM.length-1];
-}
-function dayBar(allM){
-  var m=slMonth(allM),n=lastDay(+m.slice(0,4),+m.slice(5)),td=todayStr();
-  var v=ui.slday&&ui.slday.m===m?ui.slday.d:(td.slice(0,7)===m?+td.slice(8):1);
-  return '<div class="daybar"><span class="dl">Kéo để chọn ngày · '+monthLabel(m)+'</span><input type="range" id="daysl" min="1" max="'+n+'" step="1" value="'+v+'" data-m="'+m+'" aria-label="Kéo để chọn ngày"><b id="dayval">Ngày '+v+'</b></div>';
 }
 function jumpDay(m,d){
   ui.slday={m:m,d:d};
@@ -1424,7 +1324,7 @@ function vSpend(){
     else h+='<div class="tablewrap">'+emptyBlock("Chưa có khách chạy quảng cáo","Trong "+esc(R[2].toLowerCase())+" chưa có khách nào phát sinh chi phí.")+'</div>';
     if(idle.length)h+='<details class="idle"><summary>'+idle.length+' khách không chạy '+esc(R[2].toLowerCase())+'</summary><div class="chips">'+idle.map(function(r){return '<button class="chip" data-act="goc" data-id="'+esc(r.c.id)+'">'+esc(r.c.name)+'</button>'}).join("")+'</div></details>';
   }
-  h+='<p class="hint">Dữ liệu lấy tự động từ Facebook mỗi 10 phút. '+(upd?'Cập nhật gần nhất: '+new Date(upd).toLocaleString("vi-VN")+'.':'Chưa có lần cập nhật nào.')+'</p><details class="calc"><summary>ⓘ Cách tính</summary><p class="hint">Live và Bài viết được tách theo từ khóa trong tên chiến dịch mà bạn điền ở form khách hàng (không điền thì lấy cả tài khoản, chữ LIVE trong tên là Live, còn lại là Bài viết). Phí thực nhận = (spend × phí dịch vụ % của khách) − phí ngân hàng '+String(BANK_FEE).replace('.',',')+'%. Số này chỉ để theo dõi, không tự ghi vào bảng chi tiêu của khách.</p></details>';
+  h+='<p class="hint">Dữ liệu lấy tự động từ Facebook theo lịch, vài phút một lần. '+(upd?'Cập nhật gần nhất: '+new Date(upd).toLocaleString("vi-VN")+'.':'Chưa có lần cập nhật nào.')+'</p><details class="calc"><summary>ⓘ Cách tính</summary><p class="hint">Live và Bài viết được tách theo từ khóa trong tên chiến dịch mà bạn điền ở form khách hàng (không điền thì lấy cả tài khoản, chữ LIVE trong tên là Live, còn lại là Bài viết). Phí thực nhận = (spend × phí dịch vụ % của khách) − phí ngân hàng '+String(BANK_FEE).replace('.',',')+'%. Số này chỉ để theo dõi, không tự ghi vào bảng chi tiêu của khách.</p></details>';
   return{title:"Spend hiện tại",sub:"Chi phí quảng cáo đang chạy từ Facebook",html:h};
 }
 function newCustHtml(){
@@ -1621,7 +1521,6 @@ function vSettings(){
    +'<section class="panel"><h2>Tài khoản <small>Đăng xuất khỏi thiết bị này</small></h2><div><button class="btn small" data-act="logout" type="button">Đăng xuất</button></div></section>';
   return{title:"Cài đặt",sub:"Sao lưu dữ liệu và tài khoản",html:h};
 }
-function bkRemind(){return""}
 /* ghi nhãn cột vào từng ô để bảng hiện thành thẻ gọn trên điện thoại (dùng cả cho trang khách xem) */
 function labelTables(root){
   var L=["Ngày","Quảng cáo Live","Quảng cáo Bài viết","Phí %","Phí dịch vụ","Tổng","Note","Khách chuyển khoản",""];
@@ -1645,7 +1544,6 @@ function render(){
   var hasEx=ready()&&COLS.some(function(c){return S[c].some(function(x){return x.example})});
   var banner="";
   if(localMode)banner+='<div class="note"><span>Chưa kết nối được nơi lưu dữ liệu. Thay đổi sẽ mất khi tải lại trang.</span></div>';
-  banner+=bkRemind();
   if(hasEx)banner+='<div class="note"><span>Đang hiển thị dữ liệu ví dụ. Xóa đi để bắt đầu với dữ liệu của bạn.</span><button class="btn small" data-act="clear-ex">Xóa dữ liệu ví dụ</button></div>';
   var keep=document.activeElement&&document.activeElement.id==="q"?document.activeElement.selectionStart:null;
   var ae=document.activeElement,cap=null;
@@ -1799,7 +1697,6 @@ document.addEventListener("click",function(e){
   else if(a==="spt"){ui.spt=el.dataset.v;render()}
   else if(a==="ovp"){ui.ovp=el.dataset.v;render()}
   else if(a==="phg"){ui.phg=el.dataset.v;render()}
-  else if(a==="fbfix"){if(confirm("Ghi đè số chi tiêu trong bảng của các khách bị lệch bằng số Facebook?"))fbFix(el.dataset.from,el.dataset.to)}
   else if(a==="spaid"){if(el.dataset.id.indexOf("new:")===0)setPaidBlank(el.dataset.id.slice(4),el.dataset.v==="1");else save("spend",el.dataset.id,{paid:el.dataset.v==="1"})}
 });
 function releasePointer(){pointerDown=false;if(pendingRender){pendingRender=false;render()}}

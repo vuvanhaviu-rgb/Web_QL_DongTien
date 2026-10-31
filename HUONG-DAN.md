@@ -37,11 +37,11 @@ service cloud.firestore {
 - **Tự điền bảng chi tiêu (mục Khách hàng):** chỉ một lần mỗi ngày, lần đồng bộ đầu tiên từ **10:00 sáng** giờ Việt Nam ghi số chuẩn của hôm qua rồi khóa. Trong ngày, **Tổng quan và link chia sẻ** vẫn hiện số thực kéo từ Facebook (mỗi lần đồng bộ) nhưng số này không được ghi vào bảng chi tiêu của khách.
 - Chạy ngay: github.com/vuvanhaviu-rgb/Web_QL_DongTien/actions/workflows/fb-sync.yml → **Run workflow**.
 
-**Lịch chạy mỗi 10 phút:** lịch tự động của GitHub hay bị chậm, nên dùng thêm cron-job.org gọi GitHub:
+**Lịch chạy định kỳ (khoảng 10–15 phút):** lịch tự động của GitHub hay bị chậm, nên dùng thêm cron-job.org gọi GitHub:
 - URL: `https://api.github.com/repos/vuvanhaviu-rgb/Web_QL_DongTien/actions/workflows/fb-sync.yml/dispatches`
 - Phương thức POST, body `{"ref":"main"}`
 - Headers: `Authorization: Bearer <mã GitHub chỉ có quyền Actions của kho này>`, `Accept: application/vnd.github+json`, `Content-Type: application/json`
-- Lịch: mỗi 10 phút. Kết quả đúng khi Test run báo 204.
+- Lịch: mỗi 10 hoặc 15 phút tùy bạn đặt. Kết quả đúng khi Test run báo 204.
 - Mã GitHub nằm ở github.com/settings/personal-access-tokens. Nếu lộ mã, bấm **Regenerate token** rồi dán mã mới vào cron-job.org.
 
 **Đổi mã Facebook (`FB_TOKEN`):** Business Settings → Người dùng hệ thống → Tạo mã, tick `ads_read`, `ads_management`, `business_management`. Dán vào GitHub Secrets, ghi đè `FB_TOKEN`. Không gửi mã vào chat hay file công khai.
