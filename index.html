@@ -518,6 +518,9 @@ table.sp td:first-child,table.sp td:first-child .link{font-size:16px}
   .btn:active,.nav a:active,.tabs button:active{transform:scale(.97)}
   .note{border-radius:14px}
 }
+.live-note{margin-top:6px;line-height:1.5;font-size:12px;color:var(--mut,#667)}
+.live-dot{display:inline-block;vertical-align:middle;margin-right:6px;width:8px;height:8px;border-radius:50%;background:#16a34a;box-shadow:0 0 0 0 rgba(22,163,74,.5);animation:ldot 1.8s infinite;flex:none}
+@keyframes ldot{70%{box-shadow:0 0 0 7px rgba(22,163,74,0)}100%{box-shadow:0 0 0 0 rgba(22,163,74,0)}}
 </style>
 
 <div class="app">
@@ -725,7 +728,7 @@ function viewerHtml(d){
       +cur.items.slice().sort(function(a,b){return (b.s||0)-(a.s||0)}).map(function(x){return '<tr><td>'+esc(x.n)+'</td><td>'+(x.k==="live"?"Live":"Bài viết")+'</td><td class="num">'+num(x.s)+'</td></tr>'}).join("")
       +'</tbody><tfoot><tr><td>Tổng '+cur.items.length+' chiến dịch</td><td></td><td class="num">'+num(ct)+'</td></tr></tfoot></table></div><p class="hint">Chi phí quảng cáo chưa gồm phí dịch vụ.</p></section>';
   }
-  return '<div class="head"><div><h1>'+esc(d.name||"Bảng chi tiêu")+'</h1><p>Bảng chi tiêu quảng cáo'+(upd?" · cập nhật "+esc(upd):"")+'</p></div></div>'
+  return '<div class="head"><div><h1>'+esc(d.name||"Bảng chi tiêu")+'</h1><p>Bảng chi tiêu quảng cáo</p><p class="live-note"><i class="live-dot"></i>Chi tiêu được cập nhật theo thời gian thực'+(upd?'<br>Số liệu đổi lần cuối: <b>'+esc(upd)+'</b>':'')+'<br>Nhận lúc: <b>'+new Date().toLocaleTimeString("vi-VN",{hour:"2-digit",minute:"2-digit",second:"2-digit"})+'</b></p></div></div>'
     +'<div class="kpis"><div class="kpi"><span>Chi phí quảng cáo</span><b>'+vnd(tl+tp)+'</b><small>Live '+num(tl)+' · Bài viết '+num(tp)+'</small></div>'
     +'<div class="kpi"><span>Phí dịch vụ</span><b>'+vnd(tf)+'</b><small>Tổng cộng '+vnd(tt)+'</small></div>'
     +'<div class="kpi"><span>Đã chuyển khoản</span><b>'+vnd(tx)+'</b><small>&nbsp;</small></div>'
