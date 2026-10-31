@@ -665,13 +665,22 @@ table.sp td:first-child,table.sp td:first-child .link{font-size:16px}
 .sq-r.t .red{color:#B42318}
 .sq-paid{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:20px;text-align:center}
 .sq-paid b{font-size:34px;font-weight:800;color:#1B7F4B}
-.sq-cr{display:flex;flex-direction:column;align-items:center;gap:4px;background:#E8F5EE;border:1px solid #BFE3CF;border-radius:16px;padding:16px 34px}
-.sq-cr span{font-size:17px;color:#1B7F4B;font-weight:600}.sq-cr strong{font-size:46px;font-weight:800;letter-spacing:-1px;color:#1B7F4B;line-height:1.1}
+.sq-yl{padding:6px 20px 0;display:flex;flex-direction:column}
+.sq-yl>div{display:flex;justify-content:space-between;align-items:baseline;padding:13px 0;border-bottom:1px solid #EEF0F3;font-size:22px}
+.sq-yl>div span{color:#3A4250}.sq-yl>div b{font-weight:700}
+.sq-yl>div em{font-style:normal;font-weight:700;color:#B42318}
+.sq-yl>div.t{border-bottom:0;font-size:26px}.sq-yl>div.t span{color:#1C1E21;font-weight:700}.sq-yl>div.t b{font-weight:800}
+.sq-yl.none{padding:30px 20px;font-size:26px;font-weight:700;color:#5B6472}
+.sq-st{margin:auto 20px 20px;display:flex;align-items:center;gap:18px;background:#E8F5EE;border:1px solid #BFE3CF;border-radius:16px;padding:18px 22px}
+.sq-st svg{flex:none}
+.sq-cr{display:flex;flex-direction:column;gap:3px;min-width:0}
+.sq-cr span{font-size:18px;color:#1B7F4B;font-weight:600}.sq-cr strong{font-size:44px;font-weight:800;letter-spacing:-1px;color:#1B7F4B;line-height:1.1}.sq-cr small{font-size:16px;color:#3A4250}
 .sq-paid span{font-size:17px;color:#3A4250}
 .sq-pay{flex:none;width:292px;background:#FFFFFF;border-radius:16px;padding:18px 20px;box-shadow:0 1px 2px rgba(0,0,0,0.06);display:flex;flex-direction:column;gap:12px}
 .sq-pay h2{font-size:21px;font-weight:700}
 .sq-am{background:#FEECEB;border-radius:12px;padding:12px 14px;display:flex;flex-direction:column;gap:2px}
 .sq-am span:first-child{font-size:14px;color:#7A271A}
+.sq-am.ok{background:#E8F5EE}.sq-am.ok span:first-child{color:#1B7F4B}.sq-am.ok span.sm{font-size:16px;font-weight:700;color:#1B7F4B;line-height:1.3}
 .sq-am span:last-child{font-size:28px;font-weight:800;color:#B42318;letter-spacing:-0.6px;white-space:nowrap}
 .sq-qr{align-self:center;width:100%;height:auto;border-radius:12px;border:1px solid #E4E6EB;display:block;background:#fff}
 .sq-note{margin:0;text-align:center;font-size:16px;font-style:italic;font-weight:700;line-height:1.35;color:#B42318}
@@ -1825,13 +1834,26 @@ function reportHtml(c,o){
       +'<div class="sq-r h"><span>Ngày</span>'+(hasL?'<span>Live</span>':'')+(hasP?'<span>Bài viết</span>':'')+'<span>Phí DV</span><span class="tcp">Tổng chi phí<small>(Phí ads + Dịch vụ)</small></span><span>Chậm thanh toán</span></div>'
       +rows+'<div class="sq-r t"><span>Tổng '+D.rem.length+' ngày</span>'+cL(sl)+cP(sp)+cF(sf,uni)+'<span class="red">'+num(D.bal)+'</span><span></span></div></section>';
     var info="VH "+custCode(c)+" "+D.td.slice(8,10)+D.td.slice(5,7),
-        qr=o.qr||("https://img.vietqr.io/image/"+encodeURIComponent(P.bankCode)+"-"+encodeURIComponent(P.acc)+"-compact2.png?amount="+D.pay+"&addInfo="+encodeURIComponent(info)+"&accountName="+encodeURIComponent(P.owner));
+        qr=o.qr||("https://img.vietqr.io/image/"+encodeURIComponent(P.bankCode)+"-"+encodeURIComponent(P.acc)+"-compact2.png?"+(D.pay>0?"amount="+D.pay+"&":"")+"addInfo="+encodeURIComponent(info)+"&accountName="+encodeURIComponent(P.owner));
     h+='<aside class="sq-pay"><h2>Thanh toán</h2><div class="sq-am"><span>Số tiền cần chuyển</span><span>'+m(D.pay)+'</span></div>'
       +'<img class="sq-qr" src="'+esc(qr)+'" alt="Mã QR chuyển khoản '+esc(P.bankName)+'" width="228">'
       +'<p class="sq-note">(Lưu ý: Kiểm tra thông tin trước khi chuyển khoản)</p>'
       +'<div class="sq-bk"><div><span>Ngân hàng</span><span>'+esc(P.bankName)+'</span></div><div class="n"><span>Số tài khoản</span><span>'+esc(groups4(P.acc))+'</span></div><div><span>Chủ tài khoản</span><span>'+esc(P.owner)+'</span></div></div></aside>';
   }else{
-    h+='<section class="sq-tbl"><div class="sq-paid"><svg width="150" height="150" viewBox="0 0 24 24" fill="none" stroke="#1B7F4B" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><path d="m7.5 12.5 3 3 6-7"></path></svg><b>Đã thanh toán đủ</b>'+(D.credit>0?'<div class="sq-cr"><span>Số dư còn lại</span><strong>'+m(D.credit)+'</strong></div><span>Số dư được giữ lại để trừ vào chi phí các ngày tiếp theo.</span>':'<span>Cảm ơn bạn. Hiện không còn khoản nào cần thanh toán.</span>')+'</div></section>';
+    /* hết nợ / khách chuyển khoản trước: vẫn gửi báo cáo chi tiêu hôm qua + số dư (nếu có) + mã QR để khách chuyển thêm khi cần */
+    var yL=D.y.tot>0
+      ?'<div class="sq-yl">'+(hasL?'<div><span>Quảng cáo Live</span><b>'+num(D.y.live)+'</b></div>':'')+(hasP?'<div><span>Quảng cáo Bài viết</span><b>'+num(D.y.post)+'</b></div>':'')
+        +'<div><span>Phí dịch vụ <em>'+rate+'</em></span><b>'+num(D.y.fee)+'</b></div><div class="t"><span>Tổng chi phí</span><b>'+m(D.y.tot)+'</b></div></div>'
+      :'<div class="sq-yl none">Không phát sinh chi phí</div>';
+    h+='<section class="sq-tbl"><div class="sq-th"><h2>Chi tiêu quảng cáo '+(D.isY?"hôm qua":"ngày")+' '+dm(D.yd)+'</h2><span>Đơn vị: ₫</span></div>'+yL
+      +'<div class="sq-st"><svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#1B7F4B" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><path d="m7.5 12.5 3 3 6-7"></path></svg>'
+      +(D.credit>0?'<div class="sq-cr"><span>Đã thanh toán đủ · Số dư còn lại</span><strong>'+m(D.credit)+'</strong><small>Số dư được giữ lại để trừ vào chi phí các ngày tiếp theo.</small></div>':'<div class="sq-cr"><strong>Đã thanh toán đủ</strong><small>Cảm ơn bạn. Hiện không còn khoản nào cần thanh toán.</small></div>')+'</div></section>';
+    var infoP="VH "+custCode(c)+" "+D.td.slice(8,10)+D.td.slice(5,7),
+        qrP=o.qr||("https://img.vietqr.io/image/"+encodeURIComponent(P.bankCode)+"-"+encodeURIComponent(P.acc)+"-compact2.png?addInfo="+encodeURIComponent(infoP)+"&accountName="+encodeURIComponent(P.owner));
+    h+='<aside class="sq-pay"><h2>Chuyển thêm tiền</h2><div class="sq-am ok"><span>Khi muốn chuyển thêm</span><span class="sm">Quét mã QR, nhập số tiền tùy ý</span></div>'
+      +'<img class="sq-qr" src="'+esc(qrP)+'" alt="Mã QR chuyển khoản '+esc(P.bankName)+'" width="228">'
+      +'<p class="sq-note">(Lưu ý: Kiểm tra thông tin trước khi chuyển khoản)</p>'
+      +'<div class="sq-bk"><div><span>Ngân hàng</span><span>'+esc(P.bankName)+'</span></div><div class="n"><span>Số tài khoản</span><span>'+esc(groups4(P.acc))+'</span></div><div><span>Chủ tài khoản</span><span>'+esc(P.owner)+'</span></div></div></aside>';
   }
   h+='</div><div class="sq-ft"><b>Cách tính:</b> Tổng chi phí = phí ads + phí dịch vụ '+(!owe?rate:uni!==null?pct(uni):'(tỷ lệ % ghi dưới từng khoản)')+'. Số liệu lấy tự động từ Facebook Ads. Thắc mắc vui lòng liên hệ <span style="white-space:nowrap"><b>Vũ Hà</b>'+(P.phone?' ( SĐT/Zalo '+esc(P.phone)+' )':"")+'</span></div></main></div>';
   return h;
@@ -1915,7 +1937,7 @@ function vietQrPayload(P,amount,info){
   if(!bin||!acc)throw new Error("chưa có mã ngân hàng / số tài khoản");
   var t=function(id,v){v=String(v);return id+("0"+v.length).slice(-2)+v};
   var amt=Math.round(Number(amount)||0),inf=String(info||"").replace(/[^\x20-\x7E]/g,"").slice(0,50);
-  var s=t("00","01")+t("01","12")+t("38",t("00","A000000727")+t("01",t("00",bin)+t("01",acc))+t("02","QRIBFTTA"))+t("53","704")+(amt>0?t("54",amt):"")+t("58","VN")+(inf?t("62",t("08",inf)):"")+"6304";
+  var s=t("00","01")+t("01",amt>0?"12":"11")+t("38",t("00","A000000727")+t("01",t("00",bin)+t("01",acc))+t("02","QRIBFTTA"))+t("53","704")+(amt>0?t("54",amt):"")+t("58","VN")+(inf?t("62",t("08",inf)):"")+"6304";
   return s+emvCrc(s);
 }
 function loadQrLib(){
@@ -1945,7 +1967,7 @@ async function qrLocal(c,D){
 async function qrForExport(c,D){
   try{return{src:await qrLocal(c,D),fallback:false}}catch(e){}
   var P=payCfg(),info="VH "+custCode(c)+" "+D.td.slice(8,10)+D.td.slice(5,7);
-  var url="https://img.vietqr.io/image/"+encodeURIComponent(P.bankCode)+"-"+encodeURIComponent(P.acc)+"-compact2.png?amount="+D.pay+"&addInfo="+encodeURIComponent(info)+"&accountName="+encodeURIComponent(P.owner);
+  var url="https://img.vietqr.io/image/"+encodeURIComponent(P.bankCode)+"-"+encodeURIComponent(P.acc)+"-compact2.png?"+(D.pay>0?"amount="+D.pay+"&":"")+"addInfo="+encodeURIComponent(info)+"&accountName="+encodeURIComponent(P.owner);
   try{return{src:await urlToData(url),fallback:false}}
   catch(e){return{src:await urlToData("assets/ma-qr-techcombank.png"),fallback:true}}
 }
@@ -1953,7 +1975,7 @@ var rpLast={fallback:0};
 async function reportPng(c){
   await loadHtmlToImage();
   var D=reportData(c,rpDate()),qr=null;
-  if(D.bal>0){qr=await qrForExport(c,D);if(qr.fallback)rpLast.fallback++}
+  qr=await qrForExport(c,D);if(qr.fallback&&D.pay>0)rpLast.fallback++
   var st=document.getElementById("rp-stage");if(!st){st=document.createElement("div");st.id="rp-stage";st.setAttribute("aria-hidden","true");document.body.appendChild(st)}
   st.innerHTML=reportHtml(c,{qr:qr&&qr.src,date:rpDate()});
   try{
