@@ -1421,6 +1421,15 @@ function debtAging(C,bal){
   });
   return{B:B,avg:tsum?Math.round(wsum/tsum*10)/10:0,tsum:tsum};
 }
+/* cảnh báo khi đồng bộ Facebook lỗi hoặc đã lâu không chạy (đọc từ dấu mốc __sync do máy chủ ghi) */
+function syncAlert(){
+  var sy=S.fbaccounts.filter(function(x){return x.id==="__sync"})[0];if(!sy||!sy.at)return"";
+  var age=Math.round((Date.now()-sy.at)/60000),since=new Date(sy.at).toLocaleString("vi-VN"),errs=sy.errors||[];
+  if(sy.tokenBad)return'<div class="notice warn"><b>Đồng bộ Facebook đang lỗi, số liệu đứng yên từ '+esc(since)+'.</b> Mã Facebook (FB_TOKEN) có thể đã hết hạn hoặc bị thu hồi.'+(errs.length?'<br>Facebook báo: '+esc(errs[0]):'')+'<details><summary>Cách xử lý</summary><ol><li>Tạo mã truy cập Facebook mới (Meta for Developers hoặc Business Manager, quyền ads_read).</li><li>Vào GitHub của dự án, Settings, Secrets and variables, Actions, sửa <b>FB_TOKEN</b> thành mã mới.</li><li>Vào tab Actions, chạy tay "Kéo chi phí Facebook" một lần để kiểm tra. Cảnh báo này tự biến mất khi đồng bộ thành công.</li></ol></details></div>';
+  if(sy.fail>0||errs.length)return'<div class="notice warn"><b>Đồng bộ Facebook có lỗi ở lần chạy lúc '+esc(since)+'</b> ('+(sy.fail||0)+' khách lỗi).'+(errs.length?'<br>'+errs.map(esc).join("<br>"):"")+'<br>Hệ thống sẽ thử lại ở lần chạy tới; cảnh báo tự biến mất khi hết lỗi.</div>';
+  if(age>45)return'<div class="notice warn"><b>Đã '+age+' phút máy chủ chưa đồng bộ</b> (lần cuối '+esc(since)+'). Hãy kiểm tra lịch gọi ở cron-job.org còn chạy không.</div>';
+  return"";
+}
 function sharesPanel(){
   var on=S.customers.filter(function(c){return c.shareToken}),sy=S.fbaccounts.filter(function(x){return x.id==="__sync"})[0],age=sy&&sy.at?Math.round((Date.now()-sy.at)/60000):null;
   var syH=sy&&sy.at?'<p class="hint">Máy chủ kiểm tra gần nhất lúc <b>'+new Date(sy.at).toLocaleString("vi-VN")+'</b> ('+(age<1?"vừa xong":age+" phút trước")+') · kiểm tra '+(sy.linksChecked||0)+' link, cập nhật '+(sy.linksUpdated||0)+' link vì có số mới'+(sy.linkError?' · <b>lỗi: '+esc(sy.linkError)+'</b>':'')+(age>40?' · <b>quá lâu chưa chạy, kiểm tra cron-job.org</b>':'')+'.</p>':'<p class="hint">Chưa có mốc kiểm tra của máy chủ (sẽ hiện sau lần đồng bộ tới).</p>';
@@ -1543,6 +1552,7 @@ function render(){
   else r=v();
   var hasEx=ready()&&COLS.some(function(c){return S[c].some(function(x){return x.example})});
   var banner="";
+  banner+=syncAlert();
   if(localMode)banner+='<div class="note"><span>Chưa kết nối được nơi lưu dữ liệu. Thay đổi sẽ mất khi tải lại trang.</span></div>';
   if(hasEx)banner+='<div class="note"><span>Đang hiển thị dữ liệu ví dụ. Xóa đi để bắt đầu với dữ liệu của bạn.</span><button class="btn small" data-act="clear-ex">Xóa dữ liệu ví dụ</button></div>';
   var keep=document.activeElement&&document.activeElement.id==="q"?document.activeElement.selectionStart:null;

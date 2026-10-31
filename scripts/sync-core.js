@@ -79,6 +79,7 @@ async function main() {
   const pastTen = nowVN.getUTCHours() >= 10; // từ 10h sáng giờ Việt Nam: chốt chi phí hôm qua // từ 10h sáng giờ Việt Nam: chốt chi phí hôm qua vào bảng chi tiêu
   const snap = await db.collection("customers").get();
   let ok = 0, fail = 0;
+  const errs = []; // lỗi của lượt chạy này, ghi vào dấu mốc để web cảnh báo
   // dấu "hôm nay đã chốt xong": đã chốt bảng chi tiêu của hôm qua thì các lần đồng bộ sau trong ngày bỏ qua hẳn bước này (đỡ đọc lặp lại)
   const prevMark = await db.collection("fbaccounts").doc("__sync").get().then(x => x.exists ? x.data() : {}).catch(() => ({}));
   const ledgerDone = pastTen && OPT.full !== true && prevMark.ledgerDay === yesterday;
@@ -148,7 +149,7 @@ async function main() {
       }
       console.log(`OK  ${d.name}: ${Object.keys(by).length} ngày`);
       ok++;
-    } catch (e) { console.error(`LỖI ${d.name}: ${e.message}`); fail++; }
+    } catch (e) { console.error(`LỖI ${d.name}: ${e.message}`); errs.push(String(e.message).slice(0, 200)); fail++; }
   };
   const queue = snap.docs.slice();
   await Promise.all(Array.from({ length: 5 }, async () => { while (queue.length) await one(queue.shift()); }));
@@ -157,7 +158,7 @@ async function main() {
   for (const a of Object.keys(accs)) {
     try { const info = await accountInfo(a); info.customers = accs[a]; await db.collection("fbaccounts").doc(a).set(info, { merge: true });
       console.log(`TK ${a}: dư nợ ${info.balance}, ngưỡng ${info.threshold === null ? "không đọc được" : info.threshold}, thẻ ${info.cardLast4 || "?"}, hạn ${info.nextBill || "chưa xác định"}`);
-    } catch (e) { console.error(`LỖI tài khoản ${a}: ${e.message}`); }
+    } catch (e) { console.error(`LỖI tài khoản ${a}: ${e.message}`); errs.push(String(e.message).slice(0, 200)); }
   }
   // Cập nhật luôn link chia sẻ của khách (trang khách xem), để link luôn mới dù bạn không mở web
   let ns = 0, nchk = 0, nerr = "";
@@ -181,7 +182,7 @@ async function main() {
     console.log(`Link chia sẻ: cập nhật ${ns} link.`);
   } catch (e) { if (e.message !== "__skip") { nerr = e.message; console.error("LỖI cập nhật link chia sẻ: " + e.message); } }
   // ghi dấu mốc để web hiện "máy chủ đã kiểm tra lúc nào" (1 lần ghi mỗi lượt chạy)
-  try { await db.collection("fbaccounts").doc("__sync").set({ at: Date.now(), ok, fail, linksChecked: nchk, linksUpdated: ns, linkError: nerr, ledgerDay: ledgerDone || (pastTen && fail === 0) ? yesterday : (prevMark.ledgerDay || "") }); } catch (e) { console.error("Không ghi được mốc đồng bộ: " + e.message); }
+  try { await db.collection("fbaccounts").doc("__sync").set({ at: Date.now(), ok, fail, linksChecked: nchk, linksUpdated: ns, linkError: nerr, errors: Array.from(new Set(errs)).slice(0, 3), tokenBad: errs.some(m => /token|oauth|session|expired|permission|authoriz/i.test(m)), ledgerDay: ledgerDone || (pastTen && fail === 0) ? yesterday : (prevMark.ledgerDay || "") }); } catch (e) { console.error("Không ghi được mốc đồng bộ: " + e.message); }
   console.log(`Xong. Thành công ${ok}, lỗi ${fail}.`);
   if (fail && !ok) throw new Error("Tất cả khách đều lỗi");
   return { ok, fail };
