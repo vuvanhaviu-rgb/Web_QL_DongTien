@@ -150,7 +150,8 @@ async function main() {
   try {
     let ns = 0;
     for (const c of snap.docs) {
-      const d = c.data(); if (!d.shareToken) continue;
+      const d = c.data(); if (!d.shareToken) continue; // khách không bật link thì bỏ qua hoàn toàn
+      if (!String(d.adAccountId || "").replace(/\D/g, "")) continue; // khách không nối Facebook: số chỉ đổi khi bạn sửa tay (web tự cập nhật link lúc đó)
       const rate = d.feeRate != null && d.feeRate !== "" ? Number(d.feeRate) : 10;
       const sp = await db.collection("spend").where("customerId", "==", c.id).get();
       const rows = sp.docs.map(x => x.data()).filter(r => r.date)
