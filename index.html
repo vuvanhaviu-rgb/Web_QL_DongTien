@@ -656,7 +656,7 @@ var VIEW_TOKEN=(function(){try{return new URLSearchParams(location.search).get("
 function newToken(){var a=new Uint8Array(18);crypto.getRandomValues(a);return Array.prototype.map.call(a,function(b){return ("0"+b.toString(36)).slice(-2)}).join("").slice(0,28)}
 function shareLink(t){return location.origin+location.pathname+"?v="+t}
 function sharePayload(c){
-  var rows=S.spend.filter(function(r){return r.customerId===c.id&&r.date}).sort(function(a,b){return String(a.date).localeCompare(String(b.date))||((a.createdAt||0)-(b.createdAt||0))})
+  var rows=S.spend.concat(liveRows(c.id)).filter(function(r){return r.customerId===c.id&&r.date}).sort(function(a,b){return String(a.date).localeCompare(String(b.date))||((a.createdAt||0)-(b.createdAt||0))})
     .map(function(r){return{date:r.date,adLive:Number(r.adLive)||0,adPost:Number(r.adPost)||0,feeRate:rateOf(r),transfer:Number(r.transfer)||0,paid:!!r.paid}});
   var out={name:c.name,rows:rows};
   if(c.shareCamps!==false){
@@ -1038,7 +1038,23 @@ function fbDiffHtml(from,to){
    +(D.items.length>8?'<br>… và '+(D.items.length-8)+' khách khác':'')
    +'<br><button class="btn small" data-act="fbfix" data-from="'+from+'" data-to="'+to+'" type="button" style="margin-top:8px">Cập nhật bảng chi tiêu theo Facebook</button></div>';
 }
+/* Số thực từ Facebook cho hôm nay (và hôm qua trước khi được chốt lúc 10h) chưa có trong bảng chi tiêu: chỉ để HIỂN THỊ ở Tổng quan và link chia sẻ, không ghi vào bảng chi tiêu của khách */
+function liveRows(cid){
+  var t=new Date(),td=ymd(t),yd=ymd(new Date(t.getTime()-864e5)),out=[];
+  S.fbspend.forEach(function(f){
+    if(f.date!==td&&f.date!==yd)return;if(cid&&f.customerId!==cid)return;
+    var c=cust(f.customerId);if(!c||!(Number(f.live)>0||Number(f.post)>0))return;
+    if(S.spend.some(function(x){return x.customerId===f.customerId&&x.date===f.date&&(Number(x.adLive)>0||Number(x.adPost)>0)}))return;
+    if(S.hidden.some(function(h){return h.customerId===f.customerId&&h.date===f.date}))return;
+    out.push({id:"lv_"+f.customerId+"_"+f.date,customerId:f.customerId,date:f.date,adLive:Number(f.live)||0,adPost:Number(f.post)||0,transfer:0,paid:false,createdAt:9e15,_live:true});
+  });
+  return out;
+}
 function vOverview(){
+  var _sp=S.spend;S.spend=_sp.concat(liveRows());
+  try{return vOverview0()}finally{S.spend=_sp}
+}
+function vOverview0(){
   var bal=custBalances(),balSum=0,balN=Object.keys(bal).length;Object.keys(bal).forEach(function(k){balSum+=bal[k]});
   var unpaid=owedRows();
   var over=dueSoon();

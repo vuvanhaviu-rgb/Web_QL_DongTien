@@ -153,17 +153,31 @@ async function main() {
       if (!String(d.adAccountId || "").replace(/\D/g, "")) continue; // khách không nối Facebook: số chỉ đổi khi bạn sửa tay (web tự cập nhật link lúc đó)
       const rate = d.feeRate != null && d.feeRate !== "" ? Number(d.feeRate) : 10;
       const sp = await db.collection("spend").where("customerId", "==", c.id).get();
-      const rows = sp.docs.map(x => x.data()).filter(r => r.date)
+      const ledger = sp.docs.map(x => x.data()).filter(r => r.date);
+      // lấy số Facebook của các ngày gần nhất (camps 7 ngày nếu cho khách xem chiến dịch, còn lại chỉ 2 ngày hôm nay/hôm qua)
+      const nDays = d.shareCamps !== false ? 7 : 2;
+      const days = Array.from({ length: nDays }, (_, i) => ymd(VN(Date.now() - i * 864e5)));
+      const got = [];
+      for (const day of days) { const fb = await db.collection("fbspend").where("customerId", "==", c.id).where("date", "==", day).limit(1).get(); fb.docs.forEach(x => got.push(x.data())); }
+      // hôm nay/hôm qua chưa có số trong bảng chi tiêu (chỉ chốt lúc 10h): hiện số thực từ Facebook trên link, không ghi vào bảng chi tiêu
+      const hid = await db.collection("hidden").where("customerId", "==", c.id).get();
+      const hidden = new Set(hid.docs.map(x => x.data().date));
+      const live = [];
+      for (const f of got) {
+        if (f.date !== days[0] && f.date !== days[1]) continue;
+        if (!(Number(f.live) > 0 || Number(f.post) > 0)) continue;
+        if (ledger.some(x => x.date === f.date && (Number(x.adLive) > 0 || Number(x.adPost) > 0))) continue;
+        if (hidden.has(f.date)) continue;
+        live.push({ date: f.date, adLive: Number(f.live) || 0, adPost: Number(f.post) || 0, transfer: 0, paid: false, createdAt: 9e15 });
+      }
+      const rows = ledger.concat(live)
         .sort((a, b) => String(a.date).localeCompare(String(b.date)) || ((a.createdAt || 0) - (b.createdAt || 0)))
         .map(r => ({ date: r.date, adLive: Number(r.adLive) || 0, adPost: Number(r.adPost) || 0,
           feeRate: r.feeRate != null && r.feeRate !== "" ? Number(r.feeRate) : rate, transfer: Number(r.transfer) || 0, paid: !!r.paid }));
       nchk++;
       const out = { name: d.name, rows };
       if (d.shareCamps !== false) {
-        const days = Array.from({ length: 7 }, (_, i) => ymd(VN(Date.now() - i * 864e5)));
-        const got = [];
-        for (const day of days) { const fb = await db.collection("fbspend").where("customerId", "==", c.id).where("date", "==", day).limit(1).get(); fb.docs.forEach(x => got.push(x)); }
-        const camps = got.map(x => x.data()).filter(r => r.camps && r.camps.length).sort((a, b) => String(b.date).localeCompare(String(a.date)))
+        const camps = got.filter(r => r.camps && r.camps.length).sort((a, b) => String(b.date).localeCompare(String(a.date)))
           .map(r => ({ date: r.date, items: r.camps.map(x => ({ n: x.n, s: x.s, k: x.k })) }));
         if (camps.length) out.camps = camps;
       }

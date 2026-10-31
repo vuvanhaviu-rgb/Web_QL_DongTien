@@ -34,7 +34,7 @@ service cloud.firestore {
 **Cách hoạt động:** workflow "Kéo chi phí Facebook" chạy `scripts/fb-sync.js`, đọc chi phí các chiến dịch và ghi vào Firebase.
 - Nhập **ID tài khoản quảng cáo** cho từng khách ở mục Khách hàng (một khách có thể có nhiều ID, cách nhau bằng dấu phẩy).
 - **Tách chi phí theo khách:** khi một tài khoản chạy cho nhiều khách, web nhận chiến dịch có tên trùng đúng tên khách. Chiến dịch không trùng tên thì tính theo **từ khóa Live / Bài viết** điền trong form khách hàng.
-- **Tự điền bảng chi tiêu:** chỉ một lần mỗi ngày, lần đồng bộ đầu tiên từ **10:00 sáng** giờ Việt Nam ghi chi phí của hôm qua rồi khóa, sau đó không tự sửa lại nữa. Số Facebook thô và chiến dịch vẫn cập nhật mỗi lần đồng bộ.
+- **Tự điền bảng chi tiêu (mục Khách hàng):** chỉ một lần mỗi ngày, lần đồng bộ đầu tiên từ **10:00 sáng** giờ Việt Nam ghi số chuẩn của hôm qua rồi khóa. Trong ngày, **Tổng quan và link chia sẻ** vẫn hiện số thực kéo từ Facebook (mỗi lần đồng bộ) nhưng số này không được ghi vào bảng chi tiêu của khách.
 - Chạy ngay: github.com/vuvanhaviu-rgb/Web_QL_DongTien/actions/workflows/fb-sync.yml → **Run workflow**.
 
 **Lịch chạy mỗi 10 phút:** lịch tự động của GitHub hay bị chậm, nên dùng thêm cron-job.org gọi GitHub:
