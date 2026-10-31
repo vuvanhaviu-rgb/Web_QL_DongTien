@@ -2,7 +2,6 @@
 const fs = require("fs");
 const path = require("path");
 const files = ["index.html", "firebase-config.js", "firebase-shim.js", "favicon.ico", "favicon-32.png", "favicon-192.png", "apple-touch-icon.png", "icon-512.png", "manifest.webmanifest", "sw.js"];
-const dirs = ["fonts", "vendor"]; // font Be Vietnam Pro và thư viện tạo ảnh báo cáo
 const out = path.join(__dirname, "..", "dist");
 fs.rmSync(out, { recursive: true, force: true });
 fs.mkdirSync(out, { recursive: true });
@@ -11,6 +10,5 @@ for (const f of files) {
   if (!fs.existsSync(src)) throw new Error("Thiếu file: " + f);
   fs.copyFileSync(src, path.join(out, f));
 }
-for (const d of dirs) fs.cpSync(path.join(__dirname, "..", d), path.join(out, d), { recursive: true });
 fs.writeFileSync(path.join(out, ".nojekyll"), "");
 console.log("Đã build vào dist/:", files.join(", "));
