@@ -1066,7 +1066,7 @@ function vOverview(){
   S.spend.forEach(function(r){if(!cust(r.customerId))return;if(r.date!==td0&&r.date!==td1)return;var x=spendRow(r),v=x.tot-x.xf;if(r.date===td0)nd0+=v;else nd1+=v});
   nd0=Math.max(0,nd0);nd1=Math.max(0,nd1);
   var dn=0,nOwe=0,nOver=0;Object.keys(cb).forEach(function(k){dn+=cb[k];if(cb[k]<0)nOwe++;else if(cb[k]>0)nOver++});
-  var h='<div class="tools"><div class="tabs" role="group" aria-label="Xem số liệu theo">'+OVP.map(function(t){return '<button data-act="ovp" data-v="'+t[0]+'" aria-pressed="'+(opt===t[0])+'">'+t[1]+'</button>'}).join("")+'</div><label class="dayp"><span>Chọn ngày</span>'+dateText("ov-day",opt==="day"?OR[0]:"","Chọn một ngày để xem (dd/mm/yyyy)")+'</label></div>'+fbDiffHtml(OR[0],OR[1])+'<div class="kpis top">'
+  var h='<div class="tools"><div class="tabs" role="group" aria-label="Xem số liệu theo">'+OVP.map(function(t){return '<button data-act="ovp" data-v="'+t[0]+'" aria-pressed="'+(opt===t[0])+'">'+t[1]+'</button>'}).join("")+'</div><label class="dayp"><span>Chọn ngày</span>'+dateText("ov-day",opt==="day"?OR[0]:"","Chọn một ngày để xem (dd/mm/yyyy)")+'</label></div>'+'<div class="kpis top">'
    +'<div class="kpi c-thu"><span>Tổng chi tiêu quảng cáo</span><b>'+vnd(P.live+P.post)+'</b><small>'+esc(OR[2])+' · Live '+num(P.live)+' · Bài viết '+num(P.post)+'</small></div>'
    +'<div class="kpi c-no '+(balSum>0?"bad":"")+'"><span>Tổng công nợ</span><b>'+vnd(balSum)+'</b><small>'+balN+' khách còn nợ · Nợ mới hôm nay '+vnd(nd0)+' · hôm qua '+vnd(nd1)+'</small></div>'
    +'<div class="kpi c-xf"><span>Tổng tiền khách chuyển</span><b>'+vnd(P.xf)+'</b><small>'+esc(OR[2])+' · '+Object.keys(P.xs).length+' khách đã chuyển</small></div>'
