@@ -656,14 +656,10 @@ var VIEW_TOKEN=(function(){try{return new URLSearchParams(location.search).get("
 function newToken(){var a=new Uint8Array(18);crypto.getRandomValues(a);return Array.prototype.map.call(a,function(b){return ("0"+b.toString(36)).slice(-2)}).join("").slice(0,28)}
 function shareLink(t){return location.origin+location.pathname+"?v="+t}
 function sharePayload(c){
-  var rows=S.spend.concat(liveRows(c.id)).filter(function(r){return r.customerId===c.id&&r.date}).sort(function(a,b){return String(a.date).localeCompare(String(b.date))||((a.createdAt||0)-(b.createdAt||0))})
-    .map(function(r){return{date:r.date,adLive:Number(r.adLive)||0,adPost:Number(r.adPost)||0,feeRate:rateOf(r),transfer:Number(r.transfer)||0,paid:!!r.paid}});
-  var out={name:c.name,rows:rows};
-  if(c.shareCamps!==false){
-    var cut=ymd(new Date(Date.now()-6*864e5)),cd=S.fbspend.filter(function(r){return r.customerId===c.id&&r.date>=cut&&r.camps&&r.camps.length})
-      .sort(function(a,b){return String(b.date).localeCompare(String(a.date))}).map(function(r){return{date:r.date,items:r.camps.map(function(x){return{n:x.n,s:x.s,k:x.k}})}});
-    if(cd.length)out.camps=cd;
-  }
+  /* link chia sẻ chỉ gồm các chiến dịch đang chạy (theo từ khóa của khách) trong 7 ngày gần nhất */
+  var out={name:c.name},cut=ymd(new Date(Date.now()-6*864e5)),cd=S.fbspend.filter(function(r){return r.customerId===c.id&&r.date>=cut&&r.camps&&r.camps.length})
+    .sort(function(a,b){return String(b.date).localeCompare(String(a.date))}).map(function(r){return{date:r.date,items:r.camps.map(function(x){return{n:x.n,s:x.s,k:x.k}})}});
+  if(cd.length)out.camps=cd;
   return out;
 }
 function syncShares(force){
@@ -699,26 +695,10 @@ function copyShare(){
   else{inp.select();document.execCommand("copy");done()}
 }
 function shareBox(c){
-  if(!c.shareToken)return '<div class="sharebox"><span>Gửi bảng chi tiêu này cho khách xem, không cần đăng nhập.</span><button class="btn small" data-act="share">Tạo link chia sẻ</button></div>';
-  return '<div class="sharebox on"><span>Link xem không cần đăng nhập (chỉ xem, không sửa được):</span><input id="share-url" readonly value="'+esc(shareLink(c.shareToken))+'" aria-label="Link chia sẻ"><button class="btn small" data-act="copyshare">Sao chép</button><button class="btn small danger" data-act="unshare">Tắt chia sẻ</button><label class="sharecamp"><input type="checkbox" data-act="sharecamps"'+(c.shareCamps!==false?' checked':'')+'> Cho khách xem các chiến dịch đang chạy mỗi ngày (7 ngày gần nhất)</label></div>';
+  if(!c.shareToken)return '<div class="sharebox"><span>Gửi link cho khách xem các chiến dịch đang chạy, không cần đăng nhập.</span><button class="btn small" data-act="share">Tạo link chia sẻ</button></div>';
+  return '<div class="sharebox on"><span>Link xem không cần đăng nhập (chỉ xem, không sửa được):</span><input id="share-url" readonly value="'+esc(shareLink(c.shareToken))+'" aria-label="Link chia sẻ"><button class="btn small" data-act="copyshare">Sao chép</button><button class="btn small danger" data-act="unshare">Tắt chia sẻ</button></div>';
 }
 function viewerHtml(d){
-  var rows=(d.rows||[]).slice(),tl=0,tp=0,tf=0,tt=0,tx=0,M={},order=[];
-  rows.forEach(function(r){
-    var ad=r.adLive+r.adPost,fee=Math.round(ad*r.feeRate/100),tot=ad+fee,k=String(r.date).slice(0,7);
-    r._fee=fee;r._tot=tot;tl+=r.adLive;tp+=r.adPost;tf+=fee;tt+=tot;tx+=r.transfer;
-    if(!M[k]){M[k]={live:0,post:0,fee:0,tot:0,xf:0,rows:[]};order.push(k)}
-    var m=M[k];m.live+=r.adLive;m.post+=r.adPost;m.fee+=fee;m.tot+=tot;m.xf+=r.transfer;m.rows.push(r);
-  });
-  var bal=tt-tx,body="";
-  order.sort().forEach(function(k){
-    var m=M[k];
-    body+='<tr class="mh"><td>'+monthLabel(k)+'</td><td class="num">'+num(m.live)+'</td><td class="num">'+num(m.post)+'</td><td></td><td class="num">'+num(m.fee)+'</td><td class="num">'+num(m.tot)+'</td><td></td><td class="num">'+num(m.xf)+'</td></tr>';
-    m.rows.forEach(function(r){
-      body+='<tr><td>'+fmtDate(r.date)+'</td><td class="num">'+nz(r.adLive)+'</td><td class="num">'+nz(r.adPost)+'</td><td>'+String(r.feeRate).replace(".",",")+'%</td><td class="num">'+nz(r._fee)+'</td><td class="num"><b>'+nz(r._tot)+'</b></td>'
-        +'<td><span class="pill '+(r.paid?"ok":"wait")+'">'+(r.paid?"Đã thanh toán":"Chưa thanh toán")+'</span></td><td class="num">'+nz(r.transfer)+'</td></tr>';
-    });
-  });
   var upd=d.updatedAt?new Date(d.updatedAt).toLocaleString("vi-VN"):"";
   var campH="";
   if(d.camps&&d.camps.length){
@@ -728,14 +708,8 @@ function viewerHtml(d){
       +cur.items.slice().sort(function(a,b){return (b.s||0)-(a.s||0)}).map(function(x){return '<tr><td>'+esc(x.n)+'</td><td>'+(x.k==="live"?"Live":"Bài viết")+'</td><td class="num">'+num(x.s)+'</td></tr>'}).join("")
       +'</tbody><tfoot><tr><td>Tổng '+cur.items.length+' chiến dịch</td><td></td><td class="num">'+num(ct)+'</td></tr></tfoot></table></div><p class="hint">Chi phí quảng cáo chưa gồm phí dịch vụ.</p></section>';
   }
-  return '<div class="head"><div><h1>'+esc(d.name||"Bảng chi tiêu")+'</h1><p>Bảng chi tiêu quảng cáo</p></div></div>'
-    +'<div class="kpis"><div class="kpi"><span>Chi phí quảng cáo</span><b>'+vnd(tl+tp)+'</b><small>Live '+num(tl)+' · Bài viết '+num(tp)+'</small></div>'
-    +'<div class="kpi"><span>Phí dịch vụ</span><b>'+vnd(tf)+'</b><small>Tổng cộng '+vnd(tt)+'</small></div>'
-    +'<div class="kpi"><span>Đã chuyển khoản</span><b>'+vnd(tx)+'</b><small>&nbsp;</small></div>'
-    +'<div class="kpi '+(bal>0?"bad":"")+'"><span>Còn phải thanh toán</span><b>'+vnd(Math.max(0,bal))+'</b><small>'+(bal>0?"Tổng − đã chuyển khoản":bal<0?"Đã chuyển dư "+vnd(-bal):"Đã tất toán")+'</small></div></div>'
-    +(rows.length?'<div class="tablewrap"><table class="ledger vw"><thead><tr><th>Ngày</th><th>Quảng cáo Live</th><th>Quảng cáo Bài viết</th><th>Phí %</th><th>Phí dịch vụ</th><th>Tổng</th><th>Trạng thái</th><th>Đã chuyển khoản</th></tr></thead><tbody>'+body+'</tbody>'
-      +'<tfoot><tr><td>Tổng cộng</td><td class="num">'+num(tl)+'</td><td class="num">'+num(tp)+'</td><td></td><td class="num">'+num(tf)+'</td><td class="num">'+num(tt)+'</td><td></td><td class="num">'+num(tx)+'</td></tr></tfoot></table></div>'
-      :emptyBlock("Chưa có số liệu","Bảng chi tiêu sẽ hiện ở đây khi có dữ liệu."))+campH+'<div class="live-note"><i class="live-dot"></i><span>Cập nhật chi tiêu theo thời gian thực'+(upd?'<br>Đổi lần cuối '+esc(upd):'')+'<br>Nhận lúc '+new Date().toLocaleTimeString("vi-VN",{hour:"2-digit",minute:"2-digit",second:"2-digit"})+'</span></div>';
+  return '<div class="head"><div><h1>'+esc(d.name||"Chiến dịch đang chạy")+'</h1><p>Các chiến dịch đang chạy</p></div></div>'
+    +(campH||emptyBlock("Chưa có chiến dịch đang chạy","Các chiến dịch có chi tiêu sẽ hiện ở đây."))+'<div class="live-note"><i class="live-dot"></i><span>Cập nhật chi tiêu theo thời gian thực'+(upd?'<br>Đổi lần cuối '+esc(upd):'')+'<br>Nhận lúc '+new Date().toLocaleTimeString("vi-VN",{hour:"2-digit",minute:"2-digit",second:"2-digit"})+'</span></div>';;
 }
 async function viewerInit(){
   document.body.classList.add("viewer");
@@ -1551,7 +1525,7 @@ function sharesPanel(){
   var on=S.customers.filter(function(c){return c.shareToken}),sy=S.fbaccounts.filter(function(x){return x.id==="__sync"})[0],age=sy&&sy.at?Math.round((Date.now()-sy.at)/60000):null;
   var syH=sy&&sy.at?'<p class="hint">Máy chủ kiểm tra gần nhất lúc <b>'+new Date(sy.at).toLocaleString("vi-VN")+'</b> ('+(age<1?"vừa xong":age+" phút trước")+') · kiểm tra '+(sy.linksChecked||0)+' link, cập nhật '+(sy.linksUpdated||0)+' link vì có số mới'+(sy.linkError?' · <b>lỗi: '+esc(sy.linkError)+'</b>':'')+(age>40?' · <b>quá lâu chưa chạy, kiểm tra cron-job.org</b>':'')+'.</p>':'<p class="hint">Chưa có mốc kiểm tra của máy chủ (sẽ hiện sau lần đồng bộ tới).</p>';
   return '<section class="panel"><h2>Link đang bật chia sẻ <small>'+on.length+'/'+S.customers.length+' khách</small></h2>'
-    +(on.length?'<div class="list">'+on.map(function(c){return '<div class="row"><div class="l"><button class="link" data-act="goc" data-id="'+esc(c.id)+'">'+esc(c.name)+'</button><span>Khách xem được bảng chi tiêu bằng link, không cần đăng nhập</span></div><div class="r"><button class="btn small danger" type="button" data-act="unshare-id" data-id="'+esc(c.id)+'">Tắt chia sẻ</button></div></div>'}).join("")+'</div>':'<p class="hint">Chưa có khách nào được bật link chia sẻ. Bật trong bảng chi tiêu của từng khách.</p>')+syH+'</section>';
+    +(on.length?'<div class="list">'+on.map(function(c){return '<div class="row"><div class="l"><button class="link" data-act="goc" data-id="'+esc(c.id)+'">'+esc(c.name)+'</button><span>Khách xem các chiến dịch đang chạy bằng link, không cần đăng nhập</span></div><div class="r"><button class="btn small danger" type="button" data-act="unshare-id" data-id="'+esc(c.id)+'">Tắt chia sẻ</button></div></div>'}).join("")+'</div>':'<p class="hint">Chưa có khách nào được bật link chia sẻ. Bật trong bảng chi tiêu của từng khách.</p>')+syH+'</section>';
 }
 function vStats(){
   var SD=statData(),mk=SD.mk,M=SD.M,C=SD.C,cur=M[mk[11]],prev=M[mk[10]];

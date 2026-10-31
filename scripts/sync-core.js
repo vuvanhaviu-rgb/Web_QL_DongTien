@@ -149,44 +149,25 @@ async function main() {
       console.log(`TK ${a}: dư nợ ${info.balance}, ngưỡng ${info.threshold === null ? "không đọc được" : info.threshold}, thẻ ${info.cardLast4 || "?"}, hạn ${info.nextBill || "chưa xác định"}`);
     } catch (e) { console.error(`LỖI tài khoản ${a}: ${e.message}`); }
   }
+  // so sánh không phụ thuộc thứ tự khóa (Firestore trả khóa theo thứ tự chữ cái)
+  const stable = v => JSON.stringify(v, (k, x) => x && typeof x === "object" && !Array.isArray(x) ? Object.keys(x).sort().reduce((a, y) => (a[y] = x[y], a), {}) : x);
   // Cập nhật luôn link chia sẻ của khách (trang khách xem), để link luôn mới dù bạn không mở web
   let ns = 0, nchk = 0, nerr = "";
   try {
     for (const c of snap.docs) {
       const d = c.data(); if (!d.shareToken) continue; // khách không bật link thì bỏ qua hoàn toàn
       if (!String(d.adAccountId || "").replace(/\D/g, "")) continue; // khách không nối Facebook: số chỉ đổi khi bạn sửa tay (web tự cập nhật link lúc đó)
-      const rate = d.feeRate != null && d.feeRate !== "" ? Number(d.feeRate) : 10;
-      const sp = await db.collection("spend").where("customerId", "==", c.id).get();
-      const ledger = sp.docs.map(x => x.data()).filter(r => r.date);
-      // lấy số Facebook của các ngày gần nhất (camps 7 ngày nếu cho khách xem chiến dịch, còn lại chỉ 2 ngày hôm nay/hôm qua)
-      const nDays = d.shareCamps !== false ? 7 : 2;
-      const days = Array.from({ length: nDays }, (_, i) => ymd(VN(Date.now() - i * 864e5)));
+      // link chia sẻ chỉ gồm các chiến dịch đang chạy (theo từ khóa của khách) trong 7 ngày gần nhất: không đọc bảng chi tiêu
+      const days = Array.from({ length: 7 }, (_, i) => ymd(VN(Date.now() - i * 864e5)));
       const got = [];
       for (const day of days) { const fb = await db.collection("fbspend").where("customerId", "==", c.id).where("date", "==", day).limit(1).get(); fb.docs.forEach(x => got.push(x.data())); }
-      // hôm nay/hôm qua chưa có số trong bảng chi tiêu (chỉ chốt lúc 10h): hiện số thực từ Facebook trên link, không ghi vào bảng chi tiêu
-      const hid = await db.collection("hidden").where("customerId", "==", c.id).get();
-      const hidden = new Set(hid.docs.map(x => x.data().date));
-      const live = [];
-      for (const f of got) {
-        if (f.date !== days[0] && f.date !== days[1]) continue;
-        if (!(Number(f.live) > 0 || Number(f.post) > 0)) continue;
-        if (ledger.some(x => x.date === f.date && (Number(x.adLive) > 0 || Number(x.adPost) > 0))) continue;
-        if (hidden.has(f.date)) continue;
-        live.push({ date: f.date, adLive: Number(f.live) || 0, adPost: Number(f.post) || 0, transfer: 0, paid: false, createdAt: 9e15 });
-      }
-      const rows = ledger.concat(live)
-        .sort((a, b) => String(a.date).localeCompare(String(b.date)) || ((a.createdAt || 0) - (b.createdAt || 0)))
-        .map(r => ({ date: r.date, adLive: Number(r.adLive) || 0, adPost: Number(r.adPost) || 0,
-          feeRate: r.feeRate != null && r.feeRate !== "" ? Number(r.feeRate) : rate, transfer: Number(r.transfer) || 0, paid: !!r.paid }));
       nchk++;
-      const out = { name: d.name, rows };
-      if (d.shareCamps !== false) {
-        const camps = got.filter(r => r.camps && r.camps.length).sort((a, b) => String(b.date).localeCompare(String(a.date)))
-          .map(r => ({ date: r.date, items: r.camps.map(x => ({ n: x.n, s: x.s, k: x.k })) }));
-        if (camps.length) out.camps = camps;
-      }
+      const out = { name: d.name };
+      const camps = got.filter(r => r.camps && r.camps.length).sort((a, b) => String(b.date).localeCompare(String(a.date)))
+        .map(r => ({ date: r.date, items: r.camps.map(x => ({ n: x.n, s: x.s, k: x.k })) }));
+      if (camps.length) out.camps = camps;
       const ref = db.collection("shares").doc(d.shareToken), cur = await ref.get();
-      if (cur.exists) { const o = cur.data(); delete o.updatedAt; if (JSON.stringify(o) === JSON.stringify(out)) continue; }
+      if (cur.exists) { const o = cur.data(); delete o.updatedAt; if (stable(o) === stable(out)) continue; }
       await ref.set(Object.assign({}, out, { updatedAt: Date.now() })); ns++;
     }
     console.log(`Link chia sẻ: cập nhật ${ns} link.`);
