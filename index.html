@@ -578,6 +578,8 @@ table.sp td:first-child,table.sp td:first-child .link{font-size:16px}
 }
 .rp-ro{background:#fff;color:#1C1E21;border:1px solid #D8E0DE;border-radius:12px;margin:0 0 12px;overflow:hidden;font-family:'VH Report','Be Vietnam Pro',system-ui,sans-serif}
 .rp-roh{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:baseline;gap:4px 12px;padding:12px 14px;border-bottom:1px solid #EEF0F3;background:#F7F8FA}
+.rp-tg{width:100%;border:0;border-bottom:1px solid #EEF0F3;text-align:left;cursor:pointer;font-family:inherit;color:inherit;align-items:center}.rp-ro.shut .rp-tg{border-bottom:0}.rp-tg span{font-weight:600;color:#0866FF!important;white-space:nowrap}
+.rp-ro.shut .rp-rog{display:none}.rp-lst.srch .rp-ro.shut .rp-rog{display:grid}
 .rp-roh b{font-size:14px;font-weight:700}.rp-roh span{font-size:12px;color:#5B6472}
 .rp-rog{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:0}
 .rp-row{display:grid;grid-template-columns:26px minmax(0,1fr) auto;align-items:center;gap:8px 10px;padding:11px 12px;border-bottom:1px solid #EEF0F3;border-right:1px solid #EEF0F3;background:#fff;font-size:14px;min-width:0}
@@ -1858,7 +1860,7 @@ function vReport(){
   var lst='<div class="rp-bar"><input id="rp-q" type="search" autocomplete="off" spellcheck="false" placeholder="Tìm khách theo tên" aria-label="Tìm khách theo tên"></div>';
   lst+='<section class="rp-ro"><div class="rp-roh"><b>Có phát sinh chi phí '+rpLabel()+': '+act.length+' khách</b><span>Bấm "Tạo ảnh báo cáo" bên phải từng khách</span></div>'
     +(act.length?'<div class="rp-rog">'+act.map(row).join("")+'</div>':'<div class="rp-none">Không có khách nào phát sinh chi phí trong kỳ này.</div>')+'</section>';
-  if(idle.length)lst+='<section class="rp-ro"><div class="rp-roh"><b>Không phát sinh chi phí: '+idle.length+' khách</b></div><div class="rp-rog">'+idle.map(row).join("")+'</div></section>';
+  if(idle.length){var op=!!ui.rpIdle;lst+='<section class="rp-ro rp-idle'+(op?"":" shut")+'"><button type="button" class="rp-roh rp-tg" data-act="rpidle" aria-expanded="'+op+'"><b>Không phát sinh chi phí: '+idle.length+' khách</b><span>'+(op?"Ẩn ▴":"Hiện ▾")+'</span></button><div class="rp-rog">'+idle.map(row).join("")+'</div></section>'}
   /* danh sách khách bên trái, báo cáo của khách đang bấm hiện bên phải (điện thoại / màn hình hẹp: bấm vào khách thì báo cáo thay danh sách, có nút quay lại) */
   var im=c&&ui.rpImg&&ui.rpImg.id===c.id?ui.rpImg:null,bk='<div class="rp-bar rp-bk-n"><button type="button" class="rp-btn" data-act="rpback">← Quay lại danh sách</button></div>';
   var det=!c?'<div class="rp-empty">Bấm "Tạo ảnh báo cáo" ở khách bạn muốn, ảnh báo cáo sẽ hiện ở đây để bạn sao chép gửi khách.</div>'
@@ -1873,6 +1875,7 @@ document.addEventListener("input",function(e){
   if(!e.target||e.target.id!=="rp-q")return;
   var k=noAccent(e.target.value).toLowerCase().trim();
   document.querySelectorAll(".rp-rog .rp-row").forEach(function(b){b.hidden=!!k&&b.dataset.s.indexOf(k)<0});
+  var ls=document.querySelector(".rp-lst");if(ls)ls.classList.toggle("srch",!!k); /* đang tìm tên: vẫn hiện cả khách trong mục đã ẩn */
 });
 /* tải ảnh */
 function loadHtmlToImage(){
@@ -2085,6 +2088,7 @@ document.addEventListener("click",function(e){
   else if(a==="open"){ui.cid=el.dataset.id;render();window.scrollTo(0,0)}
   else if(a==="back"){ui.cid="";render()}
   else if(a==="rpmake")rpMake(el.dataset.id);
+  else if(a==="rpidle"){ui.rpIdle=!ui.rpIdle;render()}
   else if(a==="rpback"){ui.rpCid="";ui.rpImg=null;ui.rpTok=(ui.rpTok||0)+1;render();window.scrollTo(0,0)}
   else if(a==="rppre"){ui.rpPre=el.dataset.v;ui.rpDate="";ui.rpCid="";ui.rpImg=null;ui.rpTok=(ui.rpTok||0)+1;render()}
   else if(a==="more"){e.preventDefault();var ms=document.getElementById("more-sheet");if(ms)ms.classList.toggle("open")}
