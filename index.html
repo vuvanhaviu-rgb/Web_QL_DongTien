@@ -558,6 +558,18 @@ table.sp td:first-child,table.sp td:first-child .link{font-size:16px}
 .rp-pick .rp-cnt{font-size:12px;color:var(--muted)}
 .rp-list .rp-sd{display:flex;flex-direction:column;align-items:flex-end;gap:2px}
 .rp-list button small.c{color:#3A4250;font-weight:500}
+.rp-ro{background:#fff;color:#1C1E21;border:1px solid #D8E0DE;border-radius:12px;margin:0 0 12px;overflow:hidden;font-family:'VH Report','Be Vietnam Pro',system-ui,sans-serif}
+.rp-roh{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:baseline;gap:4px 12px;padding:12px 14px;border-bottom:1px solid #EEF0F3}
+.rp-roh b{font-size:14px;font-weight:700}.rp-roh span{font-size:12px;color:#5B6472}
+.rp-rog{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:0;max-height:272px;overflow:auto}
+.rp-rog button{display:flex;align-items:center;gap:10px;text-align:left;padding:10px 14px;border:0;border-bottom:1px solid #EEF0F3;border-right:1px solid #EEF0F3;background:#fff;color:inherit;cursor:pointer;font-size:13px;min-width:0}
+.rp-rog button:hover{background:#F7F8FA}
+.rp-rog button.on{background:#F2F6FF;box-shadow:inset 3px 0 0 #0866FF}
+.rp-rog button.off .n{color:#5B6472}
+.rp-rog i{font-style:normal;font-size:12px;font-weight:700;color:#5B6472;min-width:22px;text-align:right}
+.rp-rog .n{flex:1;min-width:0;font-weight:600;overflow-wrap:anywhere}
+.rp-rog .v{display:flex;flex-direction:column;align-items:flex-end;gap:1px;white-space:nowrap}
+.rp-rog small{font-size:11px;color:#3A4250}.rp-rog small.d{color:#B42318;font-weight:600}.rp-rog small.z{color:#1B7F4B}
 .rp-cb{position:relative;flex:1 1 280px;max-width:420px}
 .rp-cb input{width:100%;height:44px;padding:0 14px;border-radius:10px;border:1px solid #C9CDD3;background:#fff;color:#1C1E21;font-size:14px;font-weight:600}
 .rp-list{position:absolute;left:0;right:0;top:48px;z-index:20;max-height:320px;overflow:auto;background:#fff;color:#1C1E21;border:1px solid #C9CDD3;border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.14);display:none}
@@ -1795,13 +1807,20 @@ function dayCost(cid,date){
   return v;
 }
 function rpDate(){return ui.rpDate&&ui.rpDate<=todayStr()?ui.rpDate:yestStr()}
+/* danh sách đủ các khách hiện sẵn bên ngoài, đánh số thứ tự (chi phí ngày chọn cao nhất lên đầu); bấm vào để xem báo cáo */
+function rpRoster(sel,rd,bal){
+  var cost={};S.customers.forEach(function(c){cost[c.id]=dayCost(c.id,rd)});
+  var L=S.customers.slice().sort(function(a,b){return (cost[b.id]||0)-(cost[a.id]||0)||(bal[b.id]||0)-(bal[a.id]||0)||String(a.name).localeCompare(String(b.name),"vi")});
+  return '<section class="rp-ro" aria-label="Danh sách khách hàng"><div class="rp-roh"><b>Tất cả khách hàng ('+L.length+')</b><span>Chi phí ngày '+dm2(rd)+' · bấm vào tên để xem báo cáo</span></div><div class="rp-rog">'
+    +L.map(function(c,i){return '<button type="button" data-act="rppick" data-id="'+esc(c.id)+'" class="'+(c.id===sel.id?"on":"")+(cost[c.id]>0?"":" off")+'"'+(c.id===sel.id?' aria-current="true"':"")+'><i>'+(i+1)+'</i><span class="n">'+esc(c.name)+'</span><span class="v"><small class="c">'+(cost[c.id]>0?"Chi phí "+vnd(cost[c.id]):"Không phát sinh")+'</small><small class="'+(bal[c.id]>0?"d":"z")+'">'+(bal[c.id]>0?"Nợ "+vnd(bal[c.id]):"Đã trả đủ")+'</small></span></button>'}).join("")+'</div></section>';
+}
 function vReport(){
   var bal=custBalances(),list=S.customers.slice().sort(function(a,b){return (bal[b.id]||0)-(bal[a.id]||0)||String(a.name).localeCompare(String(b.name),"vi")});
   if(!list.length)return{title:"Chi Tiêu Gửi Khách",sub:"Báo cáo chi tiêu và công nợ để gửi khách",html:'<div class="empty"><span>Chưa có khách hàng nào.</span></div>'};
   var c=cust(ui.rpCid)||list[0];ui.rpCid=c.id;
   var rd=rpDate(),cnt=S.customers.filter(function(x){return dayCost(x.id,rd)>0}).length;
   var pick='<div class="rp-pick"><label for="rp-date">Ngày chi tiêu</label><input id="rp-date" type="date" value="'+rd+'" max="'+todayStr()+'"><label for="rp-q">Khách hàng</label><div class="rp-cb"><input id="rp-q" type="text" autocomplete="off" spellcheck="false" value="'+esc(c.name)+'" placeholder="Gõ tên khách để tìm" role="combobox" aria-expanded="false" aria-controls="rp-list"><div class="rp-list" id="rp-list" role="listbox"></div></div><label class="rp-all"><input type="checkbox" id="rp-all"'+(ui.rpAll?" checked":"")+'> Hiện cả khách không phát sinh chi phí</label><span class="rp-cnt">'+cnt+' khách có chi phí ngày '+dm2(rd)+'</span></div>';
-  return{title:"Chi Tiêu Gửi Khách",sub:"Báo cáo chi tiêu và công nợ để gửi khách",html:pick+reportHtml(c,{tools:true,date:rd})};
+  return{title:"Chi Tiêu Gửi Khách",sub:"Báo cáo chi tiêu và công nợ để gửi khách",html:pick+rpRoster(c,rd,bal)+reportHtml(c,{tools:true,date:rd})};
 }
 /* ô chọn khách có tìm theo tên (bỏ dấu) */
 function rpFill(q){
