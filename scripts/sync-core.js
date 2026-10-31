@@ -146,6 +146,33 @@ async function main() {
       console.log(`TK ${a}: dư nợ ${info.balance}, ngưỡng ${info.threshold === null ? "không đọc được" : info.threshold}, thẻ ${info.cardLast4 || "?"}, hạn ${info.nextBill || "chưa xác định"}`);
     } catch (e) { console.error(`LỖI tài khoản ${a}: ${e.message}`); }
   }
+  // Cập nhật luôn link chia sẻ của khách (trang khách xem), để link luôn mới dù bạn không mở web
+  try {
+    let ns = 0;
+    if (!(FULL || nowVN.getUTCMinutes() < 15)) throw new Error("__skip"); // chỉ chạy mỗi giờ một lần cho đỡ tốn lượt đọc
+    for (const c of snap.docs) {
+      const d = c.data(); if (!d.shareToken) continue;
+      const rate = d.feeRate != null && d.feeRate !== "" ? Number(d.feeRate) : 10;
+      const sp = await db.collection("spend").where("customerId", "==", c.id).get();
+      const rows = sp.docs.map(x => x.data()).filter(r => r.date)
+        .sort((a, b) => String(a.date).localeCompare(String(b.date)) || ((a.createdAt || 0) - (b.createdAt || 0)))
+        .map(r => ({ date: r.date, adLive: Number(r.adLive) || 0, adPost: Number(r.adPost) || 0,
+          feeRate: r.feeRate != null && r.feeRate !== "" ? Number(r.feeRate) : rate, transfer: Number(r.transfer) || 0, paid: !!r.paid }));
+      const out = { name: d.name, rows };
+      if (d.shareCamps !== false) {
+        const days = Array.from({ length: 7 }, (_, i) => ymd(VN(Date.now() - i * 864e5)));
+        const got = [];
+        for (const day of days) { const fb = await db.collection("fbspend").where("customerId", "==", c.id).where("date", "==", day).limit(1).get(); fb.docs.forEach(x => got.push(x)); }
+        const camps = got.map(x => x.data()).filter(r => r.camps && r.camps.length).sort((a, b) => String(b.date).localeCompare(String(a.date)))
+          .map(r => ({ date: r.date, items: r.camps.map(x => ({ n: x.n, s: x.s, k: x.k })) }));
+        if (camps.length) out.camps = camps;
+      }
+      const ref = db.collection("shares").doc(d.shareToken), cur = await ref.get();
+      if (cur.exists) { const o = cur.data(); delete o.updatedAt; if (JSON.stringify(o) === JSON.stringify(out)) continue; }
+      await ref.set(Object.assign({}, out, { updatedAt: Date.now() })); ns++;
+    }
+    console.log(`Link chia sẻ: cập nhật ${ns} link.`);
+  } catch (e) { if (e.message !== "__skip") console.error("LỖI cập nhật link chia sẻ: " + e.message); }
   console.log(`Xong. Thành công ${ok}, lỗi ${fail}.`);
   if (fail && !ok) throw new Error("Tất cả khách đều lỗi");
   return { ok, fail };

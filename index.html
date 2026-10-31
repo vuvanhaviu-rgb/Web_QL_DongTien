@@ -743,7 +743,7 @@ async function viewerInit(){
   try{
     var snap=await db.collection("shares").doc(VIEW_TOKEN).get();
     if(!snap.exists){main.innerHTML=emptyBlock("Link không còn hiệu lực","Người gửi đã tắt chia sẻ hoặc link chưa đúng.");return}
-    ui.vdata=snap.data();main.innerHTML=viewerHtml(ui.vdata);tagKpis(main);
+    ui.vdata=snap.data();main.innerHTML=viewerHtml(ui.vdata);tagKpis(main);labelTables(main);
   }catch(e){main.innerHTML=emptyBlock("Không mở được link","Chủ trang có thể chưa bật quyền xem công khai cho link chia sẻ.")}
 }
 
@@ -1618,6 +1618,18 @@ function vSettings(){
   return{title:"Cài đặt",sub:"Sao lưu dữ liệu và tài khoản",html:h};
 }
 function bkRemind(){return""}
+/* ghi nhãn cột vào từng ô để bảng hiện thành thẻ gọn trên điện thoại (dùng cả cho trang khách xem) */
+function labelTables(root){
+  var L=["Ngày","Quảng cáo Live","Quảng cáo Bài viết","Phí %","Phí dịch vụ","Tổng","Note","Khách chuyển khoản",""];
+  root.querySelectorAll("table").forEach(function(t){
+    var led=t.classList.contains("ledger")&&!t.classList.contains("vw"),ths=[];
+    if(!led)t.querySelectorAll("thead th").forEach(function(th){ths.push(th.textContent.trim())});
+    t.querySelectorAll("tbody tr, tfoot tr").forEach(function(tr){
+      if(tr.classList.contains("mh"))return;
+      Array.prototype.forEach.call(tr.children,function(td,i){td.setAttribute("data-label",(led?L:ths)[i]||"")});
+    });
+  });
+}
 function render(){
   if(pointerDown){pendingRender=true;return}
   var v=(ui.view==="khach-hang"&&ui.cid&&cust(ui.cid))?vCustomerDetail:(({"tong-quan":vOverview,"spend":vSpend,"khach-hang":vCustomers,"cong-no":vPayments,"bang-gia":vPrices,"lich-su":vHistory,"thong-ke":vStats,"cai-dat":vSettings})[ui.view]||vOverview);
@@ -1642,14 +1654,7 @@ function render(){
     var L=["Ngày","Quảng cáo Live","Quảng cáo Bài viết","Phí %","Phí dịch vụ","Tổng","Note","Khách chuyển khoản",""];
     tagKpis($("#main"));
     if(ui.view==="cai-dat")bkShow();
-    document.querySelectorAll("#main table").forEach(function(t){
-      var led=t.classList.contains("ledger"),ths=[];
-      if(!led)t.querySelectorAll("thead th").forEach(function(th){ths.push(th.textContent.trim())});
-      t.querySelectorAll("tbody tr, tfoot tr").forEach(function(tr){
-        if(tr.classList.contains("mh"))return;
-        Array.prototype.forEach.call(tr.children,function(td,i){td.setAttribute("data-label",(led?L:ths)[i]||"")});
-      });
-    });
+    labelTables($("#main"));
   })();
   rendering=false;
   var newSc=document.querySelector(".ledscroll");if(newSc){newSc.scrollTop=scTop;stickyHead()}
@@ -1839,7 +1844,7 @@ document.addEventListener("change",function(e){
   }
   if(id==="phc"){ui.phc=v;render()}
   else if(id==="pc"){ui.pc=v;render()}
-  else if(id==="vw-day"){ui.vday=v;if(ui.vdata){$("#main").innerHTML=viewerHtml(ui.vdata);tagKpis($("#main"))}}
+  else if(id==="vw-day"){ui.vday=v;if(ui.vdata){$("#main").innerHTML=viewerHtml(ui.vdata);tagKpis($("#main"));labelTables($("#main"))}}
   else if(id==="ov-day"){var iv=parseDmy(v);if(iv){ui.ovd=iv;ui.ovp="day";render()}else if(v){toast("Nhập ngày theo dạng dd/mm/yyyy, ví dụ 28/10/2026")}}
   else if(id==="ov-month"){if(v){ui.ovmo=v;render()}}
   else if(id==="ov-year"){var yy=Math.round(Number(v));if(yy>=2000&&yy<=2100){ui.ovy=yy;render()}}
