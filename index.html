@@ -1758,7 +1758,7 @@ function reportData(c,date){
   rem.forEach(function(o){cum+=o.owe;o.cum=cum});
   var t0=new Date(+td.slice(0,4),+td.slice(5,7)-1,+td.slice(8,10)).getTime();
   rem.forEach(function(o){o.days=Math.max(0,Math.round((t0-new Date(+o.d.slice(0,4),+o.d.slice(5,7)-1,+o.d.slice(8,10)).getTime())/864e5))});
-  return{yd:yd,td:td,y:y,bal:cum,rem:rem,rate:defaultRate(c.id),isY:yd===yestStr()};
+  return{yd:yd,td:td,y:y,bal:cum,pay:cum>=1000?Math.floor(cum/1000)*1000:cum,rem:rem,rate:defaultRate(c.id),isY:yd===yestStr()};
 }
 function reportHtml(c,o){
   o=o||{};
@@ -1780,7 +1780,7 @@ function reportHtml(c,o){
   h+='<div class="sq-cards"><section class="sq-cd"><span>Chi phí '+(D.isY?"hôm qua":"ngày")+' ('+dm(D.yd)+')</span>'+cost+'</section>';
   if(owe){
     var old=D.rem[0],nw=D.rem[D.rem.length-1];
-    h+='<section class="sq-cd red"><span>Tổng cần thanh toán</span><span class="sq-big red">'+m(D.bal)+'</span><span class="sq-sb">Cộng dồn từ '+dm(old.d)+' đến '+dm(nw.d)+'</span></section>'
+    h+='<section class="sq-cd red"><span>Tổng cần thanh toán</span><span class="sq-big red">'+m(D.pay)+'</span><span class="sq-sb">Cộng dồn từ '+dm(old.d)+' đến '+dm(nw.d)+'</span></section>'
      +'<section class="sq-cd"><span>Số ngày chưa thanh toán</span><span class="sq-big">'+D.rem.length+' ngày</span><span class="sq-sb red">Khoản cũ nhất: '+dm(old.d)+' ('+m(old.owe)+')</span></section></div>';
   }else{
     h+='<section class="sq-cd ok"><span>Tổng cần thanh toán</span><span class="sq-big ok">Đã thanh toán đủ</span><span class="sq-sb">Không còn khoản nào chưa thanh toán</span></section>'
@@ -1811,8 +1811,8 @@ function reportHtml(c,o){
       +'<div class="sq-r h"><span>Ngày</span>'+(hasL?'<span>Live</span>':'')+(hasP?'<span>Bài viết</span>':'')+'<span>Phí DV</span><span class="tcp">Tổng chi phí<small>(Phí ads + Dịch vụ)</small></span><span>Chậm thanh toán</span></div>'
       +rows+'<div class="sq-r t"><span>Tổng '+D.rem.length+' ngày</span>'+cL(sl)+cP(sp)+cF(sf,uni)+'<span class="red">'+num(D.bal)+'</span><span></span></div></section>';
     var info="VH "+custCode(c)+" "+D.td.slice(8,10)+D.td.slice(5,7),
-        qr=o.qr||("https://img.vietqr.io/image/"+encodeURIComponent(P.bankCode)+"-"+encodeURIComponent(P.acc)+"-compact2.png?amount="+D.bal+"&addInfo="+encodeURIComponent(info)+"&accountName="+encodeURIComponent(P.owner));
-    h+='<aside class="sq-pay"><h2>Thanh toán</h2><div class="sq-am"><span>Số tiền cần chuyển</span><span>'+m(D.bal)+'</span></div>'
+        qr=o.qr||("https://img.vietqr.io/image/"+encodeURIComponent(P.bankCode)+"-"+encodeURIComponent(P.acc)+"-compact2.png?amount="+D.pay+"&addInfo="+encodeURIComponent(info)+"&accountName="+encodeURIComponent(P.owner));
+    h+='<aside class="sq-pay"><h2>Thanh toán</h2><div class="sq-am"><span>Số tiền cần chuyển</span><span>'+m(D.pay)+'</span></div>'
       +'<img class="sq-qr" src="'+esc(qr)+'" alt="Mã QR chuyển khoản '+esc(P.bankName)+'" width="228">'
       +'<p class="sq-note">(Lưu ý: Kiểm tra thông tin trước khi chuyển khoản)</p>'
       +'<div class="sq-bk"><div><span>Ngân hàng</span><span>'+esc(P.bankName)+'</span></div><div class="n"><span>Số tài khoản</span><span>'+esc(groups4(P.acc))+'</span></div><div><span>Chủ tài khoản</span><span>'+esc(P.owner)+'</span></div></div></aside>';
@@ -1912,7 +1912,7 @@ function loadImgEl(u){return new Promise(function(ok,no){var im=new Image();im.o
 /* vẽ mã QR (đúng số tiền + nội dung chuyển khoản) lên khung mẫu có logo ngân hàng / VietQR / napas 247 */
 async function qrLocal(c,D){
   var P=payCfg(),info="VH "+custCode(c)+" "+D.td.slice(8,10)+D.td.slice(5,7);
-  var pay=vietQrPayload(P,D.bal,info);
+  var pay=vietQrPayload(P,D.pay,info);
   var r=await Promise.all([loadQrLib(),loadImgEl("assets/ma-qr-techcombank.png")]),tpl=r[1],q=window.VHQR.make(pay);
   var cv=document.createElement("canvas");cv.width=tpl.naturalWidth;cv.height=tpl.naturalHeight;
   var x=cv.getContext("2d");x.fillStyle="#fff";x.fillRect(0,0,cv.width,cv.height);
@@ -1931,7 +1931,7 @@ async function qrLocal(c,D){
 async function qrForExport(c,D){
   try{return{src:await qrLocal(c,D),fallback:false}}catch(e){}
   var P=payCfg(),info="VH "+custCode(c)+" "+D.td.slice(8,10)+D.td.slice(5,7);
-  var url="https://img.vietqr.io/image/"+encodeURIComponent(P.bankCode)+"-"+encodeURIComponent(P.acc)+"-compact2.png?amount="+D.bal+"&addInfo="+encodeURIComponent(info)+"&accountName="+encodeURIComponent(P.owner);
+  var url="https://img.vietqr.io/image/"+encodeURIComponent(P.bankCode)+"-"+encodeURIComponent(P.acc)+"-compact2.png?amount="+D.pay+"&addInfo="+encodeURIComponent(info)+"&accountName="+encodeURIComponent(P.owner);
   try{return{src:await urlToData(url),fallback:false}}
   catch(e){return{src:await urlToData("assets/ma-qr-techcombank.png"),fallback:true}}
 }
