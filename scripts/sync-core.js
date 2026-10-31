@@ -77,6 +77,10 @@ async function main() {
   const pastTen = nowVN.getUTCHours() >= 10; // từ 10h sáng giờ Việt Nam: chốt chi phí hôm qua // từ 10h sáng giờ Việt Nam: chốt chi phí hôm qua vào bảng chi tiêu
   const snap = await db.collection("customers").get();
   let ok = 0, fail = 0;
+  // dấu "hôm nay đã chốt xong": đã chốt bảng chi tiêu của hôm qua thì các lần đồng bộ sau trong ngày bỏ qua hẳn bước này (đỡ đọc lặp lại)
+  const prevMark = await db.collection("fbaccounts").doc("__sync").get().then(x => x.exists ? x.data() : {}).catch(() => ({}));
+  const ledgerDone = pastTen && OPT.full !== true && prevMark.ledgerDay === yesterday;
+  if (ledgerDone) console.log("Bảng chi tiêu hôm qua đã chốt, bỏ qua bước chốt.");
   const one = async c => {
     const d = c.data(), accts = String(d.adAccountId || "").split(/[^0-9]+/).filter(x => x.length >= 5); // nhiều ID: cách nhau bằng dấu phẩy, cách hoặc xuống dòng
     if (!accts.length) return;
@@ -109,7 +113,7 @@ async function main() {
       }
       // Bảng chi tiêu của khách chỉ được tự điền MỘT lần mỗi ngày: lần chạy đầu tiên từ 10h sáng giờ VN ghi chi phí của hôm qua rồi khóa (finalized), sau đó không sửa lại nữa.
       // Trước 10h không đụng vào bảng chi tiêu. Chỉ đụng vào dòng do Facebook tạo (fromFb) hoặc dòng trống; dòng bạn tự nhập hoặc đã chốt thì không đè.
-      for (const day of pastTen ? [yesterday] : []) {
+      for (const day of pastTen && !ledgerDone ? [yesterday] : []) {
         const v = by[day] || { live: 0, post: 0 };
         const ex = await db.collection("spend").where("customerId", "==", c.id).where("date", "==", day).limit(1).get();
         if (ex.empty) {
@@ -188,7 +192,7 @@ async function main() {
     console.log(`Link chia sẻ: cập nhật ${ns} link.`);
   } catch (e) { if (e.message !== "__skip") { nerr = e.message; console.error("LỖI cập nhật link chia sẻ: " + e.message); } }
   // ghi dấu mốc để web hiện "máy chủ đã kiểm tra lúc nào" (1 lần ghi mỗi lượt chạy)
-  try { await db.collection("fbaccounts").doc("__sync").set({ at: Date.now(), ok, fail, linksChecked: nchk, linksUpdated: ns, linkError: nerr }); } catch (e) { console.error("Không ghi được mốc đồng bộ: " + e.message); }
+  try { await db.collection("fbaccounts").doc("__sync").set({ at: Date.now(), ok, fail, linksChecked: nchk, linksUpdated: ns, linkError: nerr, ledgerDay: ledgerDone || (pastTen && fail === 0) ? yesterday : (prevMark.ledgerDay || "") }); } catch (e) { console.error("Không ghi được mốc đồng bộ: " + e.message); }
   console.log(`Xong. Thành công ${ok}, lỗi ${fail}.`);
   if (fail && !ok) throw new Error("Tất cả khách đều lỗi");
   return { ok, fail };
