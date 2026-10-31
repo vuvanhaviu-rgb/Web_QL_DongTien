@@ -1891,8 +1891,43 @@ function urlToData(u,ms){
     return new Promise(function(ok,no){var im=new Image();im.onload=function(){ok(d)};im.onerror=function(){no(new Error("ảnh lỗi"))};im.src=d});
   },function(er){clearTimeout(tm);throw er});
 }
-/* mã QR tự động; nếu không tải được thì dùng ảnh QR tĩnh đã đính kèm */
+/* ---- mã QR VietQR tự tạo ngay trong trang (chuẩn EMVCo/VietQR), không phụ thuộc trang ngoài ---- */
+var BANK_BIN={TCB:"970407",VCB:"970436",MB:"970422",MBB:"970422",ACB:"970416",BIDV:"970418",VPB:"970432",TPB:"970423",CTG:"970415",ICB:"970415",STB:"970403",VIB:"970441",SHB:"970443",HDB:"970437",OCB:"970448",MSB:"970426",SEAB:"970440",VBA:"970405",AGRIBANK:"970405",LPB:"970449",EIB:"970431",NAB:"970428",BAB:"970409",VAB:"970427",ABB:"970425",BVB:"970438",PVCB:"970412",SCB:"970429",NVB:"970419",KLB:"970452",VCCB:"970454",PBVN:"970439",CAKE:"546034",TIMO:"963388"};
+function emvCrc(t){var c=0xFFFF,i,k;for(i=0;i<t.length;i++){c^=t.charCodeAt(i)<<8;for(k=0;k<8;k++)c=(c&0x8000)?((c<<1)^0x1021):(c<<1);c&=0xFFFF}return("0000"+c.toString(16).toUpperCase()).slice(-4)}
+function vietQrPayload(P,amount,info){
+  var code=String(P.bankCode||"").toUpperCase().replace(/\s+/g,""),bin=/^\d{6}$/.test(code)?code:BANK_BIN[code],acc=String(P.acc||"").replace(/\D/g,"");
+  if(!bin||!acc)throw new Error("chưa có mã ngân hàng / số tài khoản");
+  var t=function(id,v){v=String(v);return id+("0"+v.length).slice(-2)+v};
+  var amt=Math.round(Number(amount)||0),inf=String(info||"").replace(/[^\x20-\x7E]/g,"").slice(0,50);
+  var s=t("00","01")+t("01","12")+t("38",t("00","A000000727")+t("01",t("00",bin)+t("01",acc))+t("02","QRIBFTTA"))+t("53","704")+(amt>0?t("54",amt):"")+t("58","VN")+(inf?t("62",t("08",inf)):"")+"6304";
+  return s+emvCrc(s);
+}
+function loadQrLib(){
+  if(window.VHQR)return Promise.resolve();
+  return new Promise(function(ok,no){var sc=document.createElement("script");sc.src="vendor/qrcode.js";sc.onload=ok;sc.onerror=function(){no(new Error("Không tải được thư viện mã QR"))};document.head.appendChild(sc)})
+}
+function loadImgEl(u){return new Promise(function(ok,no){var im=new Image();im.onload=function(){ok(im)};im.onerror=function(){no(new Error("không tải được "+u))};im.src=u})}
+/* vẽ mã QR (đúng số tiền + nội dung chuyển khoản) lên khung mẫu có logo ngân hàng / VietQR / napas 247 */
+async function qrLocal(c,D){
+  var P=payCfg(),info="VH "+custCode(c)+" "+D.td.slice(8,10)+D.td.slice(5,7);
+  var pay=vietQrPayload(P,D.bal,info);
+  var r=await Promise.all([loadQrLib(),loadImgEl("assets/ma-qr-techcombank.png")]),tpl=r[1],q=window.VHQR.make(pay);
+  var cv=document.createElement("canvas");cv.width=tpl.naturalWidth;cv.height=tpl.naturalHeight;
+  var x=cv.getContext("2d");x.fillStyle="#fff";x.fillRect(0,0,cv.width,cv.height);
+  var tcb=String(P.bankCode).toUpperCase()==="TCB";
+  if(tcb){x.drawImage(tpl,0,0);x.fillStyle="#fff";x.fillRect(96,150,592,600)}
+  else{ /* ngân hàng khác: ghi tên ngân hàng ở trên, giữ dải logo VietQR / napas ở dưới */
+    x.drawImage(tpl,0,760,cv.width,cv.height-760,0,760,cv.width,cv.height-760);
+    x.fillStyle="#1C1E21";x.font="700 56px 'VH Report',system-ui,sans-serif";x.textAlign="center";x.textBaseline="middle";x.fillText(String(P.bankName||P.bankCode).toUpperCase(),cv.width/2,90);
+  }
+  var m=Math.floor(560/q.n),size=m*q.n,x0=Math.round(391.5-size/2),y0=Math.round(448-size/2),i,j;
+  x.fillStyle="#000";
+  for(i=0;i<q.n;i++)for(j=0;j<q.n;j++)if(q.dark(i,j))x.fillRect(x0+j*m,y0+i*m,m,m);
+  return cv.toDataURL("image/png");
+}
+/* mã QR tự tạo; nếu lỗi thì thử tải từ img.vietqr.io; vẫn lỗi thì dùng ảnh QR tĩnh đã đính kèm */
 async function qrForExport(c,D){
+  try{return{src:await qrLocal(c,D),fallback:false}}catch(e){}
   var P=payCfg(),info="VH "+custCode(c)+" "+D.td.slice(8,10)+D.td.slice(5,7);
   var url="https://img.vietqr.io/image/"+encodeURIComponent(P.bankCode)+"-"+encodeURIComponent(P.acc)+"-compact2.png?amount="+D.bal+"&addInfo="+encodeURIComponent(info)+"&accountName="+encodeURIComponent(P.owner);
   try{return{src:await urlToData(url),fallback:false}}

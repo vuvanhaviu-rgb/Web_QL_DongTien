@@ -69,7 +69,7 @@ Mở https://vhagency.io.vn bằng trình duyệt điện thoại → menu trìn
 3. Ở cuối mỗi dòng khách có nút **Tạo ảnh báo cáo**. Bấm vào, ảnh báo cáo của khách đó hiện ra bên phải (trên điện thoại hiện cả màn hình, có nút quay lại). Chưa bấm khách nào thì chưa hiện ảnh.
 4. Ảnh là hình **vuông**. Bạn chỉ cần **nhấn giữ / bấm chuột phải vào ảnh → Sao chép ảnh** rồi dán vào Zalo gửi khách (không cần tải về).
 5. Ảnh tự thay đổi theo khách: shop chỉ chạy bài viết thì chỉ có cột *Bài viết*, shop chỉ chạy Live thì chỉ có cột *Live*, chạy cả hai thì hiện cả hai. Cột *Tổng chi phí* = phí ads + phí dịch vụ theo % riêng của khách.
-6. Mã QR tự tạo theo số tiền nợ và nội dung `VH <MÃ KHÁCH> <ngàythángnay>`. Nếu mã QR không tải được, ảnh dùng mã QR tĩnh (`assets/ma-qr-techcombank.png`, không có sẵn số tiền).
+6. Mã QR được tự tạo ngay trong trang theo chuẩn VietQR, có sẵn số tiền nợ và nội dung `VH <MÃ KHÁCH> <ngàythángnay>` (không cần mạng ngoài). Ngân hàng và số tài khoản lấy ở Cài đặt (mã ngân hàng ngắn như TCB, VCB, MB, ACB, BIDV… hoặc mã BIN 6 số). Chỉ khi không tạo được (ví dụ mã ngân hàng lạ) mới thử tải từ img.vietqr.io, rồi cuối cùng dùng ảnh QR tĩnh (`assets/ma-qr-techcombank.png`, không có sẵn số tiền) kèm cảnh báo vàng.
 7. Tổng cần thanh toán luôn bằng số *Còn nợ* ở thẻ Khách hàng. Khách trả một phần thì được trừ vào ngày cũ nhất trước; ngày nào trả đủ thì không hiện. Khách đã trả đủ hiện "Đã thanh toán đủ".
 
 ## Lưu ý an toàn
