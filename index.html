@@ -654,6 +654,7 @@ table.sp td:first-child,table.sp td:first-child .link{font-size:16px}
 .sq-r .d.red{color:#B42318;font-weight:600}
 .sq-r.old{background:#FAFAFB}
 .sq-r.old>span:first-child{font-size:14px;line-height:1.1;white-space:normal}
+.sq-r .f small{display:block;font-size:11px;font-weight:500;color:#5B6472;line-height:1;margin-top:2px}
 .sq-r .p small{display:block;font-size:11px;font-weight:500;color:#5B6472;line-height:1}
 .sq-r.t{margin-top:auto;height:50px;background:#F7F8FA;border-bottom:0;font-weight:700}
 .sq-r.t>span:first-child{font-weight:700;font-size:15px}
@@ -1733,21 +1734,22 @@ function reportData(c,date){
     if(r.customerId!==c.id)return;
     var x=spendRow(r);paid+=x.xf;
     if(!r.date||!(x.tot>0))return;
-    var p=perDay[r.date]||(perDay[r.date]={live:0,post:0,fee:0,tot:0});
+    var p=perDay[r.date]||(perDay[r.date]={live:0,post:0,fee:0,tot:0,rt:null});
     p.live+=x.live;p.post+=x.post;p.fee+=x.fee;p.tot+=x.tot;
+    var rr=rateOf(r);p.rt=(p.rt===null||p.rt===rr)?rr:-1; /* -1: trong ngày có nhiều mức phí khác nhau */
   });
-  var y=perDay[yd]?{live:perDay[yd].live,post:perDay[yd].post,fee:perDay[yd].fee,tot:perDay[yd].tot}:{live:0,post:0,fee:0,tot:0};
+  var y=perDay[yd]?{live:perDay[yd].live,post:perDay[yd].post,fee:perDay[yd].fee,tot:perDay[yd].tot,rt:perDay[yd].rt}:{live:0,post:0,fee:0,tot:0,rt:null};
   if(!(y.tot>0)){ /* chưa chốt vào bảng chi tiêu (trước 10h sáng): lấy số Spend Facebook của hôm qua, phí theo % của khách */
     S.fbspend.forEach(function(f){
       if(f.customerId!==c.id||f.date!==yd)return;
       var lv=Number(f.live)||0,ps=Number(f.post)||0,fee=Math.round((lv+ps)*defaultRate(c.id)/100);
-      y.live+=lv;y.post+=ps;y.fee+=fee;y.tot+=lv+ps+fee;
+      y.live+=lv;y.post+=ps;y.fee+=fee;y.tot+=lv+ps+fee;y.rt=defaultRate(c.id);
     });
   }
   var left=paid,rem=[],cum=0;
   Object.keys(perDay).sort().forEach(function(d){
     var p=perDay[d],use=Math.min(p.tot,Math.max(0,left));left-=use;
-    if(p.tot-use>0)rem.push({d:d,live:p.live,post:p.post,fee:p.fee,tot:p.tot,owe:p.tot-use,cut:use});
+    if(p.tot-use>0)rem.push({d:d,live:p.live,post:p.post,fee:p.fee,tot:p.tot,rt:p.rt,owe:p.tot-use,cut:use});
   });
   rem.forEach(function(o){cum+=o.owe;o.cum=cum});
   var t0=new Date(+td.slice(0,4),+td.slice(5,7)-1,+td.slice(8,10)).getTime();
@@ -1757,7 +1759,7 @@ function reportData(c,date){
 function reportHtml(c,o){
   o=o||{};
   var D=reportData(c,o.date),P=payCfg(),dm=function(d){return d.slice(8,10)+"/"+d.slice(5,7)},m=function(v){return num(v)+" ₫"};
-  var ydt=new Date(+D.yd.slice(0,4),+D.yd.slice(5,7)-1,+D.yd.slice(8,10)),rate=String(D.rate).replace(".",",")+"%";
+  var ydt=new Date(+D.yd.slice(0,4),+D.yd.slice(5,7)-1,+D.yd.slice(8,10)),pct=function(v){return String(v).replace(".",",")+"%"},rate=pct(D.y.tot>0&&D.y.rt>=0&&D.y.rt!==null?D.y.rt:D.rate);
   var sy=S.fbaccounts.filter(function(x){return x.id==="__sync"})[0],ut=new Date(sy&&sy.at?sy.at:Date.now());
   var upd;try{var f=new Intl.DateTimeFormat("vi-VN",{timeZone:"Asia/Ho_Chi_Minh",hour:"2-digit",minute:"2-digit",day:"2-digit",month:"2-digit",year:"numeric",hourCycle:"h23"}).formatToParts(ut),g={};f.forEach(function(p){g[p.type]=p.value});upd=g.hour+":"+g.minute+" · "+g.day+"/"+g.month+"/"+g.year}catch(e){upd=pad(ut.getHours())+":"+pad(ut.getMinutes())+" · "+dmy(ymd(ut))}
   var nm=String(c.name||""),nmPx=nm.length>40?30:nm.length>26?36:nm.length>20?42:48;
@@ -1784,22 +1786,26 @@ function reportHtml(c,o){
   if(owe){
     var MAXR=10,list=D.rem.slice().reverse(),sl=0,sp=0,sf=0,rows="";
     D.rem.forEach(function(r){sl+=r.live;sp+=r.post;sf+=r.fee});
+    /* % phí dịch vụ lấy theo từng ngày (theo bảng Khách hàng / Bảng chi tiêu), ghi ngay dưới số tiền phí */
+    var rts={};D.rem.forEach(function(r){rts[r.rt]=1});if(D.y.tot>0&&D.y.rt!==null)rts[D.y.rt]=1;
+    var rk=Object.keys(rts),uni=rk.length===1&&rk[0]!=="-1"&&rk[0]!=="null"?Number(rk[0]):null;
+    var cF=function(f,rt){return '<span class="f">'+num(f)+(rt===null||rt===undefined?"":'<small>'+(rt<0?"nhiều mức":pct(rt))+'</small>')+'</span>'};
     var cL=hasL?function(v){return '<span>'+num(v)+'</span>'}:function(){return ""},cP=hasP?function(v){return '<span class="m">'+num(v)+'</span>'}:function(){return ""};
     var shown=list,oldG=null;
     if(list.length>MAXR){shown=list.slice(0,MAXR-1);oldG=list.slice(MAXR-1)} /* quá nhiều ngày: gộp các ngày cũ nhất thành một dòng để ảnh luôn vuông */
     shown.forEach(function(r){
       var isNew=r.d===yestStr();
-      rows+='<div class="sq-r'+(isNew?" nw":"")+'"><span>'+dm(r.d)+(isNew?' <em>Mới</em>':"")+'</span>'+cL(r.live)+cP(r.post)+'<span>'+num(r.fee)+'</span>'
+      rows+='<div class="sq-r'+(isNew?" nw":"")+'"><span>'+dm(r.d)+(isNew?' <em>Mới</em>':"")+'</span>'+cL(r.live)+cP(r.post)+cF(r.fee,r.rt)
         +'<span class="p">'+num(r.owe)+(r.cut>0?'<small>đã trừ '+num(r.cut)+'</small>':"")+'</span><span class="d'+(r.days>=4?" red":"")+'">'+r.days+' ngày</span></div>';
     });
     if(oldG){
       var gl=0,gp=0,gf=0,go=0;oldG.forEach(function(r){gl+=r.live;gp+=r.post;gf+=r.fee;go+=r.owe});
       var top=oldG[0],mn=oldG[oldG.length-1];
-      rows+='<div class="sq-r old"><span>'+oldG.length+' ngày cũ hơn</span>'+cL(gl)+cP(gp)+'<span>'+num(gf)+'</span><span class="p">'+num(go)+'</span><span class="d red">'+top.days+'+ ngày</span></div>';
+      rows+='<div class="sq-r old"><span>'+oldG.length+' ngày cũ hơn</span>'+cL(gl)+cP(gp)+cF(gf,oldG.every(function(r){return r.rt===oldG[0].rt})?oldG[0].rt:null)+'<span class="p">'+num(go)+'</span><span class="d red">'+top.days+'+ ngày</span></div>';
     }
     h+='<section class="sq-tbl" style="--cols:'+(hasL&&hasP?"100px minmax(0,1fr) minmax(0,1fr) minmax(0,1fr) minmax(0,1.12fr) 124px":"110px minmax(0,1fr) minmax(0,1fr) minmax(0,1fr) 124px")+'"><div class="sq-th"><h2>Chi tiết các ngày chưa thanh toán</h2><span>Đơn vị: ₫</span></div>'
-      +'<div class="sq-r h"><span>Ngày</span>'+(hasL?'<span>Live</span>':'')+(hasP?'<span>Bài viết</span>':'')+'<span>Phí DV '+rate+'</span><span class="tcp">Tổng chi phí<small>(Phí ads + Dịch vụ)</small></span><span>Chậm thanh toán</span></div>'
-      +rows+'<div class="sq-r t"><span>Tổng '+D.rem.length+' ngày</span>'+cL(sl)+cP(sp)+'<span>'+num(sf)+'</span><span class="red">'+num(D.bal)+'</span><span></span></div></section>';
+      +'<div class="sq-r h"><span>Ngày</span>'+(hasL?'<span>Live</span>':'')+(hasP?'<span>Bài viết</span>':'')+'<span>Phí DV</span><span class="tcp">Tổng chi phí<small>(Phí ads + Dịch vụ)</small></span><span>Chậm thanh toán</span></div>'
+      +rows+'<div class="sq-r t"><span>Tổng '+D.rem.length+' ngày</span>'+cL(sl)+cP(sp)+cF(sf,uni)+'<span class="red">'+num(D.bal)+'</span><span></span></div></section>';
     var info="VH "+custCode(c)+" "+D.td.slice(8,10)+D.td.slice(5,7),
         qr=o.qr||("https://img.vietqr.io/image/"+encodeURIComponent(P.bankCode)+"-"+encodeURIComponent(P.acc)+"-compact2.png?amount="+D.bal+"&addInfo="+encodeURIComponent(info)+"&accountName="+encodeURIComponent(P.owner));
     h+='<aside class="sq-pay"><h2>Thanh toán</h2><div class="sq-am"><span>Số tiền cần chuyển</span><span>'+m(D.bal)+'</span></div>'
@@ -1808,7 +1814,7 @@ function reportHtml(c,o){
   }else{
     h+='<section class="sq-tbl"><div class="sq-paid"><svg width="150" height="150" viewBox="0 0 24 24" fill="none" stroke="#1B7F4B" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><path d="m7.5 12.5 3 3 6-7"></path></svg><b>Đã thanh toán đủ</b><span>Cảm ơn bạn. Hiện không còn khoản nào cần thanh toán.</span></div></section>';
   }
-  h+='</div><div class="sq-ft"><b>Cách tính:</b> Tổng chi phí = phí ads + phí dịch vụ '+rate+'. Số liệu lấy tự động từ Facebook Ads. Thắc mắc vui lòng liên hệ VH Agency'+(P.phone?': <a href="tel:'+esc(P.phone.replace(/[^0-9+]/g,""))+'">'+esc(P.phone)+'</a>':"")+'</div></main></div>';
+  h+='</div><div class="sq-ft"><b>Cách tính:</b> Tổng chi phí = phí ads + phí dịch vụ '+(uni!==null?pct(uni):'(tỷ lệ % ghi dưới từng khoản)')+'. Số liệu lấy tự động từ Facebook Ads. Thắc mắc vui lòng liên hệ VH Agency'+(P.phone?': <a href="tel:'+esc(P.phone.replace(/[^0-9+]/g,""))+'">'+esc(P.phone)+'</a>':"")+'</div></main></div>';
   return h;
 }
 /* Chi phí quảng cáo từng khách theo ngày (bảng chi tiêu; ngày chưa chốt thì lấy Spend Facebook) */
