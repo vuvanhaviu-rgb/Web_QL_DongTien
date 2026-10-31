@@ -1780,7 +1780,7 @@ function reportHtml(c,o){
   h+='<div class="sq-cards"><section class="sq-cd"><span>Chi phí '+(D.isY?"hôm qua":"ngày")+' ('+dm(D.yd)+')</span>'+cost+'</section>';
   if(owe){
     var old=D.rem[0],nw=D.rem[D.rem.length-1];
-    h+='<section class="sq-cd red"><span>Tổng cần thanh toán</span><span class="sq-big red">'+m(D.pay)+'</span><span class="sq-sb">Cộng dồn từ '+dm(old.d)+' đến '+dm(nw.d)+'</span></section>'
+    h+='<section class="sq-cd red"><span>Tổng cần thanh toán</span><span class="sq-big red">'+m(D.bal)+'</span><span class="sq-sb">Cộng dồn từ '+dm(old.d)+' đến '+dm(nw.d)+'</span></section>'
      +'<section class="sq-cd"><span>Số ngày chưa thanh toán</span><span class="sq-big">'+D.rem.length+' ngày</span><span class="sq-sb red">Khoản cũ nhất: '+dm(old.d)+' ('+m(old.owe)+')</span></section></div>';
   }else{
     h+='<section class="sq-cd ok"><span>Tổng cần thanh toán</span><span class="sq-big ok">Đã thanh toán đủ</span><span class="sq-sb">Không còn khoản nào chưa thanh toán</span></section>'
