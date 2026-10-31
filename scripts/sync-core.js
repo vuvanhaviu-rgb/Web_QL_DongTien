@@ -66,6 +66,8 @@ function split(rows, liveKeys, postKeys, nameKey) {
 }
 
 async function main() {
+  // so sánh không phụ thuộc thứ tự khóa (Firestore trả khóa theo thứ tự chữ cái)
+  const stable = v => JSON.stringify(v, (k, x) => x && typeof x === "object" && !Array.isArray(x) ? Object.keys(x).sort().reduce((a, y) => (a[y] = x[y], a), {}) : x);
   const nowVN = VN(Date.now()), now = nowVN;
   // Để không vượt hạn mức miễn phí của Firebase: lần chạy thường chỉ quét hôm qua và hôm nay.
   // Quét đủ cả khoảng ngày (và dọn số cũ) chỉ khi: chạy tay có tick "full", hoặc lần chạy đầu tiên sau 10:00 sáng giờ Việt Nam.
@@ -106,10 +108,18 @@ async function main() {
         const have = await db.collection("fbspend").where("customerId", "==", c.id).get();
         for (const e of have.docs) { const dt = e.data().date; if (dt >= since && dt <= until && !by[dt]) await e.ref.delete(); }
       }
+      // chỉ ghi khi số (hoặc danh sách chiến dịch) thật sự đổi, tránh ghi lại số y hệt mỗi lần chạy
       for (const day of Object.keys(by)) {
-        await db.collection("fbspend").doc(`${c.id}_${day}`).set(
-          Object.assign({ customerId: c.id, date: day, live: by[day].live, post: by[day].post, updatedAt: Date.now() },
-            day >= since7 ? { camps: (by[day].camps || []).slice(0, 40) } : {}), { merge: true });
+        const ref = db.collection("fbspend").doc(`${c.id}_${day}`);
+        const next = Object.assign({ customerId: c.id, date: day, live: by[day].live, post: by[day].post },
+          day >= since7 ? { camps: (by[day].camps || []).slice(0, 40) } : {});
+        const cur = await ref.get();
+        if (cur.exists) {
+          const o = cur.data();
+          if (stable(Object.assign({ live: o.live, post: o.post }, day >= since7 ? { camps: o.camps || [] } : {})) ===
+              stable(Object.assign({ live: next.live, post: next.post }, day >= since7 ? { camps: next.camps } : {}))) continue;
+        }
+        await ref.set(Object.assign(next, { updatedAt: Date.now() }), { merge: true });
       }
       // Bảng chi tiêu của khách chỉ được tự điền MỘT lần mỗi ngày: lần chạy đầu tiên từ 10h sáng giờ VN ghi chi phí của hôm qua rồi khóa (finalized), sau đó không sửa lại nữa.
       // Trước 10h không đụng vào bảng chi tiêu. Chỉ đụng vào dòng do Facebook tạo (fromFb) hoặc dòng trống; dòng bạn tự nhập hoặc đã chốt thì không đè.
@@ -149,8 +159,6 @@ async function main() {
       console.log(`TK ${a}: dư nợ ${info.balance}, ngưỡng ${info.threshold === null ? "không đọc được" : info.threshold}, thẻ ${info.cardLast4 || "?"}, hạn ${info.nextBill || "chưa xác định"}`);
     } catch (e) { console.error(`LỖI tài khoản ${a}: ${e.message}`); }
   }
-  // so sánh không phụ thuộc thứ tự khóa (Firestore trả khóa theo thứ tự chữ cái)
-  const stable = v => JSON.stringify(v, (k, x) => x && typeof x === "object" && !Array.isArray(x) ? Object.keys(x).sort().reduce((a, y) => (a[y] = x[y], a), {}) : x);
   // Cập nhật luôn link chia sẻ của khách (trang khách xem), để link luôn mới dù bạn không mở web
   let ns = 0, nchk = 0, nerr = "";
   try {
