@@ -684,9 +684,9 @@ async function startShare(){
   await save("customers",c.id,{shareToken:newToken()});
   scheduleShare();
 }
-async function stopShare(){
-  var c=cust(ui.cid);if(!c||!c.shareToken)return;
-  if(!confirm("Tắt chia sẻ? Link đã gửi sẽ không mở được nữa."))return;
+async function stopShare(id){
+  var c=cust(id||ui.cid);if(!c||!c.shareToken)return;
+  if(!confirm("Tắt chia sẻ"+(id?" của "+c.name:"")+"? Link đã gửi sẽ không mở được nữa."))return;
   var t=c.shareToken;
   try{await db.collection("shares").doc(t).delete()}catch(e){}
   delete ui.shared[t];
@@ -1531,6 +1531,11 @@ function debtAging(C,bal){
   });
   return{B:B,avg:tsum?Math.round(wsum/tsum*10)/10:0,tsum:tsum};
 }
+function sharesPanel(){
+  var on=S.customers.filter(function(c){return c.shareToken});
+  return '<section class="panel"><h2>Link đang bật chia sẻ <small>'+on.length+'/'+S.customers.length+' khách</small></h2>'
+    +(on.length?'<div class="list">'+on.map(function(c){return '<div class="row"><div class="l"><button class="link" data-act="goc" data-id="'+esc(c.id)+'">'+esc(c.name)+'</button><span>Khách xem được bảng chi tiêu bằng link, không cần đăng nhập</span></div><div class="r"><button class="btn small danger" type="button" data-act="unshare-id" data-id="'+esc(c.id)+'">Tắt chia sẻ</button></div></div>'}).join("")+'</div>':'<p class="hint">Chưa có khách nào được bật link chia sẻ. Bật trong bảng chi tiêu của từng khách.</p>')+'</section>';
+}
 function vStats(){
   var SD=statData(),mk=SD.mk,M=SD.M,C=SD.C,cur=M[mk[11]],prev=M[mk[10]];
   var bal=custBalances(),balSum=0,balIds=Object.keys(bal);balIds.forEach(function(k){balSum+=bal[k]});
@@ -1538,14 +1543,14 @@ function vStats(){
   var sorted=balIds.slice().sort(function(a,b){return bal[b]-bal[a]}),top3=sorted.slice(0,3).reduce(function(t,k){return t+bal[k]},0);
   var actN=Object.keys(cur.act).length,actP=Object.keys(prev.act).length;
   var avgC=actN?Math.round(cur.ad/actN):0,avgP=actP?Math.round(prev.ad/actP):0;
-  if(!S.customers.length||!S.spend.length)return{title:"Thống kê",sub:"Lợi nhuận, công nợ và dòng tiền",html:'<div class="tablewrap">'+emptyBlock("Chưa có số liệu","Thống kê sẽ hiện khi khách có chi phí quảng cáo trong bảng chi tiêu.")+'</div>'+newCustHtml()};
+  if(!S.customers.length||!S.spend.length)return{title:"Thống kê",sub:"Lợi nhuận, công nợ và dòng tiền",html:'<div class="tablewrap">'+emptyBlock("Chưa có số liệu","Thống kê sẽ hiện khi khách có chi phí quảng cáo trong bảng chi tiêu.")+'</div>'+sharesPanel()+newCustHtml()};
   var h='<div class="kpis">'
    +'<div class="kpi"><span>Lợi nhuận tháng này</span><b>'+vnd(cur.net)+'</b><small>'+(deltaTxt(cur.net,prev.net)||"Phí dịch vụ − phí ngân hàng")+'</small></div>'
    +'<div class="kpi"><span>Tỷ suất phí thực nhận</span><b>'+pctTxt(cur.net,cur.ad)+'</b><small>Phí niêm yết bình quân '+pctTxt(cur.fee,cur.ad)+'</small></div>'
    +'<div class="kpi '+(balSum>0?"bad":"")+'"><span>Tổng công nợ</span><b>'+vnd(balSum)+'</b><small>'+balIds.length+' khách · top 3 chiếm '+pctTxt(top3,balSum)+'</small></div>'
    +'<div class="kpi '+(AG.avg>7?"bad":"")+'"><span>Tuổi nợ trung bình</span><b>'+String(AG.avg).replace(".",",")+' ngày</b><small>Tính theo số tiền còn nợ</small></div>'
    +'<div class="kpi"><span>Khách đang hoạt động</span><b>'+actN+'</b><small>'+(deltaTxt(actN,actP)||"Có chi tiêu trong tháng")+'</small></div>'
-   +'<div class="kpi"><span>Chi tiêu TB mỗi khách</span><b>'+vnd(avgC)+'</b><small>'+(deltaTxt(avgC,avgP)||"Trong tháng này")+'</small></div></div>';
+   +'<div class="kpi"><span>Chi tiêu TB mỗi khách</span><b>'+vnd(avgC)+'</b><small>'+(deltaTxt(avgC,avgP)||"Trong tháng này")+'</small></div></div>'+sharesPanel();
   /* lợi nhuận theo tháng */
   var groups=mk.map(function(k){var m=M[k];return{l:"Tháng "+(+k.slice(5))+"/"+k.slice(0,4),t:"T"+(+k.slice(5)),a:m.net}});
   h+='<section class="panel"><h2>Lợi nhuận theo tháng <small>Phí dịch vụ trừ phí ngân hàng, 12 tháng gần nhất</small></h2>'+(groups.some(function(g){return g.a>0})?groupedSvg(groups,"Lợi nhuận"):emptyBlock("Chưa có lợi nhuận","Lợi nhuận hiện khi có chi phí quảng cáo và phí dịch vụ."))
@@ -1787,6 +1792,7 @@ document.addEventListener("click",function(e){
   else if(a==="newmonth"){var nm=el.dataset.m;ui.mopen[nm]=true;ui.scrollMonth=nm;save("customers",ui.cid,{lastMonth:nm})}
   else if(a==="share")startShare();
   else if(a==="unshare")stopShare();
+  else if(a==="unshare-id")stopShare(el.getAttribute("data-id"));
   else if(a==="copyshare")copyShare();
   else if(a==="sharecamps"){var cc2=cust(ui.cid);if(cc2){save("customers",cc2.id,{shareCamps:!!el.checked})}}
   else if(a==="mtog"){var mk=el.dataset.m;ui.mopen[mk]=!monthOpen(mk);render()}
