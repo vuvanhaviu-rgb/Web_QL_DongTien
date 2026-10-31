@@ -1913,14 +1913,23 @@ async function reportPng(c){
 }
 var rpQ=Promise.resolve();
 /* tạo ảnh báo cáo của một khách rồi hiện ngay trong trang để sao chép gửi khách (không tải file) */
-function rpMake(id){
+/* dấu vân tay của số liệu trong báo cáo: đổi khi khách hàng / Bảng chi tiêu / Spend Facebook / thông tin chuyển khoản thay đổi */
+function rpSig(c){try{return reportHtml(c,{date:rpDate()})}catch(e){return""}}
+function rpMake(id,quiet){
   var c=cust(id);if(!c)return;
-  var tok=ui.rpTok=(ui.rpTok||0)+1;
-  ui.rpCid=id;ui.rpImg={id:id,busy:true};render();
-  if(window.innerWidth<1200)window.scrollTo(0,0);
+  var tok=ui.rpTok=(ui.rpTok||0)+1,sig=rpSig(c);
+  ui.rpCid=id;
+  if(!quiet){ui.rpAuto=false;ui.rpImg={id:id,busy:true};render();if(window.innerWidth<1200)window.scrollTo(0,0)}
   rpQ=rpQ.then(function(){rpLast.fallback=0;return reportPng(c)}).then(function(url){
-    if(ui.rpTok!==tok)return;ui.rpImg={id:id,url:url,fb:rpLast.fallback>0};render();
-  }).catch(function(e){if(ui.rpTok!==tok)return;ui.rpImg={id:id,err:(e&&e.message)||"lỗi"};render()});
+    if(ui.rpTok!==tok)return;ui.rpAuto=false;ui.rpImg={id:id,url:url,fb:rpLast.fallback>0,sig:sig};render();
+  }).catch(function(e){if(ui.rpTok!==tok)return;ui.rpAuto=false;ui.rpImg={id:id,err:(e&&e.message)||"lỗi"};render()});
+}
+/* số liệu đổi (sau 10h sáng bảng chi tiêu được điền, hoặc bạn sửa dữ liệu) → ảnh đang mở tự tạo lại theo số mới */
+function rpAuto(){
+  if(ui.view!=="gui-khach"||ui.rpAuto||!ui.rpImg||!ui.rpImg.url||!ui.rpCid)return;
+  var c=cust(ui.rpCid);if(!c)return;
+  if(rpSig(c)===ui.rpImg.sig)return;
+  ui.rpAuto=true;rpMake(ui.rpCid,true);
 }
 /* mã QR tự động lỗi (mạng, bị chặn) → hiện ảnh QR tĩnh */
 document.addEventListener("error",function(e){var t=e.target;if(t&&t.classList&&t.classList.contains("sq-qr")&&!t.dataset.fb){t.dataset.fb="1";t.src="assets/ma-qr-techcombank.png"}},true);
@@ -1976,6 +1985,7 @@ function render(){
     }
   }
   if(document.querySelector("table.ledger"))recalcLedger();
+  if(ui.view==="gui-khach")setTimeout(rpAuto,0);
 }
 function route(){var h=location.hash.replace("#","");ui.view=VIEWS.some(function(x){return x[0]===h})?h:"tong-quan";ui.cid=ui.pendingCid||"";ui.pendingCid="";render()}
 window.addEventListener("hashchange",route);
