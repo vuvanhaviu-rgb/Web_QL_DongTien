@@ -665,6 +665,8 @@ table.sp td:first-child,table.sp td:first-child .link{font-size:16px}
 .sq-r.t .red{color:#B42318}
 .sq-paid{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:20px;text-align:center}
 .sq-paid b{font-size:34px;font-weight:800;color:#1B7F4B}
+.sq-cr{display:flex;flex-direction:column;align-items:center;gap:4px;background:#E8F5EE;border:1px solid #BFE3CF;border-radius:16px;padding:16px 34px}
+.sq-cr span{font-size:17px;color:#1B7F4B;font-weight:600}.sq-cr strong{font-size:46px;font-weight:800;letter-spacing:-1px;color:#1B7F4B;line-height:1.1}
 .sq-paid span{font-size:17px;color:#3A4250}
 .sq-pay{flex:none;width:292px;background:#FFFFFF;border-radius:16px;padding:18px 20px;box-shadow:0 1px 2px rgba(0,0,0,0.06);display:flex;flex-direction:column;gap:12px}
 .sq-pay h2{font-size:21px;font-weight:700}
@@ -1000,6 +1002,13 @@ function owedRows(){
 /* Chưa thu của từng khách = tổng (phí dịch vụ + chi phí quảng cáo) − khách đã chuyển khoản, trên mọi dòng */
 /* khoản nợ lẻ dưới 1.000đ (còn sót sau khi khách chuyển số đã bỏ 3 số lẻ) coi như đã thanh toán đủ, không cộng sang kỳ sau */
 var WAIVE_BELOW=1000;
+/* khách chuyển khoản trước, còn dư tiền sau khi trừ mọi chi phí (từ 1.000đ trở lên) */
+function custCredits(){
+  var b={};
+  S.spend.forEach(function(r){if(!cust(r.customerId))return;var x=spendRow(r);b[r.customerId]=(b[r.customerId]||0)+x.xf-x.tot});
+  Object.keys(b).forEach(function(k){if(b[k]<WAIVE_BELOW)delete b[k]});
+  return b;
+}
 function custBalances(){
   var b={};
   S.spend.forEach(function(r){if(!cust(r.customerId))return;var x=spendRow(r);b[r.customerId]=(b[r.customerId]||0)+x.tot-x.xf});
@@ -1735,10 +1744,10 @@ var WDFULL=["Chủ Nhật","Thứ Hai","Thứ Ba","Thứ Tư","Thứ Năm","Th�
 var dm2=function(d){return d.slice(8,10)+"/"+d.slice(5,7)};
 var yestStr=function(){return ymd(new Date(Date.now()-864e5))};
 function reportData(c,date){
-  var yd=date||yestStr(),td=todayStr(),perDay={},paid=0;
+  var yd=date||yestStr(),td=todayStr(),perDay={},paid=0,tAll=0;
   S.spend.forEach(function(r){
     if(r.customerId!==c.id)return;
-    var x=spendRow(r);paid+=x.xf;
+    var x=spendRow(r);paid+=x.xf;tAll+=x.tot;
     if(!r.date||!(x.tot>0))return;
     var p=perDay[r.date]||(perDay[r.date]={live:0,post:0,fee:0,tot:0,rt:null});
     p.live+=x.live;p.post+=x.post;p.fee+=x.fee;p.tot+=x.tot;
@@ -1761,7 +1770,7 @@ function reportData(c,date){
   if(cum<WAIVE_BELOW){rem=[];cum=0} /* nợ lẻ dưới 1.000đ: bỏ, coi như đã thanh toán đủ */
   var t0=new Date(+td.slice(0,4),+td.slice(5,7)-1,+td.slice(8,10)).getTime();
   rem.forEach(function(o){o.days=Math.max(0,Math.round((t0-new Date(+o.d.slice(0,4),+o.d.slice(5,7)-1,+o.d.slice(8,10)).getTime())/864e5))});
-  return{yd:yd,td:td,y:y,bal:cum,pay:cum>=1000?Math.floor(cum/1000)*1000:cum,rem:rem,rate:defaultRate(c.id),isY:yd===yestStr()};
+  return{yd:yd,td:td,y:y,credit:(paid-tAll>=WAIVE_BELOW?paid-tAll:0),bal:cum,pay:cum>=1000?Math.floor(cum/1000)*1000:cum,rem:rem,rate:defaultRate(c.id),isY:yd===yestStr()};
 }
 function reportHtml(c,o){
   o=o||{};
@@ -1786,7 +1795,9 @@ function reportHtml(c,o){
     h+='<section class="sq-cd red"><span>Tổng cần thanh toán</span><span class="sq-big red">'+m(D.bal)+'</span><span class="sq-sb">Cộng dồn từ '+dm(old.d)+' đến '+dm(nw.d)+'</span></section>'
      +'<section class="sq-cd"><span>Số ngày chưa thanh toán</span><span class="sq-big">'+D.rem.length+' ngày</span><span class="sq-sb red">Khoản cũ nhất: '+dm(old.d)+' ('+m(old.owe)+')</span></section></div>';
   }else{
-    h+='<section class="sq-cd ok"><span>Tổng cần thanh toán</span><span class="sq-big ok">Đã thanh toán đủ</span><span class="sq-sb">Không còn khoản nào chưa thanh toán</span></section>'
+    h+=(D.credit>0
+      ?'<section class="sq-cd ok"><span>Số dư còn lại của bạn</span><span class="sq-big ok">'+m(D.credit)+'</span><span class="sq-sb">Đã chuyển khoản trước, chưa dùng hết</span></section>'
+      :'<section class="sq-cd ok"><span>Tổng cần thanh toán</span><span class="sq-big ok">Đã thanh toán đủ</span><span class="sq-sb">Không còn khoản nào chưa thanh toán</span></section>')
      +'<section class="sq-cd"><span>Số ngày chưa thanh toán</span><span class="sq-big">0 ngày</span></section></div>';
   }
   h+='<div class="sq-body">';
@@ -1820,7 +1831,7 @@ function reportHtml(c,o){
       +'<p class="sq-note">(Lưu ý: Kiểm tra thông tin trước khi chuyển khoản)</p>'
       +'<div class="sq-bk"><div><span>Ngân hàng</span><span>'+esc(P.bankName)+'</span></div><div class="n"><span>Số tài khoản</span><span>'+esc(groups4(P.acc))+'</span></div><div><span>Chủ tài khoản</span><span>'+esc(P.owner)+'</span></div></div></aside>';
   }else{
-    h+='<section class="sq-tbl"><div class="sq-paid"><svg width="150" height="150" viewBox="0 0 24 24" fill="none" stroke="#1B7F4B" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><path d="m7.5 12.5 3 3 6-7"></path></svg><b>Đã thanh toán đủ</b><span>Cảm ơn bạn. Hiện không còn khoản nào cần thanh toán.</span></div></section>';
+    h+='<section class="sq-tbl"><div class="sq-paid"><svg width="150" height="150" viewBox="0 0 24 24" fill="none" stroke="#1B7F4B" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><path d="m7.5 12.5 3 3 6-7"></path></svg><b>Đã thanh toán đủ</b>'+(D.credit>0?'<div class="sq-cr"><span>Số dư còn lại</span><strong>'+m(D.credit)+'</strong></div><span>Số dư được giữ lại để trừ vào chi phí các ngày tiếp theo.</span>':'<span>Cảm ơn bạn. Hiện không còn khoản nào cần thanh toán.</span>')+'</div></section>';
   }
   h+='</div><div class="sq-ft"><b>Cách tính:</b> Tổng chi phí = phí ads + phí dịch vụ '+(!owe?rate:uni!==null?pct(uni):'(tỷ lệ % ghi dưới từng khoản)')+'. Số liệu lấy tự động từ Facebook Ads. Thắc mắc vui lòng liên hệ <span style="white-space:nowrap"><b>Vũ Hà</b>'+(P.phone?' ( SĐT/Zalo '+esc(P.phone)+' )':"")+'</span></div></main></div>';
   return h;
@@ -1855,10 +1866,10 @@ function vReport(){
   var T="Chi Tiêu Gửi Khách",sub="Báo cáo chi tiêu và công nợ để gửi khách";
   if(!S.customers.length)return{title:T,sub:sub,html:'<div class="empty"><span>Chưa có khách hàng nào.</span></div>'};
   var c=cust(ui.rpCid);
-  var bal=custBalances(),days=rpDays(),cost=rpCosts(days),pre=ui.rpPre||"y";
+  var bal=custBalances(),cr=custCredits(),days=rpDays(),cost=rpCosts(days),pre=ui.rpPre||"y";
   var L=S.customers.slice().sort(function(a,b){return (cost[b.id]||0)-(cost[a.id]||0)||(bal[b.id]||0)-(bal[a.id]||0)||String(a.name).localeCompare(String(b.name),"vi")});
   var act=L.filter(function(x){return cost[x.id]>0}),idle=L.filter(function(x){return !(cost[x.id]>0)}),n=0;
-  var row=function(x){n++;return '<div class="rp-row'+(cost[x.id]>0?"":" off")+(c&&c.id===x.id?" on":"")+'" data-s="'+esc(noAccent(x.name).toLowerCase())+'"><i>'+n+'</i><div class="info"><span class="n">'+esc(x.name)+'</span><small class="c">'+(cost[x.id]>0?"Chi phí "+vnd(cost[x.id]):"Không phát sinh")+'</small><small class="'+(bal[x.id]>0?"d":"z")+'">'+(bal[x.id]>0?"Nợ "+vnd(bal[x.id]):"Đã trả đủ")+'</small></div><button type="button" class="rp-mk" data-act="rpmake" data-id="'+esc(x.id)+'">Tạo ảnh<br>báo cáo</button></div>'};
+  var row=function(x){n++;return '<div class="rp-row'+(cost[x.id]>0?"":" off")+(c&&c.id===x.id?" on":"")+'" data-s="'+esc(noAccent(x.name).toLowerCase())+'"><i>'+n+'</i><div class="info"><span class="n">'+esc(x.name)+'</span><small class="c">'+(cost[x.id]>0?"Chi phí "+vnd(cost[x.id]):"Không phát sinh")+'</small><small class="'+(bal[x.id]>0?"d":"z")+'">'+(bal[x.id]>0?"Nợ "+vnd(bal[x.id]):cr[x.id]>0?"Dư "+vnd(cr[x.id]):"Đã trả đủ")+'</small></div><button type="button" class="rp-mk" data-act="rpmake" data-id="'+esc(x.id)+'">Tạo ảnh<br>báo cáo</button></div>'};
   var bar='<div class="rp-bar">'+RPP.map(function(p){return '<button type="button" class="rp-chip" data-act="rppre" data-v="'+p[0]+'" aria-pressed="'+(pre===p[0])+'">'+p[1]+'</button>'}).join("")
     +'<label for="rp-date">Ngày khác</label><input id="rp-date" type="date" max="'+todayStr()+'" value="'+(pre==="d"?days[0]:"")+'"></div>'
     ;
