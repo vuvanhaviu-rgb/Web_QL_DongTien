@@ -147,8 +147,8 @@ async function main() {
     } catch (e) { console.error(`LỖI tài khoản ${a}: ${e.message}`); }
   }
   // Cập nhật luôn link chia sẻ của khách (trang khách xem), để link luôn mới dù bạn không mở web
+  let ns = 0, nchk = 0, nerr = "";
   try {
-    let ns = 0;
     for (const c of snap.docs) {
       const d = c.data(); if (!d.shareToken) continue; // khách không bật link thì bỏ qua hoàn toàn
       if (!String(d.adAccountId || "").replace(/\D/g, "")) continue; // khách không nối Facebook: số chỉ đổi khi bạn sửa tay (web tự cập nhật link lúc đó)
@@ -158,6 +158,7 @@ async function main() {
         .sort((a, b) => String(a.date).localeCompare(String(b.date)) || ((a.createdAt || 0) - (b.createdAt || 0)))
         .map(r => ({ date: r.date, adLive: Number(r.adLive) || 0, adPost: Number(r.adPost) || 0,
           feeRate: r.feeRate != null && r.feeRate !== "" ? Number(r.feeRate) : rate, transfer: Number(r.transfer) || 0, paid: !!r.paid }));
+      nchk++;
       const out = { name: d.name, rows };
       if (d.shareCamps !== false) {
         const days = Array.from({ length: 7 }, (_, i) => ymd(VN(Date.now() - i * 864e5)));
@@ -172,7 +173,9 @@ async function main() {
       await ref.set(Object.assign({}, out, { updatedAt: Date.now() })); ns++;
     }
     console.log(`Link chia sẻ: cập nhật ${ns} link.`);
-  } catch (e) { if (e.message !== "__skip") console.error("LỖI cập nhật link chia sẻ: " + e.message); }
+  } catch (e) { if (e.message !== "__skip") { nerr = e.message; console.error("LỖI cập nhật link chia sẻ: " + e.message); } }
+  // ghi dấu mốc để web hiện "máy chủ đã kiểm tra lúc nào" (1 lần ghi mỗi lượt chạy)
+  try { await db.collection("fbaccounts").doc("__sync").set({ at: Date.now(), ok, fail, linksChecked: nchk, linksUpdated: ns, linkError: nerr }); } catch (e) { console.error("Không ghi được mốc đồng bộ: " + e.message); }
   console.log(`Xong. Thành công ${ok}, lỗi ${fail}.`);
   if (fail && !ok) throw new Error("Tất cả khách đều lỗi");
   return { ok, fail };

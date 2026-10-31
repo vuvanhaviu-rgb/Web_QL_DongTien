@@ -1313,7 +1313,7 @@ function vCustomerDetail(){
 }
 
 function adAccHtml(){
-  var bankDoc=S.fbaccounts.filter(function(x){return x.id==="__bank"})[0],bank=bankDoc&&bankDoc.amount!=null?bankDoc.amount:null;var AC=S.fbaccounts.filter(function(x){return x.id!=="__bank"});
+  var bankDoc=S.fbaccounts.filter(function(x){return x.id==="__bank"})[0],bank=bankDoc&&bankDoc.amount!=null?bankDoc.amount:null;var AC=S.fbaccounts.filter(function(x){return String(x.id).indexOf("__")!==0});
   var info=AC.map(function(a){var th=a.threshold!=null?a.threshold:(a.thresholdManual!=null?a.thresholdManual:null);var left=(th!=null&&a.balance!=null)?th-a.balance:null;var pct=(left!=null&&th>0)?left/th:null;
     var lv=left==null?"":(left<=0?"hit":(pct<=0.2?"near":"ok"));return{a:a,left:left,lv:lv,th:th}});
   info.sort(function(x,y){var o={hit:0,near:1,ok:2,"":3};return o[x.lv]-o[y.lv]||((y.a.balance||0)-(x.a.balance||0))});
@@ -1532,9 +1532,10 @@ function debtAging(C,bal){
   return{B:B,avg:tsum?Math.round(wsum/tsum*10)/10:0,tsum:tsum};
 }
 function sharesPanel(){
-  var on=S.customers.filter(function(c){return c.shareToken});
+  var on=S.customers.filter(function(c){return c.shareToken}),sy=S.fbaccounts.filter(function(x){return x.id==="__sync"})[0],age=sy&&sy.at?Math.round((Date.now()-sy.at)/60000):null;
+  var syH=sy&&sy.at?'<p class="hint">Máy chủ kiểm tra gần nhất lúc <b>'+new Date(sy.at).toLocaleString("vi-VN")+'</b> ('+(age<1?"vừa xong":age+" phút trước")+') · kiểm tra '+(sy.linksChecked||0)+' link, cập nhật '+(sy.linksUpdated||0)+' link vì có số mới'+(sy.linkError?' · <b>lỗi: '+esc(sy.linkError)+'</b>':'')+(age>40?' · <b>quá lâu chưa chạy, kiểm tra cron-job.org</b>':'')+'.</p>':'<p class="hint">Chưa có mốc kiểm tra của máy chủ (sẽ hiện sau lần đồng bộ tới).</p>';
   return '<section class="panel"><h2>Link đang bật chia sẻ <small>'+on.length+'/'+S.customers.length+' khách</small></h2>'
-    +(on.length?'<div class="list">'+on.map(function(c){return '<div class="row"><div class="l"><button class="link" data-act="goc" data-id="'+esc(c.id)+'">'+esc(c.name)+'</button><span>Khách xem được bảng chi tiêu bằng link, không cần đăng nhập</span></div><div class="r"><button class="btn small danger" type="button" data-act="unshare-id" data-id="'+esc(c.id)+'">Tắt chia sẻ</button></div></div>'}).join("")+'</div>':'<p class="hint">Chưa có khách nào được bật link chia sẻ. Bật trong bảng chi tiêu của từng khách.</p>')+'</section>';
+    +(on.length?'<div class="list">'+on.map(function(c){return '<div class="row"><div class="l"><button class="link" data-act="goc" data-id="'+esc(c.id)+'">'+esc(c.name)+'</button><span>Khách xem được bảng chi tiêu bằng link, không cần đăng nhập</span></div><div class="r"><button class="btn small danger" type="button" data-act="unshare-id" data-id="'+esc(c.id)+'">Tắt chia sẻ</button></div></div>'}).join("")+'</div>':'<p class="hint">Chưa có khách nào được bật link chia sẻ. Bật trong bảng chi tiêu của từng khách.</p>')+syH+'</section>';
 }
 function vStats(){
   var SD=statData(),mk=SD.mk,M=SD.M,C=SD.C,cur=M[mk[11]],prev=M[mk[10]];
