@@ -1717,7 +1717,7 @@ function labelTables(root){
   });
 }
 /* ---------- Chi Tiêu Gửi Khách: báo cáo chi tiêu + công nợ từng khách (xem trên app, tải ảnh gửi Zalo) ---------- */
-var PAY_DEF={bankName:"Techcombank",bankCode:"TCB",acc:"6885699999",owner:"VU VAN HA",phone:""};
+var PAY_DEF={bankName:"Techcombank",bankCode:"TCB",acc:"6885699999",owner:"VU VAN HA",phone:"0356.057.546"};
 function payCfg(){
   var d=S.fbaccounts.filter(function(x){return x.id==="__pay"})[0]||{},o={};
   Object.keys(PAY_DEF).forEach(function(k){o[k]=d[k]!=null&&String(d[k]).trim()!==""?String(d[k]).trim():PAY_DEF[k]});
@@ -1817,7 +1817,7 @@ function reportHtml(c,o){
   }else{
     h+='<section class="sq-tbl"><div class="sq-paid"><svg width="150" height="150" viewBox="0 0 24 24" fill="none" stroke="#1B7F4B" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><path d="m7.5 12.5 3 3 6-7"></path></svg><b>Đã thanh toán đủ</b><span>Cảm ơn bạn. Hiện không còn khoản nào cần thanh toán.</span></div></section>';
   }
-  h+='</div><div class="sq-ft"><b>Cách tính:</b> Tổng chi phí = phí ads + phí dịch vụ '+(uni!==null?pct(uni):'(tỷ lệ % ghi dưới từng khoản)')+'. Số liệu lấy tự động từ Facebook Ads. Thắc mắc vui lòng liên hệ VH Agency'+(P.phone?': <a href="tel:'+esc(P.phone.replace(/[^0-9+]/g,""))+'">'+esc(P.phone)+'</a>':"")+'</div></main></div>';
+  h+='</div><div class="sq-ft"><b>Cách tính:</b> Tổng chi phí = phí ads + phí dịch vụ '+(uni!==null?pct(uni):'(tỷ lệ % ghi dưới từng khoản)')+'. Số liệu lấy tự động từ Facebook Ads. Thắc mắc vui lòng liên hệ <span style="white-space:nowrap"><b>Vũ Hà</b>'+(P.phone?' ( SĐT/Zalo '+esc(P.phone)+' )':"")+'</span></div></main></div>';
   return h;
 }
 /* Chi phí quảng cáo từng khách theo ngày (bảng chi tiêu; ngày chưa chốt thì lấy Spend Facebook) */
