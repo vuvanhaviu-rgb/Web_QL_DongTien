@@ -421,7 +421,8 @@ a.ext{color:var(--accent);text-decoration:underline;word-break:break-all}
 .kpis .kpi.t-info{--kc:11,102,255!important;--kd:11,80,210!important}
 .kpis .kpi.t-ok{--kc:22,163,74!important;--kd:21,128,61!important}
 .kpis .kpi.t-bad{--kc:220,38,38!important;--kd:185,28,28!important}
-.kpis .kpi.t-info b,.kpis .kpi.t-ok b,.kpis .kpi.t-bad b{color:rgb(var(--kd))}
+.kpis .kpi.t-warn{--kc:217,119,6!important;--kd:180,83,9!important}
+.kpis .kpi.t-info b,.kpis .kpi.t-ok b,.kpis .kpi.t-bad b,.kpis .kpi.t-warn b{color:rgb(var(--kd))}
 .kpis .kpi[class*="ic-"]::before{background-image:var(--icon)!important}
 .kpi.ic-spend{--icon:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22white%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M3%2011v3a1%201%200%200%200%201%201h2l5%204V7L6%2010H4a1%201%200%200%200-1%201z%22%2F%3E%3Cpath%20d%3D%22M15%209a4%204%200%200%201%200%206%22%2F%3E%3Cpath%20d%3D%22M18%206a8%208%200%200%201%200%2012%22%2F%3E%3C%2Fsvg%3E")}
 .kpi.ic-live{--icon:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22white%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Crect%20x%3D%222%22%20y%3D%226%22%20width%3D%2214%22%20height%3D%2212%22%20rx%3D%222%22%2F%3E%3Cpath%20d%3D%22m22%208-6%204%206%204z%22%2F%3E%3C%2Fsvg%3E")}
@@ -1210,13 +1211,16 @@ function adAccHtml(){
   var bad=info.filter(function(i){return i.lv==="hit"||i.lv==="near"});
   var h='<section class="panel"><h2>Tài khoản quảng cáo <small>dư nợ và ngưỡng thanh toán với Facebook</small></h2>';
   var tD=info.reduce(function(t,i){return t+(i.a.balance||0)},0),tT=info.reduce(function(t,i){return t+(i.th||0)},0),tL=info.reduce(function(t,i){return t+(i.left!=null?i.left:0)},0),fee=Math.round(tD*0.011),cb=custBalances(),cDebt=0;Object.keys(cb).forEach(function(k){cDebt+=cb[k]});var real=bank==null?null:bank-tD-fee+cDebt;
-  h+='<div class="kpis in"><div class="kpi"><span>Dư nợ hiện tại</span><b>'+vnd(tD)+'</b><small>Tổng '+info.length+' tài khoản</small></div>'
-   +'<div class="kpi"><span>Tổng ngưỡng thanh toán</span><b>'+vnd(tT)+'</b><small>Không phải số dư thẻ</small></div>'
-   +'<div class="kpi"><span>Tổng số dư ngưỡng còn lại</span><b>'+vnd(tL)+'</b><small>Ngưỡng − dư nợ</small></div>'
-   +'<div class="kpi"><span>Số dư ngân hàng</span><input class="bank-in" inputmode="numeric" placeholder="Nhập số dư" value="'+(bank!=null?num(bank):"")+'" aria-label="Số dư ngân hàng"><small>Bạn tự nhập</small></div>'
-   +'<div class="kpi"><span>Phí thanh toán</span><b>'+vnd(fee)+'</b><small>Dư nợ × 1,1%</small></div>'
-   +'<div class="kpi"><span>Số dư thực tế</span><b'+(real!=null&&real<0?' class="owe"':'')+'>'+(real==null?"Chưa nhập số dư":vnd(real))+'</b><small>Ngân hàng − dư nợ − phí + dư nợ khách</small></div>'
-   +'<div class="kpi"><span>Khách đang nợ bạn</span><b>'+vnd(cDebt)+'</b><small>Khách còn nợ bạn, đã cộng vào số dư thực tế</small></div></div>';
+  /* màu theo ý nghĩa: đỏ = nợ/âm, vàng cam = chi phí hoặc cần chú ý, xanh lá = tốt, xanh dương = số tham chiếu */
+  var hit=info.some(function(i){return i.lv==="hit"}),near=info.some(function(i){return i.lv==="near"});
+  var toneD=tD>0?"bad":"ok",toneL=hit?"bad":near?"warn":"ok",toneR=real==null?"info":(real<0?"bad":"ok"),toneC=cDebt>0?"warn":"ok";
+  h+='<div class="kpis in"><div class="kpi" data-tone="'+toneD+'"><span>Dư nợ hiện tại</span><b>'+vnd(tD)+'</b><small>Tổng '+info.length+' tài khoản</small></div>'
+   +'<div class="kpi" data-tone="info"><span>Tổng ngưỡng thanh toán</span><b>'+vnd(tT)+'</b><small>Không phải số dư thẻ</small></div>'
+   +'<div class="kpi" data-tone="'+toneL+'"><span>Tổng số dư ngưỡng còn lại</span><b>'+vnd(tL)+'</b><small>Ngưỡng − dư nợ'+(hit?' · có tài khoản đã chạm ngưỡng':near?' · có tài khoản sắp chạm ngưỡng':'')+'</small></div>'
+   +'<div class="kpi" data-tone="info"><span>Số dư ngân hàng</span><input class="bank-in" inputmode="numeric" placeholder="Nhập số dư" value="'+(bank!=null?num(bank):"")+'" aria-label="Số dư ngân hàng"><small>Bạn tự nhập</small></div>'
+   +'<div class="kpi" data-tone="warn"><span>Phí thanh toán</span><b>'+vnd(fee)+'</b><small>Dư nợ × 1,1%</small></div>'
+   +'<div class="kpi" data-tone="'+toneR+'"><span>Số dư thực tế</span><b'+(real!=null&&real<0?' class="owe"':'')+'>'+(real==null?"Chưa nhập số dư":vnd(real))+'</b><small>Ngân hàng − dư nợ − phí + dư nợ khách</small></div>'
+   +'<div class="kpi" data-tone="'+toneC+'"><span>Khách đang nợ bạn</span><b>'+vnd(cDebt)+'</b><small>Khách còn nợ bạn, đã cộng vào số dư thực tế</small></div></div>';
   if(bad.length)h+='<div class="notice warn" role="alert"><b>Cảnh báo:</b> '+bad.map(function(i){return esc(i.a.name||i.a.accountId)+(i.lv==="hit"?" đã chạm ngưỡng":" sắp chạm ngưỡng (còn "+vnd(i.left)+")")}).join("; ")+'.</div>';
   if(!AC.length)return h+emptyBlock("Chưa có dữ liệu tài khoản quảng cáo","Điền ID tài khoản quảng cáo cho khách ở mục Khách hàng, rồi chạy đồng bộ Facebook. Dữ liệu sẽ hiện ở đây.")+'</section>';
   h+='<div class="tablewrap"><table><thead><tr><th>Tài khoản quảng cáo</th><th class="num">Dư nợ hiện tại</th><th class="num">Ngưỡng thanh toán</th><th class="num">Còn lại trước ngưỡng</th><th>Ngày thanh toán dự kiến</th><th>Thẻ thanh toán</th></tr></thead><tbody>'
@@ -1495,7 +1499,7 @@ function tagKpis(root){
   (root||document).querySelectorAll(".kpis .kpi").forEach(function(k){
     var sp=k.querySelector("span");if(!sp)return;var t=sp.textContent||"",ic="chart";
     for(var i=0;i<KPI_IC.length;i++){if(KPI_IC[i][0].test(t)){ic=KPI_IC[i][1];break}}
-    k.className=k.className.replace(/\b(ic|t)-\S+/g,"").replace(/\s+/g," ").trim()+" ic-"+ic+" "+(k.classList.contains("bad")?"t-bad":(k.classList.contains("settled")||KPI_OK.test(t)?"t-ok":"t-info"));
+    k.className=k.className.replace(/\b(ic|t)-\S+/g,"").replace(/\s+/g," ").trim()+" ic-"+ic+" "+(k.dataset.tone?"t-"+k.dataset.tone:k.classList.contains("bad")?"t-bad":(k.classList.contains("settled")||KPI_OK.test(t)?"t-ok":"t-info"));
   });
 }
 
