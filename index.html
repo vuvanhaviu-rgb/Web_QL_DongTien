@@ -421,6 +421,7 @@ a.ext{color:var(--accent);text-decoration:underline;word-break:break-all}
 .kpis .kpi.t-info{--kc:11,102,255!important;--kd:11,80,210!important}
 .kpis .kpi.t-ok{--kc:22,163,74!important;--kd:21,128,61!important}
 .kpis .kpi.t-bad{--kc:220,38,38!important;--kd:185,28,28!important}
+.ledger tr.nospend .tog{visibility:hidden}
 .kpis .kpi.t-warn{--kc:217,119,6!important;--kd:180,83,9!important}
 .kpis .kpi.t-info b,.kpis .kpi.t-ok b,.kpis .kpi.t-bad b,.kpis .kpi.t-warn b{color:rgb(var(--kd))}
 .kpis .kpi[class*="ic-"]::before{background-image:var(--icon)!important}
@@ -1105,7 +1106,7 @@ function monthHead(k,m,open,hc){
 }
 function blankRow(ds,c,hid){
   var id="new:"+ds,dt=new Date(+ds.slice(0,4),+ds.slice(5,7)-1,+ds.slice(8,10)),wd=dt.getDay();
-  var cls=(hid?"hid ":"")+"blank"+(wd===0||wd===6?" we":"")+(ds===todayStr()?" today":"");
+  var cls=(hid?"hid ":"")+"blank nospend"+(wd===0||wd===6?" we":"")+(ds===todayStr()?" today":"");
   return '<tr class="'+cls+'" data-date="'+ds+'" data-month="'+ds.slice(0,7)+'"><td class="dcell">'+ds.slice(8)+"/"+ds.slice(5,7)+"/"+ds.slice(0,4)+' <small>'+WD[wd]+'</small></td>'
     +moneyCell(id,"adLive",0,"Quảng cáo Live")+moneyCell(id,"adPost",0,"Quảng cáo Bài viết")
     +'<td class="cell"><div class="pc"><input class="cin n" type="text" inputmode="decimal" autocomplete="off" data-cell="1" data-row="'+id+'" data-col="feeRate" value="'+esc(String(defaultRate(c.id)).replace(".",","))+'" aria-label="Phí dịch vụ phần trăm"><span>%</span></div></td>'
@@ -1125,6 +1126,7 @@ function recalcLedger(){
     var dv=g("date"),mk=String(dv?dv.value:(tr.dataset.month||"")).slice(0,7),m=MS[mk]||(MS[mk]={live:0,post:0,fee:0,tot:0,xf:0,n:0});
     m.live+=live;m.post+=post;m.fee+=fee;m.tot+=tot;m.xf+=xf;if(dv)m.n++;
     var cf=tr.querySelector('[data-calc="fee"]'),ct=tr.querySelector('[data-calc="tot"]'),cb=tr.querySelector('[data-calc="bal"]');
+    tr.classList.toggle("nospend",live+post===0); /* ngày không phát sinh chi phí: ẩn ô Note */
     if(cf)cf.textContent=nz(fee);
     if(ct)ct.innerHTML=tot?"<b>"+num(tot)+"</b>":"—";
     if(cb){cb.textContent=num(bal);cb.className="calc "+(bal>0?"owe":"clear")}
@@ -1162,7 +1164,7 @@ function vCustomerDetail(){
   function realRow(r,hid){
     var x=spendRow(r),rate=rateOf(r),paid=!!r.paid,id=r.id;
     bal+=x.tot-x.xf;tl+=x.live;tp+=x.post;tf+=x.fee;tt+=x.tot;tx+=x.xf;
-    return '<tr data-date="'+esc(r.date||"")+'" data-month="'+esc(String(r.date||"").slice(0,7))+'"'+' class="'+(hid?"hid ":"")+(paid?"pd":(x.tot>0?"up":""))+'">'
+    return '<tr data-date="'+esc(r.date||"")+'" data-month="'+esc(String(r.date||"").slice(0,7))+'"'+' class="'+(hid?"hid ":"")+(x.live+x.post===0?"nospend ":"")+(paid?"pd":(x.tot>0?"up":""))+'">'
       +'<td class="cell"><input class="cin" type="date" data-cell="1" data-row="'+esc(id)+'" data-col="date" value="'+esc(r.date||"")+'" aria-label="Ngày tháng"></td>'
       +moneyCell(id,"adLive",x.live,"Quảng cáo Live")+moneyCell(id,"adPost",x.post,"Quảng cáo Bài viết")
       +'<td class="cell"><div class="pc"><input class="cin n" type="text" inputmode="decimal" autocomplete="off" data-cell="1" data-row="'+esc(id)+'" data-col="feeRate" value="'+esc(String(rate).replace(".",","))+'" aria-label="Phí dịch vụ phần trăm"><span>%</span></div></td>'
