@@ -567,7 +567,8 @@ table.sp td:first-child,table.sp td:first-child .link{font-size:16px}
 .rp-wrap:not(.has) .rp-empty{display:none}
 .rp-wrap.has .rp-bk-n{display:flex}
 @media (min-width:1200px){
-  .rp-split{grid-template-columns:340px minmax(0,1fr)}
+  .app:has(.rp-wrap){max-width:1760px}
+  .rp-split{grid-template-columns:280px minmax(0,1fr)}
   .rp-wrap.has .rp-lst,.rp-wrap.has .rp-tp{display:block}
   .rp-wrap:not(.has) .rp-empty{display:block}
   .rp-wrap.has .rp-bk-n{display:none}
@@ -590,7 +591,7 @@ table.sp td:first-child,table.sp td:first-child .link{font-size:16px}
 .rp-mk{height:38px;padding:0 12px;border-radius:10px;border:1px solid #0866FF;background:#fff;color:#0866FF;font-family:inherit;font-size:12px;font-weight:700;line-height:1.15;cursor:pointer;white-space:nowrap}
 .rp-mk:hover{background:#0866FF;color:#fff}
 .rp-hint{font-size:13px;color:#3A4250;margin:0 0 10px}
-.rp-out{display:block;width:100%;height:auto;aspect-ratio:1/1;border-radius:12px;border:1px solid #E4E6EB;background:#fff}
+.rp-out{display:block;width:100%;max-width:1200px;height:auto;aspect-ratio:1/1;border-radius:12px;border:1px solid #E4E6EB;background:#fff}
 .rp-warn{font-size:12px;color:#8A5A00;background:#FBEFD2;border-radius:8px;padding:8px 10px;margin:10px 0 0}
 .rp-none{padding:16px 14px;font-size:14px;color:#5B6472}
 .rp-btn{height:44px;padding:0 16px;border-radius:10px;border:1px solid #C9CDD3;background:#FFFFFF;font-family:inherit;font-size:14px;font-weight:600;color:#1C1E21;display:flex;align-items:center;gap:8px;cursor:pointer}
@@ -1900,7 +1901,7 @@ async function reportPng(c){
     if(document.fonts&&document.fonts.ready)await document.fonts.ready;
     await Promise.all(Array.prototype.map.call(st.querySelectorAll("img"),function(im){return im.complete&&im.naturalWidth?0:new Promise(function(ok){im.onload=im.onerror=ok})}));
     var node=st.firstChild;
-    return await window.htmlToImage.toPng(node,{pixelRatio:2,width:1080,height:1080,backgroundColor:"#F0F2F5"});
+    return await window.htmlToImage.toPng(node,{pixelRatio:3,width:1080,height:1080,backgroundColor:"#F0F2F5"});
   }finally{st.innerHTML=""}
 }
 var rpQ=Promise.resolve();
