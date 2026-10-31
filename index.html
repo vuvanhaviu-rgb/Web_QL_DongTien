@@ -740,11 +740,16 @@ async function viewerInit(){
   var cl=window.claude;
   try{db=cl&&cl.use?await cl.use("db"):null}catch(e){db=null}
   if(!db){main.innerHTML=emptyBlock("Chưa mở được trang","Trang chưa được kết nối.");return}
-  try{
-    var snap=await db.collection("shares").doc(VIEW_TOKEN).get();
+  var draw=function(snap){
     if(!snap.exists){main.innerHTML=emptyBlock("Link không còn hiệu lực","Người gửi đã tắt chia sẻ hoặc link chưa đúng.");return}
     ui.vdata=snap.data();main.innerHTML=viewerHtml(ui.vdata);tagKpis(main);labelTables(main);
-  }catch(e){main.innerHTML=emptyBlock("Không mở được link","Chủ trang có thể chưa bật quyền xem công khai cho link chia sẻ.")}
+  };
+  var fail=function(){main.innerHTML=emptyBlock("Không mở được link","Chủ trang có thể chưa bật quyền xem công khai cho link chia sẻ.")};
+  try{
+    var ref=db.collection("shares").doc(VIEW_TOKEN);
+    if(ref.onSnapshot){ref.onSnapshot(draw,fail)} /* tự cập nhật ngay khi số đổi, không cần tải lại trang */
+    else draw(await ref.get());
+  }catch(e){fail()}
 }
 
 async function init(){
