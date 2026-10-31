@@ -149,7 +149,6 @@ async function main() {
   // Cập nhật luôn link chia sẻ của khách (trang khách xem), để link luôn mới dù bạn không mở web
   try {
     let ns = 0;
-    if (!(FULL || nowVN.getUTCMinutes() < 10)) throw new Error("__skip"); // chỉ chạy mỗi giờ một lần cho đỡ tốn lượt đọc
     for (const c of snap.docs) {
       const d = c.data(); if (!d.shareToken) continue;
       const rate = d.feeRate != null && d.feeRate !== "" ? Number(d.feeRate) : 10;
