@@ -998,10 +998,12 @@ function owedRows(){
   return out;
 }
 /* Chưa thu của từng khách = tổng (phí dịch vụ + chi phí quảng cáo) − khách đã chuyển khoản, trên mọi dòng */
+/* khoản nợ lẻ dưới 1.000đ (còn sót sau khi khách chuyển số đã bỏ 3 số lẻ) coi như đã thanh toán đủ, không cộng sang kỳ sau */
+var WAIVE_BELOW=1000;
 function custBalances(){
   var b={};
   S.spend.forEach(function(r){if(!cust(r.customerId))return;var x=spendRow(r);b[r.customerId]=(b[r.customerId]||0)+x.tot-x.xf});
-  Object.keys(b).forEach(function(k){if(b[k]<=0)delete b[k]});
+  Object.keys(b).forEach(function(k){if(b[k]<WAIVE_BELOW)delete b[k]});
   return b;
 }
 /* khách có phát sinh chi phí quảng cáo nhưng từ ngày cập nhật gần nhất đến nay đã từ 2 ngày trở lên không có chi phí mới */
@@ -1413,12 +1415,12 @@ function ledger(){
 function debtRows(){
   var L=ledger(),late={};dueSoon().forEach(function(l){late[l.id]=l});
   return Object.keys(L.per).filter(function(id){return L.per[id].tot>0}).map(function(id){
-    var c=L.per[id],bal=c.tot-c.xf,st=bal<=0?"paid":(late[id]?"overdue":"pending");
+    var c=L.per[id],bal=c.tot-c.xf,st=bal<WAIVE_BELOW?"paid":(late[id]?"overdue":"pending");
     return{id:id,tot:c.tot,xf:c.xf,bal:bal,st:st,days:late[id]?late[id].days:0,oldest:late[id]?late[id].oldest:""};
   }).sort(function(a,b){var o={overdue:0,pending:1,paid:2};return o[a.st]-o[b.st]||b.bal-a.bal});
 }
 function vPayments(){
-  var owe=0;debtRows().forEach(function(r){if(r.bal>0)owe+=r.bal});
+  var owe=0;debtRows().forEach(function(r){if(r.bal>=WAIVE_BELOW)owe+=r.bal});
   return{title:"Quản lý TKQC Meta",sub:"Khách còn nợ "+vnd(owe),html:adAccHtml()};
 }
 
@@ -1756,6 +1758,7 @@ function reportData(c,date){
     if(p.tot-use>0)rem.push({d:d,live:p.live,post:p.post,fee:p.fee,tot:p.tot,rt:p.rt,owe:p.tot-use,cut:use});
   });
   rem.forEach(function(o){cum+=o.owe;o.cum=cum});
+  if(cum<WAIVE_BELOW){rem=[];cum=0} /* nợ lẻ dưới 1.000đ: bỏ, coi như đã thanh toán đủ */
   var t0=new Date(+td.slice(0,4),+td.slice(5,7)-1,+td.slice(8,10)).getTime();
   rem.forEach(function(o){o.days=Math.max(0,Math.round((t0-new Date(+o.d.slice(0,4),+o.d.slice(5,7)-1,+o.d.slice(8,10)).getTime())/864e5))});
   return{yd:yd,td:td,y:y,bal:cum,pay:cum>=1000?Math.floor(cum/1000)*1000:cum,rem:rem,rate:defaultRate(c.id),isY:yd===yestStr()};
@@ -1819,7 +1822,7 @@ function reportHtml(c,o){
   }else{
     h+='<section class="sq-tbl"><div class="sq-paid"><svg width="150" height="150" viewBox="0 0 24 24" fill="none" stroke="#1B7F4B" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><path d="m7.5 12.5 3 3 6-7"></path></svg><b>Đã thanh toán đủ</b><span>Cảm ơn bạn. Hiện không còn khoản nào cần thanh toán.</span></div></section>';
   }
-  h+='</div><div class="sq-ft"><b>Cách tính:</b> Tổng chi phí = phí ads + phí dịch vụ '+(uni!==null?pct(uni):'(tỷ lệ % ghi dưới từng khoản)')+'. Số liệu lấy tự động từ Facebook Ads. Thắc mắc vui lòng liên hệ <span style="white-space:nowrap"><b>Vũ Hà</b>'+(P.phone?' ( SĐT/Zalo '+esc(P.phone)+' )':"")+'</span></div></main></div>';
+  h+='</div><div class="sq-ft"><b>Cách tính:</b> Tổng chi phí = phí ads + phí dịch vụ '+(!owe?rate:uni!==null?pct(uni):'(tỷ lệ % ghi dưới từng khoản)')+'. Số liệu lấy tự động từ Facebook Ads. Thắc mắc vui lòng liên hệ <span style="white-space:nowrap"><b>Vũ Hà</b>'+(P.phone?' ( SĐT/Zalo '+esc(P.phone)+' )':"")+'</span></div></main></div>';
   return h;
 }
 /* Chi phí quảng cáo từng khách theo ngày (bảng chi tiêu; ngày chưa chốt thì lấy Spend Facebook) */
