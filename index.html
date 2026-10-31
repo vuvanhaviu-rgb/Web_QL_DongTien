@@ -518,8 +518,8 @@ table.sp td:first-child,table.sp td:first-child .link{font-size:16px}
   .btn:active,.nav a:active,.tabs button:active{transform:scale(.97)}
   .note{border-radius:14px}
 }
-.live-note{margin-top:6px;line-height:1.5;font-size:12px;color:var(--mut,#667)}
-.live-dot{display:inline-block;vertical-align:middle;margin-right:6px;width:8px;height:8px;border-radius:50%;background:#16a34a;box-shadow:0 0 0 0 rgba(22,163,74,.5);animation:ldot 1.8s infinite;flex:none}
+.live-note{position:fixed;right:12px;bottom:12px;z-index:50;display:flex;align-items:flex-start;gap:8px;max-width:calc(100vw - 24px);padding:8px 12px;border-radius:12px;background:var(--card,#fff);border:1px solid rgba(22,163,74,.35);box-shadow:0 4px 14px rgba(0,0,0,.12);font-size:11px;line-height:1.45;color:#475569;text-align:right}
+.live-dot{display:inline-block;margin-top:4px;width:8px;height:8px;border-radius:50%;background:#16a34a;box-shadow:0 0 0 0 rgba(22,163,74,.5);animation:ldot 1.8s infinite;flex:none}
 @keyframes ldot{70%{box-shadow:0 0 0 7px rgba(22,163,74,0)}100%{box-shadow:0 0 0 0 rgba(22,163,74,0)}}
 </style>
 
@@ -728,14 +728,14 @@ function viewerHtml(d){
       +cur.items.slice().sort(function(a,b){return (b.s||0)-(a.s||0)}).map(function(x){return '<tr><td>'+esc(x.n)+'</td><td>'+(x.k==="live"?"Live":"Bài viết")+'</td><td class="num">'+num(x.s)+'</td></tr>'}).join("")
       +'</tbody><tfoot><tr><td>Tổng '+cur.items.length+' chiến dịch</td><td></td><td class="num">'+num(ct)+'</td></tr></tfoot></table></div><p class="hint">Chi phí quảng cáo chưa gồm phí dịch vụ.</p></section>';
   }
-  return '<div class="head"><div><h1>'+esc(d.name||"Bảng chi tiêu")+'</h1><p>Bảng chi tiêu quảng cáo</p><p class="live-note"><i class="live-dot"></i>Chi tiêu được cập nhật theo thời gian thực'+(upd?'<br>Số liệu đổi lần cuối: <b>'+esc(upd)+'</b>':'')+'<br>Nhận lúc: <b>'+new Date().toLocaleTimeString("vi-VN",{hour:"2-digit",minute:"2-digit",second:"2-digit"})+'</b></p></div></div>'
+  return '<div class="head"><div><h1>'+esc(d.name||"Bảng chi tiêu")+'</h1><p>Bảng chi tiêu quảng cáo</p></div></div>'
     +'<div class="kpis"><div class="kpi"><span>Chi phí quảng cáo</span><b>'+vnd(tl+tp)+'</b><small>Live '+num(tl)+' · Bài viết '+num(tp)+'</small></div>'
     +'<div class="kpi"><span>Phí dịch vụ</span><b>'+vnd(tf)+'</b><small>Tổng cộng '+vnd(tt)+'</small></div>'
     +'<div class="kpi"><span>Đã chuyển khoản</span><b>'+vnd(tx)+'</b><small>&nbsp;</small></div>'
     +'<div class="kpi '+(bal>0?"bad":"")+'"><span>Còn phải thanh toán</span><b>'+vnd(Math.max(0,bal))+'</b><small>'+(bal>0?"Tổng − đã chuyển khoản":bal<0?"Đã chuyển dư "+vnd(-bal):"Đã tất toán")+'</small></div></div>'
     +(rows.length?'<div class="tablewrap"><table class="ledger vw"><thead><tr><th>Ngày</th><th>Quảng cáo Live</th><th>Quảng cáo Bài viết</th><th>Phí %</th><th>Phí dịch vụ</th><th>Tổng</th><th>Trạng thái</th><th>Đã chuyển khoản</th></tr></thead><tbody>'+body+'</tbody>'
       +'<tfoot><tr><td>Tổng cộng</td><td class="num">'+num(tl)+'</td><td class="num">'+num(tp)+'</td><td></td><td class="num">'+num(tf)+'</td><td class="num">'+num(tt)+'</td><td></td><td class="num">'+num(tx)+'</td></tr></tfoot></table></div>'
-      :emptyBlock("Chưa có số liệu","Bảng chi tiêu sẽ hiện ở đây khi có dữ liệu."))+campH;
+      :emptyBlock("Chưa có số liệu","Bảng chi tiêu sẽ hiện ở đây khi có dữ liệu."))+campH+'<div class="live-note"><i class="live-dot"></i><span>Cập nhật chi tiêu theo thời gian thực'+(upd?'<br>Đổi lần cuối '+esc(upd):'')+'<br>Nhận lúc '+new Date().toLocaleTimeString("vi-VN",{hour:"2-digit",minute:"2-digit",second:"2-digit"})+'</span></div>';
 }
 async function viewerInit(){
   document.body.classList.add("viewer");
