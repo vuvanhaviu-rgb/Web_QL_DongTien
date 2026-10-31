@@ -336,6 +336,14 @@ td.net,th.net{color:var(--accent);font-weight:700}
   .nav a[href="#bang-gia"]{--ic:url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 24 24%27 fill=%27none%27 stroke=%27black%27 stroke-width=%272%27 stroke-linecap=%27round%27 stroke-linejoin=%27round%27%3E%3Cpath d=%27M20 12 12 20 4 12V4h8z%27/%3E%3Ccircle cx=%278%27 cy=%278%27 r=%271.2%27/%3E%3C/svg%3E")}
   .nav a[href="#thong-ke"]{--ic:url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 24 24%27 fill=%27none%27 stroke=%27black%27 stroke-width=%272%27 stroke-linecap=%27round%27 stroke-linejoin=%27round%27%3E%3Cpath d=%27M4 20V10M10 20V4M16 20v-8M22 20H2%27/%3E%3C/svg%3E")}
   .nav a[href="#lich-su"]{--ic:url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 24 24%27 fill=%27none%27 stroke=%27black%27 stroke-width=%272%27 stroke-linecap=%27round%27 stroke-linejoin=%27round%27%3E%3Ccircle%20cx=%2712%27%20cy=%2712%27%20r=%279%27/%3E%3Cpath%20d=%27M12%207v5l3%202%27/%3E%3C/svg%3E")}
+  .nav a.mv{display:none}
+  .nav a .nl{display:none}.nav a .ns{display:inline}
+  .nav a.more{display:flex}
+  .nav a[href="#gui-khach"]{--ic:url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 24 24%27 fill=%27none%27 stroke=%27black%27 stroke-width=%272%27 stroke-linecap=%27round%27 stroke-linejoin=%27round%27%3E%3Cpath d=%27M4 3h16v18l-3-2-2.5 2L12 19l-2.5 2L7 19l-3 2z%27/%3E%3Cpath d=%27M8 8h8M8 12h8%27/%3E%3C/svg%3E")}
+  .nav a.more{--ic:url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 24 24%27 fill=%27black%27%3E%3Ccircle cx=%275%27 cy=%2712%27 r=%272%27/%3E%3Ccircle cx=%2712%27 cy=%2712%27 r=%272%27/%3E%3Ccircle cx=%2719%27 cy=%2712%27 r=%272%27/%3E%3C/svg%3E")}
+  .more-sheet.open{display:flex;position:fixed;right:8px;bottom:calc(74px + env(safe-area-inset-bottom,0px));z-index:16;flex-direction:column;min-width:210px;background:var(--surface);border:1px solid var(--line);border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,.18);padding:6px}
+  .more-sheet a{padding:13px 14px;border-radius:8px;color:var(--fg);text-decoration:none;font-size:14px;font-weight:600}
+  .more-sheet a[aria-current="page"]{background:var(--accent-soft);color:var(--accent)}
   .head{padding:4px 0}
   .head h1{font-size:18px}
   .panel h2{font-size:14px;padding-bottom:6px;border-bottom:1px solid var(--line)}
@@ -523,6 +531,130 @@ table.sp td:first-child,table.sp td:first-child .link{font-size:16px}
 .live-note{display:flex;align-items:flex-start;gap:8px;width:fit-content;margin:18px 0 6px auto;padding:8px 12px;border-radius:12px;border:1px solid rgba(22,163,74,.35);font-size:11px;line-height:1.45;color:#475569;text-align:right}
 .live-dot{display:inline-block;margin-top:4px;width:8px;height:8px;border-radius:50%;background:#16a34a;box-shadow:0 0 0 0 rgba(22,163,74,.5);animation:ldot 1.8s infinite;flex:none}
 @keyframes ldot{70%{box-shadow:0 0 0 7px rgba(22,163,74,0)}100%{box-shadow:0 0 0 0 rgba(22,163,74,0)}}
+
+/* ===== Ảnh báo cáo gửi Zalo: font nhúng sẵn (tên riêng "VH Report", không ảnh hưởng font của app) ===== */
+@font-face{font-family:"VH Report";font-style:normal;font-weight:400;font-display:block;src:url("fonts/bvp-400-vietnamese.woff2") format("woff2");unicode-range:U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0323, U+0329, U+1EA0-1EF9, U+20AB}
+@font-face{font-family:"VH Report";font-style:normal;font-weight:400;font-display:block;src:url("fonts/bvp-400-latin-ext.woff2") format("woff2");unicode-range:U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF}
+@font-face{font-family:"VH Report";font-style:normal;font-weight:400;font-display:block;src:url("fonts/bvp-400-latin.woff2") format("woff2");unicode-range:U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD}
+@font-face{font-family:"VH Report";font-style:normal;font-weight:500;font-display:block;src:url("fonts/bvp-500-vietnamese.woff2") format("woff2");unicode-range:U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0323, U+0329, U+1EA0-1EF9, U+20AB}
+@font-face{font-family:"VH Report";font-style:normal;font-weight:500;font-display:block;src:url("fonts/bvp-500-latin-ext.woff2") format("woff2");unicode-range:U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF}
+@font-face{font-family:"VH Report";font-style:normal;font-weight:500;font-display:block;src:url("fonts/bvp-500-latin.woff2") format("woff2");unicode-range:U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD}
+@font-face{font-family:"VH Report";font-style:normal;font-weight:600;font-display:block;src:url("fonts/bvp-600-vietnamese.woff2") format("woff2");unicode-range:U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0323, U+0329, U+1EA0-1EF9, U+20AB}
+@font-face{font-family:"VH Report";font-style:normal;font-weight:600;font-display:block;src:url("fonts/bvp-600-latin-ext.woff2") format("woff2");unicode-range:U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF}
+@font-face{font-family:"VH Report";font-style:normal;font-weight:600;font-display:block;src:url("fonts/bvp-600-latin.woff2") format("woff2");unicode-range:U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD}
+@font-face{font-family:"VH Report";font-style:normal;font-weight:700;font-display:block;src:url("fonts/bvp-700-vietnamese.woff2") format("woff2");unicode-range:U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0323, U+0329, U+1EA0-1EF9, U+20AB}
+@font-face{font-family:"VH Report";font-style:normal;font-weight:700;font-display:block;src:url("fonts/bvp-700-latin-ext.woff2") format("woff2");unicode-range:U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF}
+@font-face{font-family:"VH Report";font-style:normal;font-weight:700;font-display:block;src:url("fonts/bvp-700-latin.woff2") format("woff2");unicode-range:U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD}
+@font-face{font-family:"VH Report";font-style:normal;font-weight:800;font-display:block;src:url("fonts/bvp-800-vietnamese.woff2") format("woff2");unicode-range:U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0323, U+0329, U+1EA0-1EF9, U+20AB}
+@font-face{font-family:"VH Report";font-style:normal;font-weight:800;font-display:block;src:url("fonts/bvp-800-latin-ext.woff2") format("woff2");unicode-range:U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF}
+@font-face{font-family:"VH Report";font-style:normal;font-weight:800;font-display:block;src:url("fonts/bvp-800-latin.woff2") format("woff2");unicode-range:U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD}
+
+/* ===== Chi Tiêu Gửi Khách: báo cáo theo file thiết kế (màu, cỡ chữ, khoảng cách giữ đúng bản mẫu; class bắt đầu bằng rp- để không ảnh hưởng phần khác) ===== */
+.rp-pick{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin:0 0 12px}
+.rp-pick>label{font-weight:600;font-size:12px}
+.rp-cb{position:relative;flex:1 1 280px;max-width:420px}
+.rp-cb input{width:100%;height:44px;padding:0 14px;border-radius:10px;border:1px solid #C9CDD3;background:#fff;color:#1C1E21;font-size:14px;font-weight:600}
+.rp-list{position:absolute;left:0;right:0;top:48px;z-index:20;max-height:320px;overflow:auto;background:#fff;color:#1C1E21;border:1px solid #C9CDD3;border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.14);display:none}
+.rp-list.open{display:block}
+.rp-list button{display:flex;justify-content:space-between;gap:12px;width:100%;text-align:left;padding:10px 14px;border:0;background:none;font-size:14px;cursor:pointer;color:inherit}
+.rp-list button:hover,.rp-list button.on{background:#F2F6FF}
+.rp-list button small{color:#B42318;font-weight:600;white-space:nowrap}
+.rp-list button small.z{color:#5B6472;font-weight:500}
+.rp-list .rp-none{padding:12px 14px;font-size:14px;color:#5B6472}
+.rp{container-type:inline-size;width:100%;min-height:920px;background:#F0F2F5;font-family:'VH Report','Be Vietnam Pro',system-ui,sans-serif;color:#1C1E21;display:flex;flex-direction:column;font-size:14px;line-height:normal;text-align:left}
+.rp *{box-sizing:border-box}
+.rp h1,.rp h2{margin:0;text-wrap:wrap}
+.rp a{color:#0759E0;text-decoration:underline}
+.rp-hd{background:#FFFFFF;border-bottom:1px solid #E4E6EB}
+.rp-hd>div{max-width:1200px;margin:0 auto;padding:16px 32px;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:16px}
+.rp-br{display:flex;align-items:center;gap:12px}
+.rp-lg{width:40px;height:40px;border-radius:10px;background:#0866FF;color:#FFFFFF;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:15px}
+.rp-bt{display:flex;flex-direction:column}
+.rp-bt b{font-weight:700;font-size:16px}
+.rp-bt span{font-size:13px;color:#5B6472}
+.rp-rt{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.rp-rt>span{font-size:13px;color:#5B6472}
+.rp-btn{height:44px;padding:0 16px;border-radius:10px;border:1px solid #C9CDD3;background:#FFFFFF;font-family:inherit;font-size:14px;font-weight:600;color:#1C1E21;display:flex;align-items:center;gap:8px;cursor:pointer}
+.rp-btn:hover{border-color:#0866FF}
+.rp-btn:disabled{opacity:.55;cursor:wait}
+.rp-mn{max-width:1200px;width:100%;margin:0 auto;padding:32px;display:flex;flex-direction:column;gap:24px}
+.rp-top{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px}
+.rp-top>div{display:flex;flex-direction:column;gap:4px;min-width:0}
+.rp-hi{font-size:19px;color:#b42318}
+.rp-top h1{font-size:32px;font-weight:800;letter-spacing:-0.6px;overflow-wrap:anywhere}
+.rp-dt{font-size:14px;color:#3A4250}
+.rp-dt strong{font-weight:700}
+.rp-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px}
+.rp-cd{background:#FFFFFF;border-radius:16px;padding:24px;display:flex;flex-direction:column;gap:10px;box-shadow:0 1px 2px rgba(0,0,0,0.06);min-width:0}
+.rp-cd.red{border-top:4px solid #B42318}
+.rp-cd.ok{border-top:4px solid #1B7F4B}
+.rp-cd>span:first-child{font-size:14px;color:#5B6472;font-weight:500}
+.rp-big{font-size:32px;font-weight:800;letter-spacing:-0.8px;overflow-wrap:anywhere}
+.rp-big.red{color:#B42318}
+.rp-big.ok{color:#1B7F4B;font-size:24px;letter-spacing:-0.4px}
+.rp-big.sm{font-size:20px;letter-spacing:-0.3px}
+.rp-ln{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:13px;color:#3A4250}
+.rp-ln strong{font-weight:700}
+.rp-sb{font-size:13px;color:#3A4250}
+.rp-sb.red{color:#B42318;font-weight:600}
+.rp-cols{display:flex;flex-wrap:wrap;gap:24px;align-items:flex-start}
+.rp-left{flex:999 1 560px;min-width:0;display:flex;flex-direction:column;gap:24px}
+.rp-side{flex:1 1 320px;min-width:0;display:flex;flex-direction:column;gap:24px}
+.rp-sec{background:#FFFFFF;border-radius:16px;box-shadow:0 1px 2px rgba(0,0,0,0.06);display:flex;flex-direction:column;overflow:hidden}
+.rp-sh{padding:24px 24px 16px;display:flex;flex-wrap:wrap;justify-content:space-between;align-items:baseline;gap:8px}
+.rp-sh h2{font-size:18px;font-weight:700}
+.rp-sh span{font-size:13px;color:#5B6472}
+.rp-sc{overflow-x:auto}
+.rp-tb{min-width:720px;font-size:14px}
+.rp-r{display:grid;grid-template-columns:1.1fr 1fr 1fr 1fr 1.1fr 1.2fr 1fr;gap:12px;padding:14px 24px;border-bottom:1px solid #EEF0F3;align-items:center}
+.rp-r>span{text-align:right}
+.rp-r>span:first-child{text-align:left;font-weight:600}
+.rp-r.h{padding:12px 24px;background:#F7F8FA;border-bottom:0;font-size:12px;font-weight:600;color:#5B6472;text-transform:uppercase;letter-spacing:0.3px}
+.rp-r.h>span:first-child{font-weight:600}
+.rp-r.nw{background:#F2F6FF}
+.rp-r.nw>span:first-child{font-weight:700;color:#0759E0;display:flex;align-items:center;gap:8px}
+.rp-r.nw>span:first-child em{font-style:normal;font-size:11px;font-weight:400;background:#0866FF;color:#FFFFFF;padding:2px 8px;border-radius:999px}
+.rp-r .m{color:#5B6472}
+.rp-r .p{font-weight:600}
+.rp-r.nw .p{font-weight:700}
+.rp-r .c{color:#3A4250}
+.rp-r.nw .c{font-weight:700;color:#1C1E21}
+.rp-r .d{color:#5B6472}
+.rp-r .d.red{color:#B42318;font-weight:600}
+.rp-r .p small{display:block;font-size:11px;font-weight:500;color:#5B6472}
+.rp-r.t{padding:16px 24px;background:#F7F8FA;border-bottom:0;font-weight:700}
+.rp-r.t>span:first-child{font-weight:700}
+.rp-r.t .red{color:#B42318}
+.rp-pay{background:#FFFFFF;border-radius:16px;padding:24px;box-shadow:0 1px 2px rgba(0,0,0,0.06);display:flex;flex-direction:column;gap:18px}
+.rp-pay h2{font-size:18px;font-weight:700}
+.rp-am{background:#FEECEB;border-radius:12px;padding:16px;display:flex;flex-direction:column;gap:4px}
+.rp-am span:first-child{font-size:13px;color:#7A271A}
+.rp-am span:last-child{font-size:26px;font-weight:800;color:#B42318;letter-spacing:-0.5px;overflow-wrap:anywhere}
+.rp-qr{align-self:center;width:200px;height:auto;border-radius:12px;border:1px solid #E4E6EB;display:block;background:#fff}
+.rp-bk{display:flex;flex-direction:column;gap:12px;font-size:14px}
+.rp-bk div{display:flex;justify-content:space-between;gap:12px}
+.rp-bk div span:first-child{color:#5B6472}
+.rp-bk div span:last-child{font-weight:600;text-align:right}
+.rp-bk div.n span:last-child{font-weight:700}
+.rp-how{background:#FFFFFF;border-radius:16px;padding:20px 24px;box-shadow:0 1px 2px rgba(0,0,0,0.06);display:flex;flex-direction:column;gap:8px;font-size:13px;color:#3A4250;line-height:1.6}
+.rp-how b{font-weight:700;color:#1C1E21;font-size:14px}
+@container (max-width:600px){
+  .rp-hd>div{padding:14px 16px}
+  .rp-mn{padding:20px 16px;gap:16px}
+  .rp-top h1{font-size:26px}
+  .rp-hi{font-size:16px}
+  .rp-cd{padding:18px}
+  .rp-big{font-size:26px}
+  .rp-sh{padding:18px 16px 12px}
+  .rp-r{padding:12px 16px}.rp-r.h{padding:10px 16px}.rp-r.t{padding:14px 16px}
+  .rp-pay{padding:18px}
+  .rp-how{padding:16px 18px}
+}
+#rp-stage{position:fixed;left:-10000px;top:0;width:900px;pointer-events:none}
+#rp-stage .rp{min-height:0}
+.nav .more{display:none}
+.nav .ns{display:none}
+.more-sheet{display:none}
 </style>
 
 <div class="app">
@@ -533,6 +665,7 @@ table.sp td:first-child,table.sp td:first-child .link{font-size:16px}
   <main id="main" aria-live="polite"></main>
 </div>
 <div id="modal-root"></div>
+<div class="more-sheet" id="more-sheet"></div>
 <div id="toast-root"></div>
 
 <script>if("serviceWorker" in navigator&&location.protocol.indexOf("http")===0){window.addEventListener("load",function(){navigator.serviceWorker.register("sw.js").catch(function(){})})}</script>
@@ -550,7 +683,7 @@ var fmtDate=function(s){return s?String(s).split("-").reverse().join("/"):"—"}
 var sum=function(a){return a.reduce(function(t,p){return t+(Number(p.amount)||0)},0)};
 var short=function(n){if(n>=1e9)return +(n/1e9).toFixed(1)+" tỷ";if(n>=1e6)return +(n/1e6).toFixed(1)+" tr";if(n>=1e3)return +(n/1e3).toFixed(0)+"k";return String(n)};
 
-var VIEWS=[["tong-quan","Tổng quan"],["spend","Spend hiện tại"],["khach-hang","Khách hàng"],["cong-no","Quản lý TKQC Meta","TKQC Meta"],["lich-su","Payment History"],["bang-gia","Bảng giá"],["thong-ke","Thống kê"],["cai-dat","Cài đặt","Cài đặt","hide"]];
+var VIEWS=[["tong-quan","Tổng quan"],["spend","Spend hiện tại"],["khach-hang","Khách hàng"],["cong-no","Quản lý TKQC Meta","TKQC Meta"],["gui-khach","Chi Tiêu Gửi Khách"],["lich-su","Payment History"],["bang-gia","Bảng giá"],["thong-ke","Thống kê"],["cai-dat","Cài đặt","Cài đặt","hide"]];
 var COLS=["customers","prices","payments","spend","hidden","fbspend","fbaccounts"];
 var S={customers:[],prices:[],payments:[],spend:[],hidden:[],fbspend:[],fbaccounts:[]};
 var loaded={customers:false,prices:false,payments:false,spend:false,hidden:false,fbspend:false,fbaccounts:false};
@@ -1524,6 +1657,12 @@ async function bkAuto(){
     setTimeout(function(){URL.revokeObjectURL(a.href);a.remove()},500);toast("Đã tải bản sao lưu tự động");
   }catch(e){toast("Không tải được: "+((e&&(e.message||e.code))||"lỗi"))}
 }
+function payPanel(){
+  var P=payCfg(),F=[["bankName","Ngân hàng","Techcombank"],["bankCode","Mã ngân hàng cho mã QR VietQR (Techcombank là TCB)","TCB"],["acc","Số tài khoản","6885699999"],["owner","Chủ tài khoản (viết hoa, không dấu)","VU VAN HA"],["phone","Số điện thoại liên hệ (hiện ở cuối báo cáo gửi khách)","0900 000 000"]];
+  return '<section class="panel"><h2>Thông tin chuyển khoản <small>Dùng cho thẻ Chi Tiêu Gửi Khách: hiện trong báo cáo và tạo mã QR cho từng khách</small></h2>'
+    +'<div class="two">'+F.map(function(f){return '<div class="field"><label for="pay-'+f[0]+'">'+f[1]+'</label><input id="pay-'+f[0]+'" class="pay-in" data-k="'+f[0]+'" type="text" autocomplete="off" value="'+esc(f[0]==="phone"?(P.phone||""):P[f[0]])+'" placeholder="'+esc(f[2])+'"></div>'}).join("")+'</div>'
+    +'<p class="hint">Sửa xong bấm ra ngoài ô để tự lưu. Mã QR sẽ lấy theo thông tin này.</p></section>';
+}
 function vSettings(){
   loadAutoBk();
   var m=ui.autoBk,st;
@@ -1533,6 +1672,7 @@ function vSettings(){
   var h='<section class="panel"><h2>Sao lưu tự động <small>Dữ liệu được tự chép vào kho lưu trữ riêng mỗi ngày, bạn không cần làm gì</small></h2><div class="bk">'+st+'</div></section>'
    +'<section class="panel"><h2>Sao lưu thủ công <small>Tải một bản về máy khi muốn tự giữ</small></h2>'
    +'<div class="bk" id="bk"><small id="bk-last"></small><button class="btn small" id="bk-save" type="button">Tải bản sao lưu</button><button class="btn small" id="bk-load" type="button">Khôi phục từ file</button><input type="file" id="bk-file" accept=".json,application/json" hidden></div></section>'
+   +payPanel()
    +'<section class="panel"><h2>Tài khoản <small>Đăng xuất khỏi thiết bị này</small></h2><div><button class="btn small" data-act="logout" type="button">Đăng xuất</button></div></section>';
   return{title:"Cài đặt",sub:"Sao lưu dữ liệu và tài khoản",html:h};
 }
@@ -1548,11 +1688,202 @@ function labelTables(root){
     });
   });
 }
+/* ---------- Chi Tiêu Gửi Khách: báo cáo chi tiêu + công nợ từng khách (xem trên app, tải ảnh gửi Zalo) ---------- */
+var PAY_DEF={bankName:"Techcombank",bankCode:"TCB",acc:"6885699999",owner:"VU VAN HA",phone:""};
+function payCfg(){
+  var d=S.fbaccounts.filter(function(x){return x.id==="__pay"})[0]||{},o={};
+  Object.keys(PAY_DEF).forEach(function(k){o[k]=d[k]!=null&&String(d[k]).trim()!==""?String(d[k]).trim():PAY_DEF[k]});
+  return o;
+}
+var noAccent=function(s){return String(s==null?"":s).normalize("NFD").replace(/[̀-ͯ]/g,"").replace(/đ/g,"d").replace(/Đ/g,"D")};
+var custCode=function(c){return noAccent(c.name).toUpperCase().replace(/[^A-Z0-9]/g,"")||"KHACH"};
+var groups4=function(s){return String(s).replace(/\D/g,"").replace(/(.{4})/g,"$1 ").trim()};
+var WDFULL=["Chủ Nhật","Thứ Hai","Thứ Ba","Thứ Tư","Thứ Năm","Thứ Sáu","Thứ Bảy"];
+/* Số liệu dùng đúng công thức của app: spendRow() cho chi phí/phí/tổng; nợ = Σ"Tổng" − Σ"Khách chuyển khoản" (giống custBalances / "Còn nợ").
+   Khách trả một phần thì trừ vào ngày cũ nhất trước; ngày nào trả đủ thì không hiện. */
+function reportData(c){
+  var yd=ymd(new Date(Date.now()-864e5)),td=todayStr(),perDay={},paid=0;
+  S.spend.forEach(function(r){
+    if(r.customerId!==c.id)return;
+    var x=spendRow(r);paid+=x.xf;
+    if(!r.date||!(x.tot>0))return;
+    var p=perDay[r.date]||(perDay[r.date]={live:0,post:0,fee:0,tot:0});
+    p.live+=x.live;p.post+=x.post;p.fee+=x.fee;p.tot+=x.tot;
+  });
+  var y=perDay[yd]?{live:perDay[yd].live,post:perDay[yd].post,fee:perDay[yd].fee,tot:perDay[yd].tot}:{live:0,post:0,fee:0,tot:0};
+  if(!(y.tot>0)){ /* chưa chốt vào bảng chi tiêu (trước 10h sáng): lấy số Spend Facebook của hôm qua, phí theo % của khách */
+    S.fbspend.forEach(function(f){
+      if(f.customerId!==c.id||f.date!==yd)return;
+      var lv=Number(f.live)||0,ps=Number(f.post)||0,fee=Math.round((lv+ps)*defaultRate(c.id)/100);
+      y.live+=lv;y.post+=ps;y.fee+=fee;y.tot+=lv+ps+fee;
+    });
+  }
+  var left=paid,rem=[],cum=0;
+  Object.keys(perDay).sort().forEach(function(d){
+    var p=perDay[d],use=Math.min(p.tot,Math.max(0,left));left-=use;
+    if(p.tot-use>0)rem.push({d:d,live:p.live,post:p.post,fee:p.fee,tot:p.tot,owe:p.tot-use,cut:use});
+  });
+  rem.forEach(function(o){cum+=o.owe;o.cum=cum});
+  var t0=new Date(+td.slice(0,4),+td.slice(5,7)-1,+td.slice(8,10)).getTime();
+  rem.forEach(function(o){o.days=Math.max(0,Math.round((t0-new Date(+o.d.slice(0,4),+o.d.slice(5,7)-1,+o.d.slice(8,10)).getTime())/864e5))});
+  return{yd:yd,td:td,y:y,bal:cum,rem:rem,rate:defaultRate(c.id)};
+}
+function reportHtml(c,o){
+  o=o||{};
+  var D=reportData(c),P=payCfg(),dm=function(d){return d.slice(8,10)+"/"+d.slice(5,7)},m=function(v){return num(v)+" ₫"};
+  var ydt=new Date(+D.yd.slice(0,4),+D.yd.slice(5,7)-1,+D.yd.slice(8,10)),rate=String(D.rate).replace(".",",")+"%";
+  var sy=S.fbaccounts.filter(function(x){return x.id==="__sync"})[0],ut=new Date(sy&&sy.at?sy.at:Date.now());
+  var upd;try{var f=new Intl.DateTimeFormat("vi-VN",{timeZone:"Asia/Ho_Chi_Minh",hour:"2-digit",minute:"2-digit",day:"2-digit",month:"2-digit",year:"numeric",hourCycle:"h23"}).formatToParts(ut),g={};f.forEach(function(p){g[p.type]=p.value});upd=g.hour+":"+g.minute+" · "+g.day+"/"+g.month+"/"+g.year}catch(e){upd=pad(ut.getHours())+":"+pad(ut.getMinutes())+" · "+dmy(ymd(ut))}
+  var dl='<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"></path><path d="m7 10 5 5 5-5"></path><path d="M5 21h14"></path></svg>';
+  var tools=o.tools?'<button type="button" class="rp-btn" data-act="rpimg"'+(rptBusy?" disabled":"")+'>'+dl+'Tải ảnh</button><button type="button" class="rp-btn" data-act="rpall"'+(rptBusy?" disabled":"")+'>'+dl+'Tải ảnh tất cả khách</button>':"";
+  var h='<div class="rp"><header class="rp-hd"><div><div class="rp-br"><div class="rp-lg">VH</div><div class="rp-bt"><b>VH Agency</b><span>Báo cáo chi tiêu quảng cáo</span></div></div>'
+    +'<div class="rp-rt"><span>Cập nhật '+upd+'</span>'+tools+'</div></div></header><main class="rp-mn">'
+    +'<div class="rp-top"><div><span class="rp-hi">Em gửi chi tiêu quảng cáo hôm qua và dư nợ còn lại nhé.</span><h1>'+esc(c.name)+'</h1></div>'
+    +'<span class="rp-dt">Báo cáo ngày <strong>'+WDFULL[ydt.getDay()]+', '+dmy(D.yd)+'</strong></span></div>';
+  /* ba thẻ số liệu */
+  var cost=D.y.tot>0
+    ?'<span class="rp-big">'+m(D.y.tot)+'</span><div class="rp-ln"><span>Live <strong>'+num(D.y.live)+'</strong></span><span>Bài viết <strong>'+num(D.y.post)+'</strong></span><span>Phí '+rate+' <strong>'+num(D.y.fee)+'</strong></span></div>'
+    :'<span class="rp-big sm">Không phát sinh chi phí</span>';
+  var owe=D.bal>0;
+  h+='<div class="rp-cards"><section class="rp-cd"><span>Chi phí hôm qua ('+dm(D.yd)+')</span>'+cost+'</section>';
+  if(owe){
+    var old=D.rem[0],nw=D.rem[D.rem.length-1];
+    h+='<section class="rp-cd red"><span>Tổng cần thanh toán</span><span class="rp-big red">'+m(D.bal)+'</span><span class="rp-sb">Cộng dồn từ '+dm(old.d)+' đến '+dm(nw.d)+'</span></section>'
+     +'<section class="rp-cd"><span>Số ngày chưa thanh toán</span><span class="rp-big">'+D.rem.length+' ngày</span><span class="rp-sb red">Khoản cũ nhất: '+dm(old.d)+' ('+m(old.owe)+')</span></section></div>';
+  }else{
+    h+='<section class="rp-cd ok"><span>Tổng cần thanh toán</span><span class="rp-big ok">Đã thanh toán đủ</span><span class="rp-sb">Không còn khoản nào chưa thanh toán</span></section>'
+     +'<section class="rp-cd"><span>Số ngày chưa thanh toán</span><span class="rp-big">0 ngày</span></section></div>';
+  }
+  h+='<div class="rp-cols">';
+  if(owe){
+    var sl=0,sp=0,sf=0;
+    var rows=D.rem.slice().reverse().map(function(r){
+      sl+=r.live;sp+=r.post;sf+=r.fee;
+      var isNew=r.d===D.yd;
+      return '<div class="rp-r'+(isNew?" nw":"")+'"><span>'+dm(r.d)+(isNew?' <em>Mới</em>':"")+'</span><span>'+num(r.live)+'</span><span class="m">'+num(r.post)+'</span><span>'+num(r.fee)+'</span>'
+        +'<span class="p">'+num(r.owe)+(r.cut>0?'<small>đã trừ '+num(r.cut)+'</small>':"")+'</span><span class="c">'+num(r.cum)+'</span><span class="d'+(r.days>=4?" red":"")+'">'+r.days+' ngày</span></div>';
+    }).join("");
+    h+='<div class="rp-left"><section class="rp-sec"><div class="rp-sh"><h2>Chi tiết các ngày chưa thanh toán</h2><span>Đơn vị: ₫</span></div><div class="rp-sc"><div class="rp-tb">'
+      +'<div class="rp-r h"><span>Ngày</span><span>Live</span><span>Bài viết</span><span>Phí DV '+rate+'</span><span>Phải trả</span><span>Cộng dồn</span><span>Đã nợ</span></div>'
+      +rows+'<div class="rp-r t"><span>Tổng '+D.rem.length+' ngày</span><span>'+num(sl)+'</span><span>'+num(sp)+'</span><span>'+num(sf)+'</span><span class="red">'+num(D.bal)+'</span><span></span><span></span></div></div></div></section></div>';
+  }
+  h+='<aside class="rp-side">';
+  if(owe){
+    var info="VH "+custCode(c)+" "+D.td.slice(8,10)+D.td.slice(5,7),
+        qr=o.qr||("https://img.vietqr.io/image/"+encodeURIComponent(P.bankCode)+"-"+encodeURIComponent(P.acc)+"-compact2.png?amount="+D.bal+"&addInfo="+encodeURIComponent(info)+"&accountName="+encodeURIComponent(P.owner));
+    h+='<section class="rp-pay"><h2>Thanh toán</h2><div class="rp-am"><span>Số tiền cần chuyển</span><span>'+m(D.bal)+'</span></div>'
+      +'<img class="rp-qr" src="'+esc(qr)+'" alt="Mã QR chuyển khoản '+esc(P.bankName)+'" width="200">'
+      +'<div class="rp-bk"><div><span>Ngân hàng</span><span>'+esc(P.bankName)+'</span></div><div class="n"><span>Số tài khoản</span><span>'+esc(groups4(P.acc))+'</span></div><div><span>Chủ tài khoản</span><span>'+esc(P.owner)+'</span></div></div></section>';
+  }
+  h+='<section class="rp-how"><b>Cách tính</b><span>Phải trả = chi phí quảng cáo + phí dịch vụ '+rate+'. Số liệu lấy tự động từ Facebook Ads.</span>'
+    +'<span>Thắc mắc vui lòng liên hệ VH Agency'+(P.phone?': <a href="tel:'+esc(P.phone.replace(/[^0-9+]/g,""))+'">'+esc(P.phone)+'</a>':"")+'</span></section></aside></div></main></div>';
+  return h;
+}
+function vReport(){
+  var bal=custBalances(),list=S.customers.slice().sort(function(a,b){return (bal[b.id]||0)-(bal[a.id]||0)||String(a.name).localeCompare(String(b.name),"vi")});
+  if(!list.length)return{title:"Chi Tiêu Gửi Khách",sub:"Báo cáo chi tiêu và công nợ để gửi khách",html:'<div class="empty"><span>Chưa có khách hàng nào.</span></div>'};
+  var c=cust(ui.rpCid)||list[0];ui.rpCid=c.id;
+  var pick='<div class="rp-pick"><label for="rp-q">Khách hàng</label><div class="rp-cb"><input id="rp-q" type="text" autocomplete="off" spellcheck="false" value="'+esc(c.name)+'" placeholder="Gõ tên khách để tìm" role="combobox" aria-expanded="false" aria-controls="rp-list"><div class="rp-list" id="rp-list" role="listbox"></div></div></div>';
+  return{title:"Chi Tiêu Gửi Khách",sub:"Báo cáo chi tiêu và công nợ để gửi khách",html:pick+reportHtml(c,{tools:true})};
+}
+/* ô chọn khách có tìm theo tên (bỏ dấu) */
+function rpFill(q){
+  var box=document.getElementById("rp-list");if(!box)return;
+  var bal=custBalances(),k=noAccent(q||"").toLowerCase().trim();
+  var list=S.customers.filter(function(c){return !k||noAccent(c.name).toLowerCase().indexOf(k)>=0}).sort(function(a,b){return (bal[b.id]||0)-(bal[a.id]||0)||String(a.name).localeCompare(String(b.name),"vi")});
+  box.innerHTML=list.length?list.map(function(c,i){return '<button type="button" role="option" data-act="rppick" data-id="'+esc(c.id)+'"'+(i===0?' class="on"':"")+'><span>'+esc(c.name)+'</span>'+(bal[c.id]>0?'<small>'+vnd(bal[c.id])+'</small>':'<small class="z">Đã trả đủ</small>')+'</button>'}).join(""):'<div class="rp-none">Không có khách nào khớp</div>';
+  box.classList.add("open");var inp=document.getElementById("rp-q");if(inp)inp.setAttribute("aria-expanded","true");
+}
+function rpClose(){var b=document.getElementById("rp-list"),i=document.getElementById("rp-q");if(b)b.classList.remove("open");if(i){i.setAttribute("aria-expanded","false");var c=cust(ui.rpCid);if(c)i.value=c.name}}
+document.addEventListener("focusin",function(e){if(e.target&&e.target.id==="rp-q"){try{e.target.select()}catch(x){}rpFill("")}});
+document.addEventListener("input",function(e){if(e.target&&e.target.id==="rp-q")rpFill(e.target.value)});
+document.addEventListener("focusout",function(e){if(e.target&&e.target.id==="rp-q")setTimeout(rpClose,150)});
+document.addEventListener("mousedown",function(e){if(e.target.closest&&e.target.closest(".rp-list"))e.preventDefault()});
+document.addEventListener("keydown",function(e){
+  if(!e.target||e.target.id!=="rp-q")return;
+  if(e.key==="Enter"){e.preventDefault();var b=document.querySelector("#rp-list button");if(b)b.click()}
+  else if(e.key==="Escape"){rpClose();e.target.blur()}
+});
+/* tải ảnh */
+function loadHtmlToImage(){
+  if(window.htmlToImage)return Promise.resolve();
+  return new Promise(function(ok,no){var sc=document.createElement("script");sc.src="vendor/html-to-image.js";sc.onload=ok;sc.onerror=function(){no(new Error("Không tải được thư viện tạo ảnh"))};document.head.appendChild(sc)});
+}
+function reportFile(c){
+  var slug=noAccent(c.name||"khach").replace(/[^a-zA-Z0-9]+/g,"-").replace(/^-+|-+$/g,"").toLowerCase()||"khach",t=todayStr();
+  return "bao-cao-"+slug+"-"+t.slice(8,10)+t.slice(5,7)+t.slice(0,4)+".png";
+}
+function urlToData(u,ms){
+  var ctl=window.AbortController?new AbortController():null,tm=ctl?setTimeout(function(){ctl.abort()},ms||12000):0;
+  return fetch(u,{mode:"cors",cache:"force-cache",signal:ctl?ctl.signal:undefined}).then(function(r){if(!r.ok)throw new Error("http "+r.status);return r.blob()}).then(function(b){
+    clearTimeout(tm);
+    return new Promise(function(ok,no){var f=new FileReader();f.onload=function(){ok(f.result)};f.onerror=no;f.readAsDataURL(b)});
+  }).then(function(d){ /* chắc chắn là ảnh đọc được */
+    return new Promise(function(ok,no){var im=new Image();im.onload=function(){ok(d)};im.onerror=function(){no(new Error("ảnh lỗi"))};im.src=d});
+  },function(er){clearTimeout(tm);throw er});
+}
+/* mã QR tự động; nếu không tải được thì dùng ảnh QR tĩnh đã đính kèm */
+async function qrForExport(c,D){
+  var P=payCfg(),info="VH "+custCode(c)+" "+D.td.slice(8,10)+D.td.slice(5,7);
+  var url="https://img.vietqr.io/image/"+encodeURIComponent(P.bankCode)+"-"+encodeURIComponent(P.acc)+"-compact2.png?amount="+D.bal+"&addInfo="+encodeURIComponent(info)+"&accountName="+encodeURIComponent(P.owner);
+  try{return{src:await urlToData(url),fallback:false}}
+  catch(e){return{src:await urlToData("assets/ma-qr-techcombank.png"),fallback:true}}
+}
+var rpLast={fallback:0};
+async function reportPng(c){
+  await loadHtmlToImage();
+  var D=reportData(c),qr=null;
+  if(D.bal>0){qr=await qrForExport(c,D);if(qr.fallback)rpLast.fallback++}
+  var st=document.getElementById("rp-stage");if(!st){st=document.createElement("div");st.id="rp-stage";st.setAttribute("aria-hidden","true");document.body.appendChild(st)}
+  st.innerHTML=reportHtml(c,{tools:false,qr:qr&&qr.src});
+  try{
+    /* chờ font + ảnh mã QR tải xong rồi mới chụp */
+    await Promise.all([400,500,600,700,800].map(function(w){return document.fonts.load(w+" 16px 'VH Report'","Ảẫờ₫0123456789")}));
+    if(document.fonts&&document.fonts.ready)await document.fonts.ready;
+    await Promise.all(Array.prototype.map.call(st.querySelectorAll("img"),function(im){return im.complete&&im.naturalWidth?0:new Promise(function(ok){im.onload=im.onerror=ok})}));
+    var node=st.firstChild;
+    return await window.htmlToImage.toPng(node,{pixelRatio:2,width:900,height:node.offsetHeight,backgroundColor:"#F0F2F5"});
+  }finally{st.innerHTML=""}
+}
+function saveDataUrl(url,name){var a=document.createElement("a");a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove()}
+var rptBusy=false;
+function rpBtns(on){document.querySelectorAll('[data-act=rpimg],[data-act=rpall]').forEach(function(b){b.disabled=!!on})}
+async function downloadReport(id){
+  var c=cust(id);if(!c||rptBusy)return;rptBusy=true;rpBtns(true);rpLast.fallback=0;
+  try{
+    toast("Đang tạo ảnh báo cáo…");saveDataUrl(await reportPng(c),reportFile(c));
+    toast(rpLast.fallback?"Đã tải ảnh của "+c.name+" (mã QR tự động không tải được nên dùng mã QR tĩnh)":"Đã tải ảnh báo cáo của "+c.name);
+  }catch(e){toast("Không tạo được ảnh: "+((e&&e.message)||"lỗi"))}
+  rptBusy=false;rpBtns(false);
+}
+async function downloadAllReports(){
+  if(rptBusy)return;
+  var bal=custBalances(),list=S.customers.filter(function(c){return bal[c.id]>0}).sort(function(a,b){return bal[b.id]-bal[a.id]});
+  if(!list.length){toast("Không có khách nào còn nợ");return}
+  rptBusy=true;rpBtns(true);rpLast.fallback=0;var ok=0;
+  try{
+    for(var i=0;i<list.length;i++){
+      toast("Đang tạo ảnh "+(i+1)+"/"+list.length+": "+list[i].name);
+      saveDataUrl(await reportPng(list[i]),reportFile(list[i]));ok++;
+      await new Promise(function(r){setTimeout(r,500)}); /* cách nhau một chút để trình duyệt không chặn tải nhiều file */
+    }
+    toast("Đã tải "+ok+" ảnh (khách đã trả đủ được bỏ qua)"+(rpLast.fallback?" · "+rpLast.fallback+" ảnh dùng mã QR tĩnh":""));
+  }catch(e){toast("Dừng ở ảnh "+(ok+1)+": "+((e&&e.message)||"lỗi"))}
+  rptBusy=false;rpBtns(false);
+}
+/* mã QR tự động lỗi (mạng, bị chặn) → hiện ảnh QR tĩnh */
+document.addEventListener("error",function(e){var t=e.target;if(t&&t.classList&&t.classList.contains("rp-qr")&&!t.dataset.fb){t.dataset.fb="1";t.src="assets/ma-qr-techcombank.png"}},true);
+
 function render(){
   if(pointerDown){pendingRender=true;return}
-  var v=(ui.view==="khach-hang"&&ui.cid&&cust(ui.cid))?vCustomerDetail:(({"tong-quan":vOverview,"spend":vSpend,"khach-hang":vCustomers,"cong-no":vPayments,"bang-gia":vPrices,"lich-su":vHistory,"thong-ke":vStats,"cai-dat":vSettings})[ui.view]||vOverview);
+  var v=(ui.view==="khach-hang"&&ui.cid&&cust(ui.cid))?vCustomerDetail:(({"tong-quan":vOverview,"spend":vSpend,"khach-hang":vCustomers,"cong-no":vPayments,"gui-khach":vReport,"bang-gia":vPrices,"lich-su":vHistory,"thong-ke":vStats,"cai-dat":vSettings})[ui.view]||vOverview);
   var overdue=ready()?dueSoon().length:0;
-  $("#nav").innerHTML=VIEWS.filter(function(x){return x[3]!=="hide"}).map(function(x){return '<a href="#'+x[0]+'"'+(x[0]===ui.view?' aria-current="page"':"")+'>'+(x[2]||x[1])+(x[0]==="cong-no"&&overdue?'<span class="badge" title="Khoản quá hạn">'+overdue+'</span>':"")+'</a>'}).join("");
+  /* điện thoại: Payment History, Bảng giá, Thống kê gom vào mục "Thêm" để thanh menu dưới không bị chật */
+  var MORE=["lich-su","bang-gia","thong-ke"],navV=VIEWS.filter(function(x){return x[3]!=="hide"});
+  $("#nav").innerHTML=navV.map(function(x){return '<a href="#'+x[0]+'"'+(MORE.indexOf(x[0])>=0?' class="mv"':"")+(x[0]===ui.view?' aria-current="page"':"")+'>'+(x[0]==="gui-khach"?'<span class="nl">Chi Tiêu Gửi Khách</span><span class="ns">Gửi khách</span>':(x[2]||x[1]))+(x[0]==="cong-no"&&overdue?'<span class="badge" title="Khoản quá hạn">'+overdue+'</span>':"")+'</a>'}).join("")
+    +'<a href="#" class="more" data-act="more" role="button" aria-haspopup="true"'+(MORE.indexOf(ui.view)>=0?' aria-current="page"':"")+'>Thêm</a>';
+  var sheet=document.getElementById("more-sheet");
+  if(sheet){sheet.innerHTML=navV.filter(function(x){return MORE.indexOf(x[0])>=0}).map(function(x){return '<a href="#'+x[0]+'"'+(x[0]===ui.view?' aria-current="page"':"")+'>'+(x[2]||x[1])+'</a>'}).join("");sheet.classList.remove("open")}
   var r;
   if(!ready())r={title:VIEWS.filter(function(x){return x[0]===ui.view})[0][1],html:loadingBlock()};
   else r=v();
@@ -1692,6 +2023,10 @@ document.addEventListener("click",function(e){
   else if(a==="clear-ex")clearExamples();
   else if(a==="open"){ui.cid=el.dataset.id;render();window.scrollTo(0,0)}
   else if(a==="back"){ui.cid="";render()}
+  else if(a==="rppick"){ui.rpCid=el.dataset.id;render();var qi=document.getElementById("rp-q");if(qi)qi.blur()}
+  else if(a==="rpimg")downloadReport(ui.rpCid);
+  else if(a==="rpall")downloadAllReports();
+  else if(a==="more"){e.preventDefault();var ms=document.getElementById("more-sheet");if(ms)ms.classList.toggle("open")}
   else if(a==="goc"){ui.pendingCid=el.dataset.id;if(location.hash==="#khach-hang"){route()}else{location.hash="#khach-hang"}window.scrollTo(0,0)}
   else if(a==="sadd")addSpendRow();
   else if(a==="newmonth"){var nm=el.dataset.m;ui.mopen[nm]=true;ui.scrollMonth=nm;save("customers",ui.cid,{lastMonth:nm})}
@@ -1719,6 +2054,7 @@ function releasePointer(){pointerDown=false;if(pendingRender){pendingRender=fals
 document.addEventListener("pointerdown",function(){pointerDown=true},true);
 document.addEventListener("pointerup",function(){setTimeout(releasePointer,350)},true);
 document.addEventListener("pointercancel",function(){setTimeout(releasePointer,0)},true);
+document.addEventListener("click",function(e){var ms=document.getElementById("more-sheet");if(ms&&ms.classList.contains("open")&&!(e.target.closest&&e.target.closest("#more-sheet,.nav .more")))ms.classList.remove("open")});
 document.addEventListener("click",function(){setTimeout(releasePointer,0)});
 document.addEventListener("focusout",function(e){var t=e.target;if(!rendering&&t.dataset&&t.dataset.cell)setTimeout(function(){saveCell(t)},0)});
 var justFocused=null;
@@ -1746,6 +2082,14 @@ document.addEventListener("input",function(e){
 });
 document.addEventListener("change",function(e){
   var id=e.target.id,v=e.target.value;
+  if(e.target.classList&&e.target.classList.contains("pay-in")){
+    var pk=e.target.dataset.k,pv=String(v).trim();
+    if(pk==="acc")pv=pv.replace(/\D/g,"");
+    if(pk==="bankCode"||pk==="owner")pv=pv.toUpperCase().replace(/\s+/g,pk==="bankCode"?"":" ");
+    var pd={};pd[pk]=pv;
+    db.collection("fbaccounts").doc("__pay").set(pd,{merge:true}).then(function(){toast("Đã lưu thông tin chuyển khoản")}).catch(function(er){toast("Không lưu được: "+((er&&(er.message||er.code))||"lỗi"))});
+    return;
+  }
   if(e.target.classList&&e.target.classList.contains("bank-in")){
     var rb=String(v).replace(/\D/g,"");
     db.collection("fbaccounts").doc("__bank").set({amount:rb?Number(rb):null},{merge:true}).catch(function(er){toast("Không lưu được số dư: "+((er&&(er.message||er.code))||"lỗi"))});

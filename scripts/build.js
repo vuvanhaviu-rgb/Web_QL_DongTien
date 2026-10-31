@@ -1,6 +1,7 @@
 // Gom các file của web vào thư mục dist/ để đưa lên GitHub Pages.
 const fs = require("fs");
 const path = require("path");
+const dirs = ["fonts", "vendor", "assets"]; // font Be Vietnam Pro, thư viện tạo ảnh, mã QR tĩnh
 const files = ["index.html", "firebase-config.js", "firebase-shim.js", "favicon.ico", "favicon-32.png", "favicon-192.png", "apple-touch-icon.png", "icon-512.png", "manifest.webmanifest", "sw.js"];
 const out = path.join(__dirname, "..", "dist");
 fs.rmSync(out, { recursive: true, force: true });
@@ -10,5 +11,6 @@ for (const f of files) {
   if (!fs.existsSync(src)) throw new Error("Thiếu file: " + f);
   fs.copyFileSync(src, path.join(out, f));
 }
+for (const d of dirs) fs.cpSync(path.join(__dirname, "..", d), path.join(out, d), { recursive: true });
 fs.writeFileSync(path.join(out, ".nojekyll"), "");
 console.log("Đã build vào dist/:", files.join(", "));
