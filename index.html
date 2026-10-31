@@ -634,7 +634,7 @@ table.sp td:first-child,table.sp td:first-child .link{font-size:16px}
 .sq-th h2{font-size:21px;font-weight:700}
 .sq-th span{font-size:14px;color:#5B6472}
 .sq-r.h{align-items:center}
-.sq-r{display:grid;grid-template-columns:var(--cols,100px minmax(0,1fr) minmax(0,1fr) minmax(0,1fr) minmax(0,1.12fr) 80px);gap:8px;padding:0 20px;height:44px;border-bottom:1px solid #EEF0F3;align-items:center;font-size:16px}
+.sq-r{display:grid;grid-template-columns:var(--cols,100px minmax(0,1fr) minmax(0,1fr) minmax(0,1fr) minmax(0,1.12fr) 124px);gap:8px;padding:0 20px;height:44px;border-bottom:1px solid #EEF0F3;align-items:center;font-size:16px}
 .sq-r>span{text-align:right;white-space:nowrap}
 .sq-r>span:first-child{text-align:left;font-weight:600}
 .sq-r.h>span.tcp{white-space:normal;line-height:1.2}
@@ -1796,8 +1796,8 @@ function reportHtml(c,o){
       var top=oldG[0],mn=oldG[oldG.length-1];
       rows+='<div class="sq-r old"><span>'+oldG.length+' ngày cũ hơn</span>'+cL(gl)+cP(gp)+'<span>'+num(gf)+'</span><span class="p">'+num(go)+'</span><span class="d red">'+top.days+'+ ngày</span></div>';
     }
-    h+='<section class="sq-tbl" style="--cols:'+(hasL&&hasP?"100px minmax(0,1fr) minmax(0,1fr) minmax(0,1fr) minmax(0,1.12fr) 80px":"110px minmax(0,1fr) minmax(0,1fr) minmax(0,1fr) 84px")+'"><div class="sq-th"><h2>Chi tiết các ngày chưa thanh toán</h2><span>Đơn vị: ₫</span></div>'
-      +'<div class="sq-r h"><span>Ngày</span>'+(hasL?'<span>Live</span>':'')+(hasP?'<span>Bài viết</span>':'')+'<span>Phí DV '+rate+'</span><span class="tcp">Tổng chi phí<small>(Phí ads + Dịch vụ)</small></span><span>Đã nợ</span></div>'
+    h+='<section class="sq-tbl" style="--cols:'+(hasL&&hasP?"100px minmax(0,1fr) minmax(0,1fr) minmax(0,1fr) minmax(0,1.12fr) 124px":"110px minmax(0,1fr) minmax(0,1fr) minmax(0,1fr) 124px")+'"><div class="sq-th"><h2>Chi tiết các ngày chưa thanh toán</h2><span>Đơn vị: ₫</span></div>'
+      +'<div class="sq-r h"><span>Ngày</span>'+(hasL?'<span>Live</span>':'')+(hasP?'<span>Bài viết</span>':'')+'<span>Phí DV '+rate+'</span><span class="tcp">Tổng chi phí<small>(Phí ads + Dịch vụ)</small></span><span>Chậm thanh toán</span></div>'
       +rows+'<div class="sq-r t"><span>Tổng '+D.rem.length+' ngày</span>'+cL(sl)+cP(sp)+'<span>'+num(sf)+'</span><span class="red">'+num(D.bal)+'</span><span></span></div></section>';
     var info="VH "+custCode(c)+" "+D.td.slice(8,10)+D.td.slice(5,7),
         qr=o.qr||("https://img.vietqr.io/image/"+encodeURIComponent(P.bankCode)+"-"+encodeURIComponent(P.acc)+"-compact2.png?amount="+D.bal+"&addInfo="+encodeURIComponent(info)+"&accountName="+encodeURIComponent(P.owner));
