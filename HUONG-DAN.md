@@ -65,11 +65,12 @@ Mở https://vhagency.io.vn bằng trình duyệt điện thoại → menu trìn
 
 ## 9. Thẻ Chi Tiêu Gửi Khách (báo cáo gửi Zalo)
 1. Vào **Cài đặt** → mục *Thông tin chuyển khoản*: nhập ngân hàng, mã ngân hàng (Techcombank là TCB), số tài khoản, chủ tài khoản và số điện thoại liên hệ. Sửa xong bấm ra ngoài ô để tự lưu.
-2. Vào thẻ **Chi Tiêu Gửi Khách**, chọn *Ngày chi tiêu* (mặc định hôm qua), rồi chọn khách ở ô bên cạnh (gõ tên để tìm). Danh sách chỉ hiện khách có phát sinh chi phí quảng cáo ngày đó, xếp chi phí cao nhất lên đầu; tick "Hiện cả khách không phát sinh chi phí" nếu cần thấy mọi khách. Báo cáo hiển thị chi phí của đúng ngày đã chọn.
-3. Ngay dưới ô chọn có danh sách **Tất cả khách hàng** đánh số thứ tự (chi phí ngày chọn cao nhất lên đầu); bấm vào tên khách để xem báo cáo.
-4. Bấm **Tải ảnh** để tải ảnh PNG của khách đang chọn, hoặc **Tải ảnh tất cả khách** để tải lần lượt ảnh của mọi khách còn nợ (khách đã trả đủ được bỏ qua). Trình duyệt có thể hỏi cho phép tải nhiều file, hãy chọn Cho phép.
-5. Mã QR tự tạo theo số tiền nợ và nội dung `VH <MÃ KHÁCH> <ngàythángnay>`. Nếu mã QR không tải được, báo cáo dùng ảnh QR tĩnh (`assets/ma-qr-techcombank.png`, không có sẵn số tiền).
-6. Tổng cần thanh toán luôn bằng số *Còn nợ* ở thẻ Khách hàng. Khách trả một phần thì được trừ vào ngày cũ nhất trước.
+2. Vào thẻ **Chi Tiêu Gửi Khách**. Phía trên có các nút chọn thời gian: *Hôm nay, Hôm qua, 3 ngày, 7 ngày, 14 ngày, 30 ngày, Tháng này, Năm nay, Ngày khác*. Danh sách bên dưới đánh số thứ tự tất cả khách, khách có chạy quảng cáo trong khoảng đã chọn được xếp lên đầu cùng số chi phí; gõ tên vào ô tìm kiếm để lọc nhanh.
+3. Ở cuối mỗi dòng khách có nút **Tạo ảnh báo cáo**. Bấm vào, ảnh báo cáo của khách đó hiện ra bên phải (trên điện thoại hiện cả màn hình, có nút quay lại). Chưa bấm khách nào thì chưa hiện ảnh.
+4. Ảnh là hình **vuông**. Bạn chỉ cần **nhấn giữ / bấm chuột phải vào ảnh → Sao chép ảnh** rồi dán vào Zalo gửi khách (không cần tải về).
+5. Ảnh tự thay đổi theo khách: shop chỉ chạy bài viết thì chỉ có cột *Bài viết*, shop chỉ chạy Live thì chỉ có cột *Live*, chạy cả hai thì hiện cả hai. Cột *Tổng chi phí* = phí ads + phí dịch vụ theo % riêng của khách.
+6. Mã QR tự tạo theo số tiền nợ và nội dung `VH <MÃ KHÁCH> <ngàythángnay>`. Nếu mã QR không tải được, ảnh dùng mã QR tĩnh (`assets/ma-qr-techcombank.png`, không có sẵn số tiền).
+7. Tổng cần thanh toán luôn bằng số *Còn nợ* ở thẻ Khách hàng. Khách trả một phần thì được trừ vào ngày cũ nhất trước; ngày nào trả đủ thì không hiện. Khách đã trả đủ hiện "Đã thanh toán đủ".
 
 ## Lưu ý an toàn
 - Không bao giờ dán mã `FB_TOKEN`, `FIREBASE_SA` hay mã GitHub vào chat, ảnh chụp màn hình hay file trong kho. Lỡ lộ thì tạo lại mã ngay.
