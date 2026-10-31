@@ -70,7 +70,7 @@ async function main() {
   // Để không vượt hạn mức miễn phí của Firebase: lần chạy thường chỉ quét hôm qua và hôm nay.
   // Quét đủ cả khoảng ngày (và dọn số cũ) chỉ khi: chạy tay có tick "full", hoặc lần chạy đầu tiên sau 10:00 sáng giờ Việt Nam.
   const since7 = ymd(VN(Date.now() - 6 * 864e5)); // tên chiến dịch chỉ lưu cho 7 ngày gần nhất
-  const FULL = OPT.full === true || (nowVN.getUTCHours() === 10 && nowVN.getUTCMinutes() < 30);
+  const FULL = OPT.full === true || (nowVN.getUTCHours() === 10 && nowVN.getUTCMinutes() < 10);
   const from = VN(Date.now() - ((FULL ? DAYS : 2) - 1) * 864e5);
   console.log(FULL ? "Chế độ quét đủ" : "Chế độ nhanh (hôm qua và hôm nay)");
   const since = ymd(from), until = ymd(now), yesterday = ymd(VN(Date.now() - 864e5));
@@ -149,7 +149,7 @@ async function main() {
   // Cập nhật luôn link chia sẻ của khách (trang khách xem), để link luôn mới dù bạn không mở web
   try {
     let ns = 0;
-    if (!(FULL || nowVN.getUTCMinutes() < 15)) throw new Error("__skip"); // chỉ chạy mỗi giờ một lần cho đỡ tốn lượt đọc
+    if (!(FULL || nowVN.getUTCMinutes() < 10)) throw new Error("__skip"); // chỉ chạy mỗi giờ một lần cho đỡ tốn lượt đọc
     for (const c of snap.docs) {
       const d = c.data(); if (!d.shareToken) continue;
       const rate = d.feeRate != null && d.feeRate !== "" ? Number(d.feeRate) : 10;
