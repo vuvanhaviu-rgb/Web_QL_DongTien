@@ -259,6 +259,20 @@ td.net,th.net{color:var(--accent);font-weight:700}
   .two{grid-template-columns:1fr}
 }
 
+.mtog{display:none}
+@media (min-width:821px){
+  .mtog{display:flex;align-items:center;gap:8px;align-self:flex-start;background:transparent;border:1px solid var(--line);color:var(--muted);border-radius:8px;padding:5px 10px;font:inherit;font-size:12px;font-weight:600;cursor:pointer}
+  .mtog:hover{background:var(--surface);color:var(--fg)}
+  .mtog .mt-ic{font-size:16px;line-height:1}
+  .app{transition:grid-template-columns .2s ease}
+  .app.shut{grid-template-columns:44px minmax(0,1fr);gap:16px}
+  .app.shut .side>*:not(.mtog){display:none}
+  .app.shut .mtog{padding:6px 0;width:44px;justify-content:center}
+  .app.shut .mtog .mt-tx{display:none}
+  .app.shut .mtog .mt-ic{transform:rotate(180deg)}
+  .viewer .mtog{display:none}
+}
+@media (prefers-reduced-motion:reduce){.app{transition:none}}
 /* ===== Giao diện điện thoại (≤700px) ===== */
 @media (max-width:700px){
   body{padding:10px 10px 84px}
@@ -705,6 +719,7 @@ table.sp td:first-child,table.sp td:first-child .link{font-size:16px}
 
 <div class="app">
   <aside class="side">
+    <button type="button" class="mtog" id="mtog" aria-expanded="true" aria-controls="nav" title="Thu gọn menu"><span class="mt-ic" aria-hidden="true">‹</span><span class="mt-tx">Thu gọn menu</span></button>
     <div class="brand"><span class="logo" aria-hidden="true"><svg viewBox="0 0 40 40" width="40" height="40"><defs><linearGradient id="lg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#4C9BFF"/><stop offset="1" stop-color="#0A4FD6"/></linearGradient></defs><rect width="40" height="40" rx="11" fill="url(#lg)"/><path d="M0 0h40v18C28 14 14 22 0 16z" fill="#fff" opacity=".12"/><path d="M10 12l7.5 16.5L25 14" fill="none" stroke="#fff" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M22.5 11h7.5v7.5" fill="none" stroke="#fff" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M30 11 21 20" stroke="#fff" stroke-width="3.6" stroke-linecap="round"/></svg></span><span class="bt"><b>VH Agency</b><small>Quản lý dòng tiền</small></span><a class="gear" href="#cai-dat" aria-label="Cài đặt">⚙ Cài đặt</a></div>
     <nav class="nav" id="nav" aria-label="Menu chính"></nav>
   </aside>
@@ -2345,5 +2360,17 @@ document.addEventListener("change",function(e){
 
 route();
 init();
+/* Thu gọn / mở rộng menu bên trái (máy tính); ghi nhớ lựa chọn trên trình duyệt này */
+(function(){
+  var app=document.querySelector(".app"),b=document.getElementById("mtog");if(!app||!b)return;
+  function set(shut,save){
+    app.classList.toggle("shut",shut);b.setAttribute("aria-expanded",shut?"false":"true");
+    var t=shut?"Mở rộng menu":"Thu gọn menu";b.title=t;b.setAttribute("aria-label",t);
+    if(save){try{localStorage.setItem("menu-shut",shut?"1":"0")}catch(e){}}
+  }
+  var was=false;try{was=localStorage.getItem("menu-shut")==="1"}catch(e){}
+  set(was,false);
+  b.addEventListener("click",function(){set(!app.classList.contains("shut"),true)});
+})();
 })();
 </script>

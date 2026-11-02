@@ -75,6 +75,10 @@ Mở https://vhagency.io.vn bằng trình duyệt điện thoại → menu trìn
 ## 10. Xóa chi tiêu theo tháng
 Vào **Cài đặt** → mục *Xóa chi tiêu theo tháng*: chọn tháng, app báo sẽ xóa bao nhiêu dòng của bao nhiêu khách. Bước 1 bấm *Tải bản sao lưu* (bắt buộc, để còn khôi phục), bước 2 bấm *Xóa chi tiêu tháng …* rồi bấm thêm lần nữa để xác nhận (có nút *Hủy*). Chỉ xóa các dòng trong Bảng chi tiêu của tháng đó cho mọi khách; số Spend lấy từ Facebook không bị xóa. Công nợ của khách sẽ tính lại theo số còn lại. Các ngày đã xóa (đến hôm qua) được ghi nhớ để hệ thống không tự điền lại lúc 10h sáng.
 
+## 11. Thu gọn menu bên trái
+
+Trên máy tính, nút **Thu gọn menu** ở đầu cột menu cho phép đóng cột lại để bảng rộng hơn. Bấm nút mũi tên nhỏ để mở lại. Trình duyệt nhớ lựa chọn của bạn. Trên điện thoại menu nằm ở thanh dưới nên không có nút này.
+
 ## Lưu ý an toàn
 - Không bao giờ dán mã `FB_TOKEN`, `FIREBASE_SA` hay mã GitHub vào chat, ảnh chụp màn hình hay file trong kho. Lỡ lộ thì tạo lại mã ngay.
 - Gói miễn phí của Firebase và GitHub đủ dùng cho vài chục khách.
