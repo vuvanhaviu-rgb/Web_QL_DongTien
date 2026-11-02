@@ -71,6 +71,8 @@ main{min-width:0;display:flex;flex-direction:column;gap:20px}
 .btn[disabled]{opacity:.5;cursor:not-allowed}
 .dm{display:flex;align-items:center;gap:10px;margin:6px 0 12px;flex-wrap:wrap}.dm label{font-weight:600}
 .dm input[type=month]{width:auto;min-width:170px;background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:8px 10px;font:inherit;color:inherit}
+.notice.rs,.dm-sum{margin-top:10px;line-height:1.5}.notice.rs:not(.ok):not(.warn){background:var(--surface-2);border:1px solid var(--line);border-radius:10px;padding:10px 12px;font-size:12px}.rs-btn{margin-top:8px;display:flex;gap:8px;flex-wrap:wrap}
+.bk-pick{display:block;text-align:center}.bk-in{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none;overflow:hidden}
 .dm-steps{display:flex;flex-direction:column;gap:10px;margin-top:12px}.dm-ok{color:var(--good,#1B7F4B);font-weight:700}
 .btn.danger.armed{background:var(--bad);border-color:var(--bad);color:#fff}
 .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px}
@@ -801,23 +803,55 @@ function bkSave(){
   try{localStorage.setItem("bk-last",String(Date.now()))}catch(e){}
   bkShow();toast("Đã tải bản sao lưu về máy");
 }
+/* Khôi phục từ file sao lưu: chọn file -> xem tóm tắt ngay trong trang -> bấm Khôi phục (không dùng hộp thoại của trình duyệt) -> có tiến độ và kết quả hiện lâu */
+var RS_NAME={customers:"khách hàng",prices:"bảng giá",payments:"công nợ",spend:"dòng chi tiêu",hidden:"ngày đã ẩn",fbspend:"chi tiêu Facebook",fbaccounts:"tài khoản Facebook"};
+function rsFix(v){ /* file sao lưu tự động ghi thời gian dạng {"__ts": số} -> trả về số như app vẫn dùng */
+  if(v&&typeof v==="object"){
+    if(!Array.isArray(v)&&typeof v.__ts==="number"&&Object.keys(v).length===1)return v.__ts;
+    var o=Array.isArray(v)?[]:{};Object.keys(v).forEach(function(k){o[k]=rsFix(v[k])});return o;
+  }
+  return v;
+}
 async function bkRestore(file){
   var obj;
-  try{obj=JSON.parse(await file.text())}catch(e){toast("File không đọc được");return}
-  if(!obj||obj.app!=="quan-ly-dong-tien"||!obj.data){toast("Đây không phải file sao lưu của trang này");return}
-  var n=0;COLS.forEach(function(c){n+=(obj.data[c]||[]).length});
-  if(!confirm("Khôi phục "+n+" bản ghi từ file sao lưu ngày "+String(obj.exportedAt||"").slice(0,10)+"?\nDữ liệu cùng mã sẽ được ghi đè, dữ liệu mới thêm sau bản sao lưu vẫn được giữ."))return;
-  var failed=0;
-  for(var i=0;i<COLS.length;i++){
-    var c=COLS[i],rows=obj.data[c]||[];
-    for(var j=0;j<rows.length;j++){
-      var r=Object.assign({},rows[j]),id=r.id;delete r.id;
-      if(localMode){var k=S[c].findIndex(function(x){return x.id===id});if(k>=0)S[c][k]=Object.assign({id:id},r);else S[c].push(Object.assign({id:id},r));continue}
-      try{await db.collection(c).doc(id).set(r)}catch(e){failed++}
-    }
+  try{obj=JSON.parse(await file.text())}catch(e){ui.rs={err:"File không đọc được (không phải file .json hợp lệ)."};render();return}
+  var data=obj&&obj.data&&typeof obj.data==="object"?obj.data:obj; /* chấp nhận cả file chỉ gồm các bộ dữ liệu */
+  var cnt={},n=0;
+  COLS.forEach(function(c){var a=data&&Array.isArray(data[c])?data[c]:[];cnt[c]=a.length;n+=a.length});
+  if(!n){ui.rs={err:"Đây không phải file sao lưu của trang này, hoặc file không có dữ liệu."};render();return}
+  ui.rs={data:data,cnt:cnt,n:n,date:String(obj.exportedAt||"").slice(0,10),name:file.name};render();
+}
+async function rsRun(){
+  var r=ui.rs;if(!r||!r.data||r.busy)return;
+  r.busy=true;r.done=0;r.fail=0;r.err="";render();
+  var jobs=[];
+  COLS.forEach(function(c){(r.data[c]||[]).forEach(function(row){jobs.push([c,row])})});
+  var errs={},i,k,upd=function(){var el=document.getElementById("rs-prog");if(el)el.textContent="Đang khôi phục "+r.done+"/"+jobs.length+"…"};
+  for(i=0;i<jobs.length;i+=25){
+    await Promise.all(jobs.slice(i,i+25).map(async function(jb){
+      var c=jb[0],row=rsFix(Object.assign({},jb[1])),id=row.id;delete row.id;
+      try{
+        if(localMode){
+          if(id==null){S[c].push(Object.assign({id:"l"+(++seq)},row))}
+          else{var q=S[c].findIndex(function(x){return x.id===id});if(q>=0)S[c][q]=Object.assign({id:id},row);else S[c].push(Object.assign({id:id},row))}
+        }else if(id==null||id==="")await db.collection(c).add(row);
+        else await db.collection(c).doc(String(id)).set(row);
+      }catch(e){r.fail++;errs[(e&&(e.message||e.code))||"lỗi"]=1}
+      r.done++;
+    }));
+    upd();
   }
-  render();
-  toast(failed?"Khôi phục xong, lỗi "+failed+" bản ghi":"Đã khôi phục "+n+" bản ghi");
+  var m=Object.keys(errs)[0]||"";
+  ui.rs={result:r.fail?("Khôi phục xong "+(jobs.length-r.fail)+"/"+jobs.length+" bản ghi, "+r.fail+" bản ghi lỗi"+(m?" ("+m+")":"")+". Bạn có thể bấm Khôi phục từ file và chọn lại file để thử tiếp."):("Đã khôi phục "+jobs.length+" bản ghi từ file"+(r.name?" "+r.name:"")+"."),bad:!!r.fail};
+  render();toast(r.fail?"Khôi phục xong, có lỗi":"Đã khôi phục xong");
+}
+function rsBox(){
+  var r=ui.rs;if(!r)return"";
+  if(r.err)return '<div class="notice warn rs">'+esc(r.err)+'</div>';
+  if(r.result)return '<div class="notice rs'+(r.bad?" warn":" ok")+'">'+esc(r.result)+'</div>';
+  if(r.busy)return '<div class="notice rs"><span id="rs-prog">Đang khôi phục…</span> Vui lòng chưa đóng trang.</div>';
+  var parts=COLS.filter(function(c){return r.cnt[c]>0}).map(function(c){return r.cnt[c]+" "+RS_NAME[c]});
+  return '<div class="notice rs">File <b>'+esc(r.name||"")+'</b>'+(r.date?' (sao lưu ngày '+esc(r.date)+')':'')+' có <b>'+r.n+' bản ghi</b>: '+esc(parts.join(", "))+'.<br>Khôi phục sẽ ghi đè các bản ghi cùng mã; dữ liệu mới thêm sau bản sao lưu vẫn được giữ.<div class="rs-btn"><button class="btn primary small" data-act="rs-go" type="button">Khôi phục '+r.n+' bản ghi</button> <button class="btn small" data-act="rs-cancel" type="button">Hủy</button></div></div>';
 }
 document.addEventListener("click",function(e){
   var ab=e.target&&e.target.closest?e.target.closest("[data-act=logout],[data-act=bk-dismiss],[data-act=bk-auto]"):null;
@@ -1724,7 +1758,7 @@ function dmPanel(){
   rows.forEach(function(r){cs[r.customerId]=1;var x=spendRow(r);tot+=x.tot;xf+=x.xf});
   var ml=d.m.slice(5)+"/"+d.m.slice(0,4),n=Object.keys(cs).length;
   var sum=!ready()?'<p class="hint">Đang tải dữ liệu…</p>':rows.length
-    ?'<div class="notice">Tháng <b>'+esc(ml)+'</b> có <b>'+rows.length+' dòng</b> chi tiêu của <b>'+n+' khách</b> (tổng chi phí '+vnd(tot)+', khách đã chuyển khoản '+vnd(xf)+'). Xóa xong, các dòng này mất khỏi Bảng chi tiêu và <b>công nợ của khách sẽ tính lại</b> theo số còn lại.</div>'
+    ?'<div class="notice rs">Tháng <b>'+esc(ml)+'</b> có <b>'+rows.length+' dòng</b> chi tiêu của <b>'+n+' khách</b> (tổng chi phí '+vnd(tot)+', khách đã chuyển khoản '+vnd(xf)+'). Xóa xong, các dòng này mất khỏi Bảng chi tiêu và <b>công nợ của khách sẽ tính lại</b> theo số còn lại.</div>'
     :'<p class="hint">Tháng '+esc(ml)+' không có dòng chi tiêu nào.</p>';
   var steps='';
   if(ready()&&rows.length){
@@ -1763,7 +1797,7 @@ function vSettings(){
   else st='<p class="hint">Đang kiểm tra bản sao lưu tự động…</p>';
   var h='<section class="panel"><h2>Sao lưu tự động <small>Dữ liệu được tự chép vào kho lưu trữ riêng mỗi ngày, bạn không cần làm gì</small></h2><div class="bk">'+st+'</div></section>'
    +'<section class="panel"><h2>Sao lưu thủ công <small>Tải một bản về máy khi muốn tự giữ</small></h2>'
-   +'<div class="bk" id="bk"><small id="bk-last"></small><button class="btn small" id="bk-save" type="button">Tải bản sao lưu</button><button class="btn small" id="bk-load" type="button">Khôi phục từ file</button><input type="file" id="bk-file" accept=".json,application/json" hidden></div></section>'
+   +'<div class="bk" id="bk"><small id="bk-last"></small><button class="btn small" id="bk-save" type="button">Tải bản sao lưu</button><label class="btn small bk-pick" for="bk-file" role="button" tabindex="0">Khôi phục từ file</label><input type="file" id="bk-file" accept=".json,application/json,text/plain" class="bk-in"></div>'+rsBox()+'</section>'
    +dmPanel()
    +payPanel()
    +'<section class="panel"><h2>Tài khoản <small>Đăng xuất khỏi thiết bị này</small></h2><div><button class="btn small" data-act="logout" type="button">Đăng xuất</button></div></section>';
@@ -2218,6 +2252,8 @@ document.addEventListener("click",function(e){
   else if(a==="copyshare")copyShare();
   else if(a==="sharecamps"){var cc2=cust(ui.cid);if(cc2){save("customers",cc2.id,{shareCamps:!!el.checked})}}
   else if(a==="mtog"){var mk=el.dataset.m;ui.mopen[mk]=!monthOpen(mk);render()}
+  else if(a==="rs-go"){rsRun()}
+  else if(a==="rs-cancel"){ui.rs=null;render()}
   else if(a==="dm-bk"){bkSave();if(ready()){dmState().bk=true;render()}}
   else if(a==="dm-del"){var dd=dmState();if(!dd.bk){toast("Hãy tải bản sao lưu trước");return}if(dd.arm)dmRun();else{dd.arm=true;render()}}
   else if(a==="dm-cancel"){dmState().arm=false;render()}

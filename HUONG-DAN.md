@@ -54,7 +54,7 @@ service cloud.firestore {
 
 ## 6. Sao lưu dữ liệu (nên làm mỗi tuần)
 - Cột menu trái có khung **Sao lưu dữ liệu**. Bấm **Tải bản sao lưu** để tải file `.json` chứa toàn bộ dữ liệu. Cất ở ít nhất 2 nơi (máy tính và Google Drive hoặc email).
-- **Khôi phục:** đăng nhập, bấm **Khôi phục từ file**, chọn file gần nhất, bấm OK. Dữ liệu cùng mã bị ghi đè, dữ liệu thêm sau ngày sao lưu vẫn còn.
+- **Khôi phục:** đăng nhập, vào Cài đặt, bấm **Khôi phục từ file** và chọn file .json gần nhất. Ngay bên dưới hiện khung tóm tắt (file có bao nhiêu khách, dòng chi tiêu...). Bấm **Khôi phục N bản ghi** để ghi vào, hoặc **Hủy** để thôi. Khi xong khung báo kết quả và không tự biến mất. Dữ liệu cùng mã bị ghi đè, dữ liệu thêm sau ngày sao lưu vẫn còn.
 - Firebase có thể tự sao lưu hằng ngày (Firestore → Disaster Recovery), nhưng cần nâng gói Blaze và gắn thẻ thanh toán. Nếu dùng, đặt hạn mức chi tiêu thấp.
 
 ## 7. Chia sẻ bảng chi tiêu cho khách
