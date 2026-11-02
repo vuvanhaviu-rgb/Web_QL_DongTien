@@ -689,6 +689,12 @@ table.sp td:first-child,table.sp td:first-child .link{font-size:16px}
 .sq-cp .s{flex:none;width:96px;text-align:right;color:#1C1E21;font-weight:700}
 .sq-cp .more{display:block;font-size:13px;color:#5B6472;margin-top:3px}
 .sq-tbl>.sq-cp+.sq-r.t{margin-top:0}
+.sq-r>span.cp{text-align:left;white-space:normal;display:flex;flex-direction:column;gap:1px;min-width:0;font-size:13px;line-height:1.25;font-weight:600;color:#1C1E21}
+.sq-r>span.cp i{display:block;font-style:normal;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sq-r>span.cp i.m{font-weight:500;color:#5B6472}
+.sq-r.h>span.cph{text-align:left}
+.sq-tbl.wc .sq-r{font-size:15px;padding:0 16px}.sq-tbl.wc .sq-r.h{font-size:10px}
+.sq-tbl.wc .sq-r.old>span:first-child{font-size:13px}
 .sq-r.t{margin-top:auto;height:50px;background:#F7F8FA;border-bottom:0;font-weight:700}
 .sq-r.t>span:first-child{font-weight:700;font-size:15px}
 .sq-r:not(.h):not(.t){flex:1 1 0;min-height:44px;max-height:66px;height:auto}
@@ -706,7 +712,7 @@ table.sp td:first-child,table.sp td:first-child .link{font-size:16px}
 .sq-cr{display:flex;flex-direction:column;gap:3px;min-width:0}
 .sq-cr span{font-size:18px;color:#1B7F4B;font-weight:600}.sq-cr strong{font-size:44px;font-weight:800;letter-spacing:-1px;color:#1B7F4B;line-height:1.1}.sq-cr small{font-size:16px;color:#3A4250}
 .sq-paid span{font-size:17px;color:#3A4250}
-.sq-pay{flex:none;width:292px;background:#FFFFFF;border-radius:16px;padding:18px 20px;box-shadow:0 1px 2px rgba(0,0,0,0.06);display:flex;flex-direction:column;gap:12px}
+.sq-pay{flex:none;width:262px;background:#FFFFFF;border-radius:16px;padding:18px 20px;box-shadow:0 1px 2px rgba(0,0,0,0.06);display:flex;flex-direction:column;gap:12px}
 .sq-pay h2{font-size:21px;font-weight:700}
 .sq-am{background:#FEECEB;border-radius:12px;padding:12px 14px;display:flex;flex-direction:column;gap:2px}
 .sq-am span:first-child{font-size:14px;color:#7A271A}
@@ -1898,6 +1904,20 @@ function campBlock(c,date,max){
     +show.map(function(x){return '<div><span class="n">'+esc(x.n)+'</span><span class="k">'+(x.k==="live"?"Live":"Bài viết")+'</span><span class="s">'+num(x.s)+'</span></div>'}).join("")
     +(rest>0?'<span class="more">và '+rest+' chiến dịch khác</span>':"")+'</div>';
 }
+/* Tên chiến dịch của khách trong một ngày, xếp theo số tiền giảm dần (chỉ có cho 7 ngày gần nhất) */
+function campNames(c,date){
+  var by={},order=[];
+  S.fbspend.forEach(function(f){
+    if(f.customerId!==c.id||f.date!==date||!f.camps)return;
+    f.camps.forEach(function(x){if(!by[x.n]){by[x.n]=0;order.push(x.n)}by[x.n]+=Number(x.s)||0});
+  });
+  return order.filter(function(n){return by[n]>0}).sort(function(a,b){return by[b]-by[a]});
+}
+function campCell(names){
+  if(!names.length)return '<span class="cp"></span>';
+  if(names.length<=2)return '<span class="cp">'+names.map(function(n){return '<i>'+esc(n)+'</i>'}).join("")+'</span>';
+  return '<span class="cp"><i>'+esc(names[0])+'</i><i class="m">+ '+(names.length-1)+' chiến dịch khác</i></span>';
+}
 function reportHtml(c,o){
   o=o||{};
   var D=reportData(c,o.date),P=payCfg(),dm=function(d){return d.slice(8,10)+"/"+d.slice(5,7)},m=function(v){return num(v)+" ₫"};
@@ -1928,7 +1948,7 @@ function reportHtml(c,o){
   }
   h+='<div class="sq-body">';
   if(owe){
-    var hasCp=!!campBlock(c,D.yd,1),MAXR=hasCp?7:10,list=D.rem.slice().reverse(),sl=0,sp=0,sf=0,rows="";
+    var MAXR=10,list=D.rem.slice().reverse(),sl=0,sp=0,sf=0,rows="";
     D.rem.forEach(function(r){sl+=r.live;sp+=r.post;sf+=r.fee});
     /* % phí dịch vụ lấy theo từng ngày (theo bảng Khách hàng / Bảng chi tiêu), ghi ngay dưới số tiền phí */
     var rts={};D.rem.forEach(function(r){rts[r.rt]=1});if(D.y.tot>0&&D.y.rt!==null)rts[D.y.rt]=1;
@@ -1937,19 +1957,22 @@ function reportHtml(c,o){
     var cL=hasL?function(v){return '<span>'+num(v)+'</span>'}:function(){return ""},cP=hasP?function(v){return '<span class="m">'+num(v)+'</span>'}:function(){return ""};
     var shown=list,oldG=null;
     if(list.length>MAXR){shown=list.slice(0,MAXR-1);oldG=list.slice(MAXR-1)} /* quá nhiều ngày: gộp các ngày cũ nhất thành một dòng để ảnh luôn vuông */
+    var cpN={};shown.forEach(function(r){cpN[r.d]=campNames(c,r.d)});
+    var hasCpC=shown.some(function(r){return cpN[r.d].length>0}),cC=hasCpC?function(names){return campCell(names)}:function(){return ""};
     shown.forEach(function(r){
       var isNew=r.d===yestStr();
-      rows+='<div class="sq-r'+(isNew?" nw":"")+'"><span>'+dm(r.d)+(isNew?' <em>Mới</em>':"")+'</span>'+cL(r.live)+cP(r.post)+cF(r.fee,r.rt)
+      rows+='<div class="sq-r'+(isNew?" nw":"")+'"><span>'+dm(r.d)+(isNew?' <em>Mới</em>':"")+'</span>'+cC(cpN[r.d])+cL(r.live)+cP(r.post)+cF(r.fee,r.rt)
         +'<span class="p">'+num(r.owe)+(r.cut>0?'<small>đã trừ '+num(r.cut)+'</small>':"")+'</span><span class="d'+(r.days>=4?" red":"")+'">'+r.days+' ngày</span></div>';
     });
     if(oldG){
       var gl=0,gp=0,gf=0,go=0;oldG.forEach(function(r){gl+=r.live;gp+=r.post;gf+=r.fee;go+=r.owe});
       var top=oldG[0],mn=oldG[oldG.length-1];
-      rows+='<div class="sq-r old"><span>'+oldG.length+' ngày cũ hơn</span>'+cL(gl)+cP(gp)+cF(gf,oldG.every(function(r){return r.rt===oldG[0].rt})?oldG[0].rt:null)+'<span class="p">'+num(go)+'</span><span class="d red">'+top.days+'+ ngày</span></div>';
+      rows+='<div class="sq-r old"><span>'+oldG.length+' ngày cũ hơn</span>'+cC([])+cL(gl)+cP(gp)+cF(gf,oldG.every(function(r){return r.rt===oldG[0].rt})?oldG[0].rt:null)+'<span class="p">'+num(go)+'</span><span class="d red">'+top.days+'+ ngày</span></div>';
     }
-    h+='<section class="sq-tbl" style="--cols:'+(hasL&&hasP?"100px minmax(0,1fr) minmax(0,1fr) minmax(0,1fr) minmax(0,1.12fr) 124px":"110px minmax(0,1fr) minmax(0,1fr) minmax(0,1fr) 124px")+'"><div class="sq-th"><h2>Chi tiết các ngày chưa thanh toán</h2><span>Đơn vị: ₫</span></div>'
-      +'<div class="sq-r h"><span>Ngày</span>'+(hasL?'<span>Live</span>':'')+(hasP?'<span>Bài viết</span>':'')+'<span>Phí DV</span><span class="tcp">Tổng chi phí<small>(Phí ads + Dịch vụ)</small></span><span>Chậm thanh toán</span></div>'
-      +rows+campBlock(c,D.yd,shown.length+(oldG?1:0)<=3?4:shown.length+(oldG?1:0)<=5?3:shown.length+(oldG?1:0)<=6?2:1)+'<div class="sq-r t"><span>Tổng '+D.rem.length+' ngày</span>'+cL(sl)+cP(sp)+cF(sf,uni)+'<span class="red">'+num(D.bal)+'</span><span></span></div></section>';
+    var cols=hasCpC?(hasL&&hasP?"92px minmax(0,1fr) 84px 84px 78px 100px 84px":"92px minmax(0,1fr) 92px 84px 104px 92px"):(hasL&&hasP?"100px minmax(0,1fr) minmax(0,1fr) minmax(0,1fr) minmax(0,1.12fr) 124px":"110px minmax(0,1fr) minmax(0,1fr) minmax(0,1fr) 124px");
+    h+='<section class="sq-tbl'+(hasCpC?" wc":"")+'" style="--cols:'+cols+'"><div class="sq-th"><h2>Chi tiết các ngày chưa thanh toán</h2><span>Đơn vị: ₫</span></div>'
+      +'<div class="sq-r h"><span>Ngày</span>'+(hasCpC?'<span class="cph">Chiến dịch</span>':'')+(hasL?'<span>Live</span>':'')+(hasP?'<span>Bài viết</span>':'')+'<span>Phí DV</span><span class="tcp">Tổng chi phí<small>(Phí ads + Dịch vụ)</small></span><span>Chậm thanh toán</span></div>'
+      +rows+'<div class="sq-r t"><span>Tổng '+D.rem.length+' ngày</span>'+cC([])+cL(sl)+cP(sp)+cF(sf,uni)+'<span class="red">'+num(D.bal)+'</span><span></span></div></section>';
     var info="VH "+custCode(c)+" "+D.td.slice(8,10)+D.td.slice(5,7),
         qr=o.qr||("https://img.vietqr.io/image/"+encodeURIComponent(P.bankCode)+"-"+encodeURIComponent(P.acc)+"-compact2.png?"+(D.pay>0?"amount="+D.pay+"&":"")+"addInfo="+encodeURIComponent(info)+"&accountName="+encodeURIComponent(P.owner));
     h+='<aside class="sq-pay"><h2>Thanh toán</h2><div class="sq-am"><span>Số tiền cần chuyển</span><span>'+m(D.pay)+'</span></div>'
