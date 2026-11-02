@@ -2116,6 +2116,7 @@ function render(){
   var r;
   if(!ready())r={title:VIEWS.filter(function(x){return x[0]===ui.view})[0][1],html:loadingBlock()};
   else r=v();
+  setTabTitle();
   var hasEx=ready()&&COLS.some(function(c){return S[c].some(function(x){return x.example})});
   var banner="";
   banner+=syncAlert();
@@ -2156,7 +2157,20 @@ function render(){
   if(document.querySelector("table.ledger"))recalcLedger();
   if(ui.view==="gui-khach")setTimeout(rpAuto,0);
 }
-function route(){var h=location.hash.replace("#","");ui.view=VIEWS.some(function(x){return x[0]===h})?h:"tong-quan";ui.cid=ui.pendingCid||"";ui.pendingCid="";render()}
+/* Địa chỉ trang: #khach-hang/<mã khách> mở thẳng khách đó, nên mở tab mới hoặc tải lại vẫn giữ đúng khách */
+function route(){
+  var raw=location.hash.replace("#",""),parts=raw.split("/"),h=parts[0],id="";
+  if(h==="khach-hang"&&parts[1]){try{id=decodeURIComponent(parts[1])}catch(e){id=parts[1]}}
+  ui.view=VIEWS.some(function(x){return x[0]===h})?h:"tong-quan";ui.cid=ui.pendingCid||id;ui.pendingCid="";render()
+}
+function goHash(h){if(location.hash===h)route();else location.hash=h}
+/* Tiêu đề tab trình duyệt theo từng thẻ / từng khách, để nhiều tab mở cùng lúc dễ phân biệt */
+function setTabTitle(){
+  var t,vw=VIEWS.filter(function(x){return x[0]===ui.view})[0];
+  if(ui.view==="khach-hang"&&ui.cid&&cust(ui.cid))t=cust(ui.cid).name+" · Khách hàng";
+  else t=vw?(vw[1]):"Tổng quan";
+  try{document.title=t+" · VH Agency"}catch(e){}
+}
 window.addEventListener("hashchange",route);
 
 /* ---------- forms ---------- */
@@ -2215,7 +2229,7 @@ function openForm(type,id){
   if(del)del.addEventListener("click",function(){
     if(!del.classList.contains("armed")){del.classList.add("armed");del.textContent="Bấm lại để xóa";return}
     closeModal();
-    if(type==="customers"){S.spend.filter(function(x){return x.customerId===id}).forEach(function(x){remove("spend",x.id)});ui.cid=""}
+    if(type==="customers"){S.spend.filter(function(x){return x.customerId===id}).forEach(function(x){remove("spend",x.id)});ui.cid="";if(/^#khach-hang\//.test(location.hash))history.replaceState(null,"","#khach-hang")}
     remove(type,id);
   });
   $("#form").addEventListener("submit",function(ev){
@@ -2251,14 +2265,14 @@ document.addEventListener("click",function(e){
   else if(a==="unpay")save("payments",el.dataset.id,{paidDate:null});
   else if(a==="pf"){ui.pf=el.dataset.v;render()}
   else if(a==="clear-ex")clearExamples();
-  else if(a==="open"){ui.cid=el.dataset.id;render();window.scrollTo(0,0)}
-  else if(a==="back"){ui.cid="";render()}
+  else if(a==="open"){goHash("#khach-hang/"+encodeURIComponent(el.dataset.id));window.scrollTo(0,0)}
+  else if(a==="back"){goHash("#khach-hang")}
   else if(a==="rpmake")rpMake(el.dataset.id);
   else if(a==="rpidle"){ui.rpIdle=!ui.rpIdle;render()}
   else if(a==="rpback"){ui.rpCid="";ui.rpImg=null;ui.rpTok=(ui.rpTok||0)+1;render();window.scrollTo(0,0)}
   else if(a==="rppre"){ui.rpPre=el.dataset.v;ui.rpDate="";ui.rpCid="";ui.rpImg=null;ui.rpTok=(ui.rpTok||0)+1;render()}
   else if(a==="more"){e.preventDefault();var ms=document.getElementById("more-sheet");if(ms)ms.classList.toggle("open")}
-  else if(a==="goc"){ui.pendingCid=el.dataset.id;if(location.hash==="#khach-hang"){route()}else{location.hash="#khach-hang"}window.scrollTo(0,0)}
+  else if(a==="goc"){goHash("#khach-hang/"+encodeURIComponent(el.dataset.id));window.scrollTo(0,0)}
   else if(a==="sadd")addSpendRow();
   else if(a==="newmonth"){var nm=el.dataset.m;ui.mopen[nm]=true;ui.scrollMonth=nm;save("customers",ui.cid,{lastMonth:nm})}
   else if(a==="share")startShare();

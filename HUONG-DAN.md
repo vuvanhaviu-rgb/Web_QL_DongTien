@@ -79,6 +79,10 @@ Vào **Cài đặt** → mục *Xóa chi tiêu theo tháng*: chọn tháng, app 
 
 Trên máy tính, nút **Thu gọn menu** ở đầu cột menu cho phép đóng cột lại để bảng rộng hơn. Bấm nút mũi tên nhỏ để mở lại. Trình duyệt nhớ lựa chọn của bạn. Trên điện thoại menu nằm ở thanh dưới nên không có nút này.
 
+## 12. Tên trên tab trình duyệt
+
+Mỗi thẻ hiện tên riêng trên tab, ví dụ "Tổng quan · VH Agency". Khi mở một khách, tab hiện tên khách đó ("C Châu · Khách hàng · VH Agency"). Địa chỉ trang cũng ghi đúng khách (đuôi `#khach-hang/...`), nên bấm chuột phải mở tab mới hoặc tải lại trang vẫn giữ đúng khách.
+
 ## Lưu ý an toàn
 - Không bao giờ dán mã `FB_TOKEN`, `FIREBASE_SA` hay mã GitHub vào chat, ảnh chụp màn hình hay file trong kho. Lỡ lộ thì tạo lại mã ngay.
 - Gói miễn phí của Firebase và GitHub đủ dùng cho vài chục khách.
