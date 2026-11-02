@@ -1,0 +1,35 @@
+name: Điền chi tiêu theo tháng
+
+on:
+  workflow_dispatch:
+    inputs:
+      month:
+        description: "Tháng cần điền (YYYY-MM)"
+        default: "2026-11"
+      apply:
+        description: "Tick để GHI thật. Bỏ trống = chỉ xem trước"
+        type: boolean
+        default: false
+      unhide:
+        description: "Tick để gỡ dấu ẩn (do chức năng xóa theo tháng tạo) của các ngày cần điền"
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm install firebase-admin --no-save
+      - run: node scripts/dien-thang.js
+        env:
+          FIREBASE_SA: ${{ secrets.FIREBASE_SA }}
+          MONTH: ${{ inputs.month }}
+          APPLY: ${{ inputs.apply }}
+          UNHIDE: ${{ inputs.unhide }}
