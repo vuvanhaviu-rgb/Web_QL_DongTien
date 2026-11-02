@@ -68,6 +68,10 @@ main{min-width:0;display:flex;flex-direction:column;gap:20px}
 .btn.primary:hover{filter:brightness(1.07)}
 .btn.small{padding:4px 10px;font-size:10px;box-shadow:none}
 .btn.danger{color:var(--bad)}
+.btn[disabled]{opacity:.5;cursor:not-allowed}
+.dm{display:flex;align-items:center;gap:10px;margin:6px 0 12px;flex-wrap:wrap}.dm label{font-weight:600}
+.dm input[type=month]{width:auto;min-width:170px;background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:8px 10px;font:inherit;color:inherit}
+.dm-steps{display:flex;flex-direction:column;gap:10px;margin-top:12px}.dm-ok{color:var(--good,#1B7F4B);font-weight:700}
 .btn.danger.armed{background:var(--bad);border-color:var(--bad);color:#fff}
 .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px}
 .kpi{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px 16px;display:flex;flex-direction:column;gap:4px;box-shadow:var(--shadow)}
@@ -1712,6 +1716,45 @@ function payPanel(){
     +'<div class="two">'+F.map(function(f){return '<div class="field"><label for="pay-'+f[0]+'">'+f[1]+'</label><input id="pay-'+f[0]+'" class="pay-in" data-k="'+f[0]+'" type="text" autocomplete="off" value="'+esc(f[0]==="phone"?(P.phone||""):P[f[0]])+'" placeholder="'+esc(f[2])+'"></div>'}).join("")+'</div>'
     +'<p class="hint">Sửa xong bấm ra ngoài ô để tự lưu. Mã QR sẽ lấy theo thông tin này.</p></section>';
 }
+/* ---- Xóa chi tiêu theo tháng (Cài đặt) ---- */
+function dmState(){if(!ui.dm)ui.dm={m:todayStr().slice(0,7),bk:false,arm:false,busy:false};return ui.dm}
+function dmRows(m){return S.spend.filter(function(r){return r.date&&String(r.date).slice(0,7)===m})}
+function dmPanel(){
+  var d=dmState(),rows=dmRows(d.m),cs={},tot=0,xf=0;
+  rows.forEach(function(r){cs[r.customerId]=1;var x=spendRow(r);tot+=x.tot;xf+=x.xf});
+  var ml=d.m.slice(5)+"/"+d.m.slice(0,4),n=Object.keys(cs).length;
+  var sum=!ready()?'<p class="hint">Đang tải dữ liệu…</p>':rows.length
+    ?'<div class="notice">Tháng <b>'+esc(ml)+'</b> có <b>'+rows.length+' dòng</b> chi tiêu của <b>'+n+' khách</b> (tổng chi phí '+vnd(tot)+', khách đã chuyển khoản '+vnd(xf)+'). Xóa xong, các dòng này mất khỏi Bảng chi tiêu và <b>công nợ của khách sẽ tính lại</b> theo số còn lại.</div>'
+    :'<p class="hint">Tháng '+esc(ml)+' không có dòng chi tiêu nào.</p>';
+  var steps='';
+  if(ready()&&rows.length){
+    steps='<div class="dm-steps"><div><b>Bước 1.</b> Tải bản sao lưu về máy để còn khôi phục khi cần. '+(d.bk?'<span class="dm-ok">Đã tải ✓</span>':'<button class="btn small" data-act="dm-bk" type="button">Tải bản sao lưu</button>')+'</div>'
+      +'<div><b>Bước 2.</b> '+(d.busy?'<span class="hint">Đang xóa, vui lòng chờ…</span>':d.arm
+        ?'<button class="btn danger armed" data-act="dm-del" type="button">Bấm lần nữa để XÓA '+rows.length+' dòng tháng '+esc(ml)+'</button> <button class="btn" data-act="dm-cancel" type="button">Hủy</button>'
+        :'<button class="btn danger" data-act="dm-del" type="button"'+(d.bk?'':' disabled')+'>Xóa chi tiêu tháng '+esc(ml)+'</button>'+(d.bk?'':' <span class="hint">(cần tải sao lưu ở bước 1)</span>'))+'</div></div>';
+  }
+  return '<section class="panel"><h2>Xóa chi tiêu theo tháng <small>Xóa toàn bộ dòng trong Bảng chi tiêu của tháng được chọn, cho mọi khách. Số Spend lấy từ Facebook không bị ảnh hưởng.</small></h2>'
+    +'<div class="dm"><label for="dm-m">Chọn tháng</label><input type="month" id="dm-m" value="'+esc(d.m)+'" max="'+todayStr().slice(0,7)+'"></div>'+sum+steps+'</section>';
+}
+async function dmRun(){
+  var d=dmState(),m=d.m,rows=dmRows(m);if(!rows.length||!d.bk)return;
+  d.busy=true;d.arm=false;render();
+  var td=todayStr(),marks={},fail=0,i;
+  /* ghi nhớ các ngày đã xóa (đến hôm qua) để hệ thống không tự điền lại; ngày hôm nay trở đi không ghi nhớ để lần điền 10h sáng sau vẫn chạy */
+  rows.forEach(function(r){if(r.date<td&&!S.hidden.some(function(h){return h.customerId===r.customerId&&h.date===r.date}))marks[r.customerId+"|"+r.date]={customerId:r.customerId,date:r.date}});
+  var mk=Object.keys(marks).map(function(k){return marks[k]});
+  if(localMode){
+    var del={};rows.forEach(function(r){del[r.id]=1});S.spend=S.spend.filter(function(r){return!del[r.id]});
+    mk.forEach(function(v){S.hidden.push(Object.assign({id:"l"+(++seq),createdAt:Date.now()},v))});
+  }else{
+    var ids=rows.map(function(r){return r.id});
+    for(i=0;i<ids.length;i+=20)await Promise.all(ids.slice(i,i+20).map(function(id){return db.collection("spend").doc(id).delete().catch(function(){fail++})}));
+    for(i=0;i<mk.length;i+=20)await Promise.all(mk.slice(i,i+20).map(function(v){return db.collection("hidden").add(Object.assign({createdAt:Date.now()},v)).catch(function(){})}));
+  }
+  ui.dm={m:m,bk:false,arm:false,busy:false};
+  toast(fail?("Đã xóa "+(rows.length-fail)+" dòng, "+fail+" dòng chưa xóa được. Hãy thử lại."):("Đã xóa "+rows.length+" dòng chi tiêu tháng "+m.slice(5)+"/"+m.slice(0,4)));
+  render();
+}
 function vSettings(){
   loadAutoBk();
   var m=ui.autoBk,st;
@@ -1721,6 +1764,7 @@ function vSettings(){
   var h='<section class="panel"><h2>Sao lưu tự động <small>Dữ liệu được tự chép vào kho lưu trữ riêng mỗi ngày, bạn không cần làm gì</small></h2><div class="bk">'+st+'</div></section>'
    +'<section class="panel"><h2>Sao lưu thủ công <small>Tải một bản về máy khi muốn tự giữ</small></h2>'
    +'<div class="bk" id="bk"><small id="bk-last"></small><button class="btn small" id="bk-save" type="button">Tải bản sao lưu</button><button class="btn small" id="bk-load" type="button">Khôi phục từ file</button><input type="file" id="bk-file" accept=".json,application/json" hidden></div></section>'
+   +dmPanel()
    +payPanel()
    +'<section class="panel"><h2>Tài khoản <small>Đăng xuất khỏi thiết bị này</small></h2><div><button class="btn small" data-act="logout" type="button">Đăng xuất</button></div></section>';
   return{title:"Cài đặt",sub:"Sao lưu dữ liệu và tài khoản",html:h};
@@ -2174,6 +2218,9 @@ document.addEventListener("click",function(e){
   else if(a==="copyshare")copyShare();
   else if(a==="sharecamps"){var cc2=cust(ui.cid);if(cc2){save("customers",cc2.id,{shareCamps:!!el.checked})}}
   else if(a==="mtog"){var mk=el.dataset.m;ui.mopen[mk]=!monthOpen(mk);render()}
+  else if(a==="dm-bk"){bkSave();if(ready()){dmState().bk=true;render()}}
+  else if(a==="dm-del"){var dd=dmState();if(!dd.bk){toast("Hãy tải bản sao lưu trước");return}if(dd.arm)dmRun();else{dd.arm=true;render()}}
+  else if(a==="dm-cancel"){dmState().arm=false;render()}
   else if(a==="sdel"){if(ui.delArm===el.dataset.id){ui.delArm="";var rr=S.spend.filter(function(x){return x.id===el.dataset.id})[0];remove("spend",el.dataset.id);if(rr)hideDay(rr.date,el.dataset.id)}else{ui.delArm=el.dataset.id;render()}}
   else if(a==="shide")hideDay(el.dataset.date)
   else if(a==="sunhide"){var mk2=el.dataset.m;S.hidden.filter(function(h){return h.customerId===ui.cid&&String(h.date).slice(0,7)===mk2}).forEach(function(h){remove("hidden",h.id)});toast("Đã hiện lại các ngày")}
@@ -2220,6 +2267,7 @@ document.addEventListener("input",function(e){
 });
 document.addEventListener("change",function(e){
   var id=e.target.id,v=e.target.value;
+  if(id==="dm-m"){var dm0=dmState();if(/^\d{4}-\d{2}$/.test(v)){dm0.m=v;dm0.bk=false;dm0.arm=false;render()}return}
   if(id==="rp-date"){if(/^\d{4}-\d{2}-\d{2}$/.test(v)){ui.rpDate=v;ui.rpPre="d"}else{ui.rpDate="";ui.rpPre="y"}ui.rpCid="";ui.rpImg=null;ui.rpTok=(ui.rpTok||0)+1;render();return}
   if(e.target.classList&&e.target.classList.contains("pay-in")){
     var pk=e.target.dataset.k,pv=String(v).trim();
