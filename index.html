@@ -679,6 +679,15 @@ table.sp td:first-child,table.sp td:first-child .link{font-size:16px}
 .sq-r>span.f{display:grid;justify-content:end;justify-items:center;text-align:center}
 .sq-r .f small{display:block;font-size:12px;font-weight:700;color:#B42318;line-height:1;margin-top:2px}
 .sq-r .p small{display:block;font-size:11px;font-weight:500;color:#5B6472;line-height:1}
+.sq-cp{flex:none;padding:10px 20px 12px;border-top:1px solid #EEF0F3;background:#FBFCFD}
+.sq-cp h3{font-size:12px;font-weight:600;color:#5B6472;text-transform:uppercase;letter-spacing:0;margin:0 0 5px}
+.sq-cp>div{display:flex;align-items:baseline;gap:10px;font-size:15px;line-height:1.55}
+.sq-cp .n{flex:1 1 0;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600;color:#1C1E21}
+.sq-cp .k{flex:none;font-size:11px;font-weight:600;color:#0759E0;background:#E7F0FF;border-radius:999px;padding:1px 8px}
+.sq-cp .k.p{color:#5B6472;background:#EEF0F3}
+.sq-cp .s{flex:none;width:92px;text-align:right;color:#3A4250;font-weight:600}.sq-cp .k{width:62px;text-align:center;box-sizing:border-box}
+.sq-cp .more{display:block;font-size:13px;color:#5B6472;margin-top:2px}
+.sq-tbl>.sq-cp+.sq-r.t{margin-top:0}
 .sq-r.t{margin-top:auto;height:50px;background:#F7F8FA;border-bottom:0;font-weight:700}
 .sq-r.t>span:first-child{font-weight:700;font-size:15px}
 .sq-r:not(.h):not(.t){flex:1 1 0;min-height:44px;max-height:66px;height:auto}
@@ -1874,6 +1883,20 @@ function reportData(c,date){
   rem.forEach(function(o){o.days=Math.max(0,Math.round((t0-new Date(+o.d.slice(0,4),+o.d.slice(5,7)-1,+o.d.slice(8,10)).getTime())/864e5))});
   return{yd:yd,td:td,y:y,credit:(paid-tAll>=WAIVE_BELOW?paid-tAll:0),bal:cum,pay:cum>=1000?Math.floor(cum/1000)*1000:cum,rem:rem,rate:defaultRate(c.id),isY:yd===yestStr()};
 }
+/* Tên chiến dịch quảng cáo của khách trong ngày báo cáo (lấy từ số Facebook đã kéo; chỉ lưu cho 7 ngày gần nhất) */
+function campBlock(c,date,max){
+  var by={},order=[];
+  S.fbspend.forEach(function(f){
+    if(f.customerId!==c.id||f.date!==date||!f.camps)return;
+    f.camps.forEach(function(x){var k=(x.k||"")+"|"+x.n;if(!by[k]){by[k]={n:x.n,k:x.k,s:0};order.push(k)}by[k].s+=Number(x.s)||0});
+  });
+  var list=order.map(function(k){return by[k]}).filter(function(x){return x.s>0}).sort(function(a,b){return b.s-a.s});
+  if(!list.length||max<1)return"";
+  var show=list.slice(0,max),rest=list.length-show.length;
+  return '<div class="sq-cp"><h3>Chiến dịch quảng cáo ngày '+date.slice(8,10)+'/'+date.slice(5,7)+'</h3>'
+    +show.map(function(x){return '<div><span class="n">'+esc(x.n)+'</span><span class="k'+(x.k==="live"?"":" p")+'">'+(x.k==="live"?"Live":"Bài viết")+'</span><span class="s">'+num(x.s)+'</span></div>'}).join("")
+    +(rest>0?'<span class="more">và '+rest+' chiến dịch khác</span>':"")+'</div>';
+}
 function reportHtml(c,o){
   o=o||{};
   var D=reportData(c,o.date),P=payCfg(),dm=function(d){return d.slice(8,10)+"/"+d.slice(5,7)},m=function(v){return num(v)+" ₫"};
@@ -1904,7 +1927,7 @@ function reportHtml(c,o){
   }
   h+='<div class="sq-body">';
   if(owe){
-    var MAXR=10,list=D.rem.slice().reverse(),sl=0,sp=0,sf=0,rows="";
+    var hasCp=!!campBlock(c,D.yd,1),MAXR=hasCp?8:10,list=D.rem.slice().reverse(),sl=0,sp=0,sf=0,rows="";
     D.rem.forEach(function(r){sl+=r.live;sp+=r.post;sf+=r.fee});
     /* % phí dịch vụ lấy theo từng ngày (theo bảng Khách hàng / Bảng chi tiêu), ghi ngay dưới số tiền phí */
     var rts={};D.rem.forEach(function(r){rts[r.rt]=1});if(D.y.tot>0&&D.y.rt!==null)rts[D.y.rt]=1;
@@ -1925,7 +1948,7 @@ function reportHtml(c,o){
     }
     h+='<section class="sq-tbl" style="--cols:'+(hasL&&hasP?"100px minmax(0,1fr) minmax(0,1fr) minmax(0,1fr) minmax(0,1.12fr) 124px":"110px minmax(0,1fr) minmax(0,1fr) minmax(0,1fr) 124px")+'"><div class="sq-th"><h2>Chi tiết các ngày chưa thanh toán</h2><span>Đơn vị: ₫</span></div>'
       +'<div class="sq-r h"><span>Ngày</span>'+(hasL?'<span>Live</span>':'')+(hasP?'<span>Bài viết</span>':'')+'<span>Phí DV</span><span class="tcp">Tổng chi phí<small>(Phí ads + Dịch vụ)</small></span><span>Chậm thanh toán</span></div>'
-      +rows+'<div class="sq-r t"><span>Tổng '+D.rem.length+' ngày</span>'+cL(sl)+cP(sp)+cF(sf,uni)+'<span class="red">'+num(D.bal)+'</span><span></span></div></section>';
+      +rows+campBlock(c,D.yd,shown.length+(oldG?1:0)<=3?5:shown.length+(oldG?1:0)<=5?3:shown.length+(oldG?1:0)<=6?2:1)+'<div class="sq-r t"><span>Tổng '+D.rem.length+' ngày</span>'+cL(sl)+cP(sp)+cF(sf,uni)+'<span class="red">'+num(D.bal)+'</span><span></span></div></section>';
     var info="VH "+custCode(c)+" "+D.td.slice(8,10)+D.td.slice(5,7),
         qr=o.qr||("https://img.vietqr.io/image/"+encodeURIComponent(P.bankCode)+"-"+encodeURIComponent(P.acc)+"-compact2.png?"+(D.pay>0?"amount="+D.pay+"&":"")+"addInfo="+encodeURIComponent(info)+"&accountName="+encodeURIComponent(P.owner));
     h+='<aside class="sq-pay"><h2>Thanh toán</h2><div class="sq-am"><span>Số tiền cần chuyển</span><span>'+m(D.pay)+'</span></div>'
@@ -1938,7 +1961,7 @@ function reportHtml(c,o){
       ?'<div class="sq-yl">'+(hasL?'<div><span>Quảng cáo Live</span><b>'+num(D.y.live)+'</b></div>':'')+(hasP?'<div><span>Quảng cáo Bài viết</span><b>'+num(D.y.post)+'</b></div>':'')
         +'<div><span>Phí dịch vụ <em>'+rate+'</em></span><b>'+num(D.y.fee)+'</b></div><div class="t"><span>Tổng chi phí</span><b>'+m(D.y.tot)+'</b></div></div>'
       :'<div class="sq-yl none">Không phát sinh chi phí</div>';
-    h+='<section class="sq-tbl"><div class="sq-th"><h2>Chi tiêu quảng cáo '+(D.isY?"hôm qua":"ngày")+' '+dm(D.yd)+'</h2><span>Đơn vị: ₫</span></div>'+yL
+    h+='<section class="sq-tbl"><div class="sq-th"><h2>Chi tiêu quảng cáo '+(D.isY?"hôm qua":"ngày")+' '+dm(D.yd)+'</h2><span>Đơn vị: ₫</span></div>'+yL+campBlock(c,D.yd,4)
       +'<div class="sq-st"><svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#1B7F4B" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><path d="m7.5 12.5 3 3 6-7"></path></svg>'
       +(D.credit>0?'<div class="sq-cr"><span>Đã thanh toán đủ · Số dư còn lại</span><strong>'+m(D.credit)+'</strong><small>Số dư được giữ lại để trừ vào chi phí các ngày tiếp theo.</small></div>':'<div class="sq-cr"><strong>Đã thanh toán đủ</strong><small>Cảm ơn bạn. Hiện không còn khoản nào cần thanh toán.</small></div>')+'</div></section>';
     var infoP="VH "+custCode(c)+" "+D.td.slice(8,10)+D.td.slice(5,7),
