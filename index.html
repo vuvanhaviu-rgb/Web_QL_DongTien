@@ -1052,9 +1052,9 @@ function dueSoon(){
 
 /* các dòng chi tiêu đang để "Chưa thanh toán" và khách còn phải chuyển (tổng − đã chuyển) */
 function owedRows(){
-  var now=new Date(),t0=new Date(now.getFullYear(),now.getMonth(),now.getDate()).getTime(),out=[];
+  var now=new Date(),t0=new Date(now.getFullYear(),now.getMonth(),now.getDate()).getTime(),out=[],bw=custBalances();
   S.spend.forEach(function(r){
-    if(r.paid||!r.date||!cust(r.customerId))return;
+    if(r.paid||!r.date||!cust(r.customerId)||!(bw[r.customerId]>0))return;
     var x=spendRow(r),owe=Math.max(0,x.tot-x.xf);if(!owe)return;
     var d=new Date(+r.date.slice(0,4),+r.date.slice(5,7)-1,+r.date.slice(8,10)).getTime();
     out.push({cid:r.customerId,owe:owe,days:Math.round((t0-d)/86400000)});
@@ -1064,6 +1064,8 @@ function owedRows(){
 /* Chưa thu của từng khách = tổng (phí dịch vụ + chi phí quảng cáo) − khách đã chuyển khoản, trên mọi dòng */
 /* khoản nợ lẻ dưới 1.000đ (còn sót sau khi khách chuyển số đã bỏ 3 số lẻ) coi như đã thanh toán đủ, không cộng sang kỳ sau */
 var WAIVE_BELOW=1000;
+/* số dư (nợ hoặc dư) dưới 1.000đ coi như bằng 0 */
+function wv(b){return Math.abs(b)<WAIVE_BELOW?0:b}
 /* khách chuyển khoản trước, còn dư tiền sau khi trừ mọi chi phí (từ 1.000đ trở lên) */
 function custCredits(){
   var b={};
@@ -1197,6 +1199,7 @@ function vOverview0(){
   var td0=todayStr(),yd=new Date();yd.setDate(yd.getDate()-1);var td1=ymd(yd),nd0=0,nd1=0;
   S.spend.forEach(function(r){if(!cust(r.customerId))return;if(r.date!==td0&&r.date!==td1)return;var x=spendRow(r),v=x.tot-x.xf;if(r.date===td0)nd0+=v;else nd1+=v});
   nd0=Math.max(0,nd0);nd1=Math.max(0,nd1);
+  Object.keys(cb).forEach(function(k){cb[k]=wv(cb[k])});
   var dn=0,nOwe=0,nOver=0;Object.keys(cb).forEach(function(k){dn+=cb[k];if(cb[k]<0)nOwe++;else if(cb[k]>0)nOver++});
   var h='<div class="tools"><div class="tabs" role="group" aria-label="Xem số liệu theo">'+OVP.map(function(t){return '<button data-act="ovp" data-v="'+t[0]+'" aria-pressed="'+(opt===t[0])+'">'+t[1]+'</button>'}).join("")+'</div><label class="dayp"><span>Chọn ngày</span>'+dateText("ov-day",opt==="day"?OR[0]:"","Chọn một ngày để xem (dd/mm/yyyy)")+'</label></div>'+'<div class="kpis top">'
    +'<div class="kpi c-thu"><span>Tổng chi tiêu quảng cáo</span><b>'+vnd(P.live+P.post)+'</b><small>'+esc(OR[2])+' · Live '+num(P.live)+' · Bài viết '+num(P.post)+'</small></div>'
@@ -1369,13 +1372,14 @@ function recalcLedger(){
   var set=function(sel,txt){var el=document.querySelector(sel);if(el)el.textContent=txt};
   Object.keys(MS).forEach(function(k){var m=MS[k];["live","post","fee","tot","xf"].forEach(function(f){set('[data-m="'+k+'"][data-k="'+f+'"]',num(m[f]))});set('[data-m="'+k+'"][data-k="n"]',m.n+" dòng")});
   set('[data-foot="live"]',num(tl));set('[data-foot="post"]',num(tp));set('[data-foot="fee"]',num(tf));
-  set('[data-foot="tot"]',num(tt));set('[data-foot="xf"]',num(tx));set('[data-foot="bal"]',num(-bal));
-  var fb=document.querySelector('[data-foot="bal"]');if(fb)fb.className="num "+(bal>0?"owe":"clear");
+  var bw=wv(bal);
+  set('[data-foot="tot"]',num(tt));set('[data-foot="xf"]',num(tx));set('[data-foot="bal"]',num(-bw));
+  var fb=document.querySelector('[data-foot="bal"]');if(fb)fb.className="num "+(bw>0?"owe":"clear");
   set('[data-kpi="qc"]',vnd(tl+tp));set('[data-kpi="qcsub"]',"Live "+num(tl)+" · Bài viết "+num(tp));
   set('[data-kpi="fee"]',vnd(tf));set('[data-kpi="feesub"]',"Tổng cộng "+vnd(tt));
-  set('[data-kpi="xf"]',vnd(tx));set('[data-kpi="bal"]',vnd(-bal));
-  set('[data-kpi="balsub"]',bal>0?"Khách còn nợ":bal<0?"Khách chuyển dư":"Đã tất toán");
-  var box=document.querySelector('[data-kpi-box="bal"]');if(box){box.classList.toggle("bad",bal>0);box.classList.toggle("settled",bal===0)}
+  set('[data-kpi="xf"]',vnd(tx));set('[data-kpi="bal"]',vnd(-bw));
+  set('[data-kpi="balsub"]',bw>0?"Khách còn nợ":bw<0?"Khách chuyển dư":"Đã tất toán");
+  var box=document.querySelector('[data-kpi-box="bal"]');if(box){box.classList.toggle("bad",bw>0);box.classList.toggle("settled",bw===0)}
   if(box)tagKpis(box.parentNode);
 }
 function liveFormat(el){
@@ -1430,7 +1434,7 @@ function vCustomerDetail(){
     +'<div class="kpi"><span>Chi phí quảng cáo</span><b data-kpi="qc">'+vnd(tl+tp)+'</b><small data-kpi="qcsub">Live '+num(tl)+' · Bài viết '+num(tp)+'</small></div>'
     +'<div class="kpi"><span>Phí dịch vụ</span><b data-kpi="fee">'+vnd(tf)+'</b><small data-kpi="feesub">Tổng cộng '+vnd(tt)+'</small></div>'
     +'<div class="kpi"><span>Khách đã chuyển khoản</span><b data-kpi="xf">'+vnd(tx)+'</b><small>&nbsp;</small></div>'
-    +'<div class="kpi '+(bal>0?"bad":bal===0?"settled":"")+'" data-kpi-box="bal"><span>Dư nợ cuối</span><b data-kpi="bal">'+vnd(-bal)+'</b><small data-kpi="balsub">'+(bal>0?"Khách còn nợ":bal<0?"Khách chuyển dư":"Đã tất toán")+'</small></div></div>';
+    +'<div class="kpi '+(wv(bal)>0?"bad":wv(bal)===0?"settled":"")+'" data-kpi-box="bal"><span>Dư nợ cuối</span><b data-kpi="bal">'+vnd(-wv(bal))+'</b><small data-kpi="balsub">'+(wv(bal)>0?"Khách còn nợ":wv(bal)<0?"Khách chuyển dư":"Đã tất toán")+'</small></div></div>';
   h+='<div class="tablewrap ledscroll"><table class="ledger"><colgroup><col style="width:14%"><col style="width:12%"><col style="width:12%"><col style="width:7%"><col style="width:11%"><col style="width:12%"><col style="width:14%"><col style="width:11%"><col style="width:7%"></colgroup><thead><tr><th rowspan="2">Ngày tháng</th><th colspan="2" class="grp">Chi phí quảng cáo</th><th rowspan="2" class="num">Phí %</th><th rowspan="2" class="num">Phí dịch vụ</th><th rowspan="2" class="num">Tổng</th><th rowspan="2">Note</th><th rowspan="2" class="num">Khách chuyển khoản</th><th rowspan="2"></th></tr>'
     +'<tr><th class="num">Quảng cáo Live</th><th class="num">Quảng cáo Bài viết</th></tr></thead><tbody>'+body+'</tbody>'
     +'<tfoot><tr><td>Tổng cộng</td><td class="num" data-foot="live">'+num(tl)+'</td><td class="num" data-foot="post">'+num(tp)+'</td><td></td><td class="num" data-foot="fee">'+num(tf)+'</td><td class="num" data-foot="tot">'+num(tt)+'</td><td></td><td class="num" data-foot="xf">'+num(tx)+'</td><td></td></tr></tfoot></table></div>'
