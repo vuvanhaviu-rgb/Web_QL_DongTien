@@ -683,6 +683,21 @@ table.sp td:first-child,table.sp td:first-child .link{font-size:16px}
 .sq-r.t>span:first-child{font-weight:700;font-size:15px}
 .sq-r:not(.h):not(.t){flex:1 1 0;min-height:44px;max-height:66px;height:auto}
 .sq-r.t .red{color:#B42318}
+.sq-tbl.rb.fit{align-self:flex-start}
+.sq-tbl.rb .sq-th{padding:18px 20px 14px}
+.sq-tbl.rb .sq-th h2{font-size:24px}
+.sq-tbl.rb .sq-r:not(.h):not(.t){flex:none;height:var(--rh);min-height:0;max-height:none;font-size:var(--fs);border-bottom:1px solid #D5DBE3}
+.sq-tbl.rb .sq-r.h{height:56px;background:#EEF2F7;border-top:1px solid #D5DBE3;border-bottom:2px solid #C3CCD8;font-size:14px;font-weight:700;color:#1C1E21;text-transform:none}
+.sq-tbl.rb .sq-r.h>span.tcp small{font-size:11px;font-weight:500;color:#5B6472}
+.sq-tbl.rb .sq-r.h>span{white-space:normal;line-height:1.15}
+.sq-tbl.rb .sq-r.t{margin-top:0;height:64px;background:#EEF2F7;border-top:2px solid #C3CCD8;font-size:17px}
+.sq-tbl.rb .sq-r.t>span:first-child{font-size:15px;white-space:normal;line-height:1.15}
+.sq-tbl.rb .sq-r.nw>span:first-child em{font-size:12px}
+.sq-tbl.rb .sq-r .d{font-size:calc(var(--fs) - 1px)}
+.sq-tbl.rb .sq-r .f small{font-size:13px}
+.sq-tbl.rb .sq-r .p small{font-size:12px}
+.sq-tbl.rb .sq-r.old>span:first-child{font-size:calc(var(--fs) - 2px)}
+
 .sq-paid{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:20px;text-align:center}
 .sq-paid b{font-size:34px;font-weight:800;color:#1B7F4B}
 .sq-yl{padding:6px 20px 0;display:flex;flex-direction:column}
@@ -1927,7 +1942,8 @@ function reportHtml(c,o){
       var top=oldG[0],mn=oldG[oldG.length-1];
       rows+='<div class="sq-r old"><span>'+oldG.length+' ngày cũ hơn</span>'+cL(gl)+cP(gp)+cF(gf,oldG.every(function(r){return r.rt===oldG[0].rt})?oldG[0].rt:null)+'<span class="p">'+num(go)+'</span><span class="d red">'+top.days+'+ ngày</span></div>';
     }
-    h+='<section class="sq-tbl" style="--cols:'+(hasL&&hasP?"100px minmax(0,1fr) minmax(0,1fr) minmax(0,1fr) minmax(0,1.12fr) 124px":"110px minmax(0,1fr) minmax(0,1fr) minmax(0,1fr) 124px")+'"><div class="sq-th"><h2>Chi tiết các ngày chưa thanh toán</h2><span>Đơn vị: ₫</span></div>'
+    var nr=shown.length+(oldG?1:0),rh=nr<=3?88:nr<=5?72:nr<=7?60:nr<=8?52:44,fs=nr<=3?21:nr<=5?19:nr<=7?18:16;
+    h+='<section class="sq-tbl rb'+(nr<=7?" fit":"")+'" style="--rh:'+rh+'px;--fs:'+fs+'px;--cols:'+(hasL&&hasP?"100px minmax(0,1fr) minmax(0,1fr) minmax(0,1fr) minmax(0,1.12fr) 124px":"110px minmax(0,1fr) minmax(0,1fr) minmax(0,1fr) 124px")+'"><div class="sq-th"><h2>Chi tiết các ngày chưa thanh toán</h2><span>Đơn vị: ₫</span></div>'
       +'<div class="sq-r h"><span>Ngày</span>'+(hasL?'<span>Live</span>':'')+(hasP?'<span>Bài viết</span>':'')+'<span>Phí DV</span><span class="tcp">Tổng chi phí<small>(Phí ads + Dịch vụ)</small></span><span>Chậm thanh toán</span></div>'
       +rows+'<div class="sq-r t"><span>Tổng '+D.rem.length+' ngày</span>'+cL(sl)+cP(sp)+cF(sf,uni)+'<span class="red">'+num(D.bal)+'</span><span></span></div></section>';
     var info="VH "+custCode(c)+" "+D.td.slice(8,10)+D.td.slice(5,7),
