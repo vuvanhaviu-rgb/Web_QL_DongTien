@@ -1,0 +1,22 @@
+name: Tìm khách theo ID tài khoản quảng cáo (chỉ đọc)
+on:
+  workflow_dispatch:
+    inputs:
+      acct:
+        description: "ID tài khoản quảng cáo cần tìm"
+        default: "1445790276113219"
+permissions:
+  contents: read
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm install firebase-admin --no-save
+      - run: node scripts/tim-tai-khoan.js
+        env:
+          FIREBASE_SA: ${{ secrets.FIREBASE_SA }}
+          ACCT: ${{ inputs.acct }}
