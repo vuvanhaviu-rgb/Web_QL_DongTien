@@ -426,6 +426,15 @@ table.ledger tr.flash td{animation:flash 1.4s ease-out}
 .tablewrap table:not(.ledger):not(.custlist),.tablewrap table:not(.ledger):not(.custlist) th,.tablewrap table:not(.ledger):not(.custlist) td,.tablewrap table:not(.ledger):not(.custlist) b,.tablewrap table:not(.ledger):not(.custlist) .link,.tablewrap table:not(.ledger):not(.custlist) button{font-size:10px}
 table.custlist,table.custlist th,table.custlist td,table.custlist .link,table.custlist button,table.custlist .badge{font-size:10px}
 table.custlist .link{text-decoration:none}
+table.custlist th{padding:0}
+table.custlist th .sorth{all:unset;box-sizing:border-box;display:inline-flex;align-items:center;gap:4px;width:100%;padding:10px 12px;cursor:pointer;font-size:10px;font-weight:600;color:var(--muted);white-space:nowrap}
+table.custlist th.num .sorth{justify-content:flex-end}
+table.custlist th .sorth:hover{color:var(--fg)}
+table.custlist th .sorth.on{color:var(--accent)}
+table.custlist th .sorth .arr{font-size:9px;opacity:.55}table.custlist th .sorth.on .arr{opacity:1}
+table.custlist th .sorth:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+.csel{display:none}
+@media (max-width:700px){.tools .csel{display:block;width:100%;min-width:0}}
 table.custlist td:first-child,table.custlist td:first-child .link{white-space:nowrap}
 a.ext{color:var(--accent);text-decoration:underline;word-break:break-all}
 
@@ -767,7 +776,7 @@ var DEFAULT_FEE=10;
 var BANK_FEE=1.1;
 function defaultRate(cid){var c=(S.customers.filter(function(x){return x.id===cid})[0]);return c&&c.feeRate!=null&&c.feeRate!==""?Number(c.feeRate):DEFAULT_FEE}
 var db=null,localMode=false,seq=0;
-var ui={view:"tong-quan",q:"",pf:"all",pc:"",cid:"",ap:"month",anchor:todayStr(),delArm:"",pendingFocus:null,mopen:{},pend:{},shared:{}};
+var ui={csort:(function(){try{var v=JSON.parse(localStorage.getItem("cust-sort")||"null");if(v&&v.k&&(v.d==="asc"||v.d==="desc"))return v}catch(e){}return{k:"",d:""}})(),view:"tong-quan",q:"",pf:"all",pc:"",cid:"",ap:"month",anchor:todayStr(),delArm:"",pendingFocus:null,mopen:{},pend:{},shared:{}};
 var num=function(n){return (Number(n)||0).toLocaleString("vi-VN")};
 var nz=function(n){return n?num(n):"—"};
 var rendering=false,restoring=false,pointerDown=false,pendingRender=false;
@@ -1245,10 +1254,25 @@ function vCustomers(){
   var linkCell=function(u){u=String(u||"").trim();if(!u)return "—";var href=/^https?:\/\//i.test(u)?u:"https://"+u,txt=u.replace(/^https?:\/\/(www\.)?/i,"");if(txt.length>34)txt=txt.slice(0,32)+"…";return '<a class="ext" href="'+esc(href)+'" target="_blank" rel="noopener noreferrer">'+esc(txt)+'</a>'};
   var list=S.customers.filter(function(c){return!q||[c.name,c.contact,c.phone,c.note,c.product,c.pageLink].join(" ").toLowerCase().indexOf(q)>=0})
     .sort(function(a,b){return (budget[b.id]||0)-(budget[a.id]||0)||String(a.name).localeCompare(String(b.name),"vi")});
-  var h='<div class="tools"><input type="search" id="q" placeholder="Tìm theo tên, số điện thoại…" value="'+esc(ui.q)+'" aria-label="Tìm khách hàng"></div>';
+  /* sắp xếp theo cột (bấm tiêu đề cột): chữ A→Z / Z→A, số cao→thấp / thấp→cao; mặc định xếp theo tổng ngân sách */
+  var SKEY={name:function(c){return String(c.name||"")},contact:function(c){return String(c.contact||"")+" "+String(c.phone||"")},page:function(c){return String(c.pageLink||"")},product:function(c){return String(c.product||"")},
+    fee:function(c){return defaultRate(c.id)},budget:function(c){return budget[c.id]||0},fees:function(c){return fees[c.id]||0},owed:function(c){return owed[c.id]||0}};
+  var SNUM={fee:1,budget:1,fees:1,owed:1},cs=ui.csort;
+  if(cs&&SKEY[cs.k]){
+    var kf=SKEY[cs.k],sg=cs.d==="asc"?1:-1;
+    list.sort(function(a,b){var x=kf(a),y=kf(b),r;
+      if(SNUM[cs.k])r=x-y;else{var ex=!String(x).trim(),ey=!String(y).trim();if(ex!==ey)return ex?1:-1;r=String(x).localeCompare(String(y),"vi")}
+      return r*sg||String(a.name).localeCompare(String(b.name),"vi")});
+  }
+  var SCOL=[["name","Tên Khách"],["contact","Liên hệ"],["page","Link Page"],["product","Sản Phẩm"],["fee","Fee Dịch Vụ"],["budget","Tổng Ngân Sách"],["fees","Tổng Phí"],["owed","Còn nợ"]];
+  var sth=function(k,label,cls){var on=cs&&cs.k===k,arrow=on?(cs.d==="asc"?"▲":"▼"):"↕";
+    return '<th'+(cls?' class="'+cls+'"':'')+' aria-sort="'+(on?(cs.d==="asc"?"ascending":"descending"):"none")+'"><button type="button" class="sorth'+(on?" on":"")+'" data-act="csort" data-k="'+k+'" title="Bấm để sắp xếp">'+label+'<span class="arr" aria-hidden="true">'+arrow+'</span></button></th>'};
+  var sopts='<option value="">Sắp xếp: mặc định (tổng ngân sách cao → thấp)</option>'+SCOL.map(function(c){var num0=!!SNUM[c[0]];
+    return ['asc','desc'].map(function(d){var sel=cs&&cs.k===c[0]&&cs.d===d?" selected":"",lb=c[1]+": "+(num0?(d==="desc"?"cao → thấp":"thấp → cao"):(d==="asc"?"A → Z":"Z → A"));return '<option value="'+c[0]+'|'+d+'"'+sel+'>'+lb+'</option>'}).join("")}).join("");
+  var h='<div class="tools"><input type="search" id="q" placeholder="Tìm theo tên, số điện thoại…" value="'+esc(ui.q)+'" aria-label="Tìm khách hàng"><select id="csel" class="csel" aria-label="Sắp xếp danh sách khách">'+sopts+'</select></div>';
   if(!S.customers.length)h+='<div class="tablewrap">'+emptyBlock("Chưa có khách hàng","Thêm khách hàng đầu tiên để bắt đầu ghi nhận công nợ.",'<button class="btn primary" data-act="add" data-type="customers">Thêm khách hàng</button>')+'</div>';
   else if(!list.length)h+='<div class="tablewrap">'+emptyBlock("Không tìm thấy","Thử từ khóa khác.")+'</div>';
-  else h+='<div class="tablewrap"><table class="custlist"><thead><tr><th>Tên Khách</th><th>Liên hệ</th><th>Link Page</th><th>Sản Phẩm</th><th class="num">Fee Dịch Vụ</th><th class="num">Tổng Ngân Sách</th><th class="num">Tổng Phí</th><th class="num">Còn nợ</th><th></th></tr></thead><tbody>'
+  else h+='<div class="tablewrap"><table class="custlist"><thead><tr>'+sth("name","Tên Khách")+sth("contact","Liên hệ")+sth("page","Link Page")+sth("product","Sản Phẩm")+sth("fee","Fee Dịch Vụ","num")+sth("budget","Tổng Ngân Sách","num")+sth("fees","Tổng Phí","num")+sth("owed","Còn nợ","num")+'<th></th></tr></thead><tbody>'
     +list.map(function(c){return '<tr><td><button class="link" data-act="open" data-id="'+esc(c.id)+'">'+esc(c.name)+'</button>'+(c.note?'<span class="sub">'+esc(c.note)+'</span>':"")+'</td>'+(function(){var same=String(c.contact||"").trim()===String(c.name||"").trim(),ct=same?"":esc(c.contact||"");var em=!ct&&!c.phone;return '<td'+(em?' class="empty"':'')+'>'+ct+(c.phone?'<span class="sub">'+esc(c.phone)+'</span>':"")+'</td>'})()+'<td>'+linkCell(c.pageLink)+'</td><td>'+(esc(c.product||"")||"—")+'</td><td class="num">'+defaultRate(c.id)+'%</td><td class="num">'+nz2(budget[c.id])+'</td><td class="num">'+nz2(fees[c.id])+'</td><td class="num'+(owed[c.id]?' has-debt':'')+'">'+(owed[c.id]?'<b>'+vnd(owed[c.id])+'</b>':"—")+'</td><td class="act"><button class="btn small" data-act="open" data-id="'+esc(c.id)+'">Bảng chi tiêu</button> <button class="btn small" data-act="edit" data-type="customers" data-id="'+esc(c.id)+'">Sửa</button></td></tr>'}).join("")
     +'</tbody></table></div>';
   return{title:"Khách hàng",sub:S.customers.length+" khách hàng",action:'<button class="btn primary" data-act="add" data-type="customers">Thêm khách hàng</button>',html:h};
@@ -1842,7 +1866,7 @@ function labelTables(root){
   var L=["Ngày","Quảng cáo Live","Quảng cáo Bài viết","Phí %","Phí dịch vụ","Tổng","Note","Khách chuyển khoản",""];
   root.querySelectorAll("table").forEach(function(t){
     var led=t.classList.contains("ledger")&&!t.classList.contains("vw"),ths=[];
-    if(!led)t.querySelectorAll("thead th").forEach(function(th){ths.push(th.textContent.trim())});
+    if(!led)t.querySelectorAll("thead th").forEach(function(th){var lb=th.cloneNode(true);lb.querySelectorAll(".arr").forEach(function(x){x.remove()});ths.push(lb.textContent.trim())});
     t.querySelectorAll("tbody tr, tfoot tr").forEach(function(tr){
       if(tr.classList.contains("mh"))return;
       Array.prototype.forEach.call(tr.children,function(td,i){td.setAttribute("data-label",(led?L:ths)[i]||"")});
@@ -2285,6 +2309,13 @@ document.addEventListener("click",function(e){
   else if(a==="unpay")save("payments",el.dataset.id,{paidDate:null});
   else if(a==="pf"){ui.pf=el.dataset.v;render()}
   else if(a==="clear-ex")clearExamples();
+  else if(a==="csort"){
+    var k=el.dataset.k,cur=ui.csort||{k:"",d:""},isNum={fee:1,budget:1,fees:1,owed:1}[k];
+    /* bấm lần 1: số cao→thấp, chữ A→Z; lần 2: đảo chiều; lần 3: về mặc định */
+    var first=isNum?"desc":"asc",second=isNum?"asc":"desc";
+    ui.csort=cur.k!==k?{k:k,d:first}:cur.d===first?{k:k,d:second}:{k:"",d:""};
+    try{localStorage.setItem("cust-sort",JSON.stringify(ui.csort))}catch(e){}
+    render()}
   else if(a==="open"){goHash("#khach-hang/"+encodeURIComponent(el.dataset.id));window.scrollTo(0,0)}
   else if(a==="back"){goHash("#khach-hang")}
   else if(a==="rpmake")rpMake(el.dataset.id);
@@ -2352,6 +2383,7 @@ document.addEventListener("input",function(e){
 });
 document.addEventListener("change",function(e){
   var id=e.target.id,v=e.target.value;
+  if(id==="csel"){var pr=String(v).split("|");ui.csort=pr.length===2?{k:pr[0],d:pr[1]}:{k:"",d:""};try{localStorage.setItem("cust-sort",JSON.stringify(ui.csort))}catch(er){}render();return}
   if(id==="dm-m"){var dm0=dmState();if(/^\d{4}-\d{2}$/.test(v)){dm0.m=v;dm0.bk=false;dm0.arm=false;render()}return}
   if(id==="rp-date"){if(/^\d{4}-\d{2}-\d{2}$/.test(v)){ui.rpDate=v;ui.rpPre="d"}else{ui.rpDate="";ui.rpPre="y"}ui.rpCid="";ui.rpImg=null;ui.rpTok=(ui.rpTok||0)+1;render();return}
   if(e.target.classList&&e.target.classList.contains("pay-in")){

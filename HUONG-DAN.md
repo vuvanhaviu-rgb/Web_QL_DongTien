@@ -85,6 +85,10 @@ Trên máy tính, nút **Thu gọn menu** ở đầu cột menu cho phép đóng
 
 Mỗi thẻ hiện tên riêng trên tab, ví dụ "Tổng quan · VH Agency". Khi mở một khách, tab hiện tên khách đó ("C Châu · Khách hàng · VH Agency"). Địa chỉ trang cũng ghi đúng khách (đuôi `#khach-hang/...`), nên bấm chuột phải mở tab mới hoặc tải lại trang vẫn giữ đúng khách.
 
+## 13. Sắp xếp danh sách khách hàng
+
+Ở mục Khách hàng, bấm vào tên cột để sắp xếp. Cột số (Fee Dịch Vụ, Tổng Ngân Sách, Tổng Phí, Còn nợ): bấm lần 1 là cao đến thấp, lần 2 là thấp đến cao, lần 3 về mặc định (xếp theo Tổng Ngân Sách). Cột chữ (Tên Khách, Liên hệ, Link Page, Sản Phẩm): lần 1 là A đến Z, lần 2 là Z đến A, lần 3 về mặc định. Mũi tên cạnh tên cột cho biết đang xếp theo cột nào. Trình duyệt nhớ cách xếp. Trên điện thoại dùng ô chọn "Sắp xếp" bên cạnh ô tìm kiếm.
+
 ## Lưu ý an toàn
 - Không bao giờ dán mã `FB_TOKEN`, `FIREBASE_SA` hay mã GitHub vào chat, ảnh chụp màn hình hay file trong kho. Lỡ lộ thì tạo lại mã ngay.
 - Gói miễn phí của Firebase và GitHub đủ dùng cho vài chục khách.
