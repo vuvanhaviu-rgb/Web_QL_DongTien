@@ -22,13 +22,16 @@ service cloud.firestore {
       allow get: if true;
       allow write: if request.auth != null;
     }
+    match /refresh/{token} {
+      allow create, update: if request.resource.data.keys().hasOnly(['at']) && request.resource.data.at is number;
+    }
     match /{document=**} {
       allow read, write: if request.auth != null;
     }
   }
 }
 ```
-Đoạn `shares` cho phép người ngoài xem đúng một bảng chi tiêu khi có link chia sẻ. Không xem được dữ liệu khác.
+Đoạn `shares` cho phép người ngoài xem đúng một bảng chi tiêu khi có link chia sẻ. Không xem được dữ liệu khác. Đoạn `refresh` chỉ cho phép khách bấm nút **Làm mới** trên link chia sẻ gửi một yêu cầu nhỏ (một con số thời gian), không đọc được gì.
 
 ## 4. Lấy chi phí từ Facebook
 **Cách hoạt động:** workflow "Kéo chi phí Facebook" chạy `scripts/fb-sync.js`, đọc chi phí các chiến dịch và ghi vào Firebase.
@@ -59,6 +62,11 @@ service cloud.firestore {
 
 ## 7. Chia sẻ bảng chi tiêu cho khách
 Mở bảng chi tiêu của khách → **Tạo link chia sẻ** → **Sao chép** gửi khách. Link chỉ xem, không có phí ngân hàng và phí thực nhận. Muốn thu hồi, bấm **Tắt chia sẻ**.
+
+**Nút Làm mới trên link chia sẻ:** khách bấm nút này để xem số thực tế. Link công khai không được chứa mã Facebook nên nút chỉ gửi một yêu cầu; cứ mỗi phút GitHub chạy workflow **Làm mới theo yêu cầu (link chia sẻ)**, nếu có yêu cầu thì kéo số Facebook của riêng khách đó (hôm qua và hôm nay) rồi cập nhật link, thường xong sau 1 đến 2 phút. Không có yêu cầu thì thoát ngay, không gọi Facebook. Mỗi link chỉ được làm mới tối đa 2 lần mỗi phút. Cần cài một lần:
+1. Cập nhật luật Firestore như mục 3 (thêm đoạn `refresh`) rồi Publish.
+2. Trên cron-job.org tạo thêm một lịch **mỗi 1 phút**, giống lịch kéo Facebook nhưng URL là `https://api.github.com/repos/vuvanhaviu-rgb/Web_QL_DongTien/actions/workflows/lam-moi-yeu-cau.yml/dispatches` (POST, body `{"ref":"main"}`, cùng các Headers và cùng mã GitHub).
+Chưa cài hai bước này thì khách bấm sẽ thấy báo chưa gửi được hoặc đợi mãi không có số mới.
 
 ## 8. Cài thành app trên điện thoại
 Mở https://vhagency.io.vn bằng trình duyệt điện thoại → menu trình duyệt → **Thêm vào màn hình chính** (hoặc **Cài đặt ứng dụng**).

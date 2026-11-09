@@ -557,6 +557,14 @@ table.sp td:first-child,table.sp td:first-child .link{font-size:16px}
   .btn:active,.nav a:active,.tabs button:active{transform:scale(.97)}
   .note{border-radius:14px}
 }
+.vrefresh{display:inline-flex;align-items:center;gap:8px;padding:9px 14px;border-radius:999px;border:1px solid var(--line);background:var(--surface);color:var(--accent);font:inherit;font-size:13px;font-weight:600;cursor:pointer}
+.vrefresh:hover{background:var(--accent-soft)}
+.vrefresh[disabled]{cursor:progress;opacity:.8}
+.vrefresh.spin svg{animation:vspin 1s linear infinite}
+@keyframes vspin{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){.vrefresh.spin svg{animation:none}}
+.vr-msg{margin:10px 0 0;padding:9px 12px;border-radius:10px;background:var(--surface-2);color:var(--muted);font-size:13px}
+.vr-msg.ok{background:var(--ok-soft);color:var(--ok)}.vr-msg.bad{background:var(--bad-soft);color:var(--bad)}
 .live-note{display:flex;align-items:flex-start;gap:8px;width:fit-content;margin:18px 0 6px auto;padding:8px 12px;border-radius:12px;border:1px solid rgba(22,163,74,.35);font-size:11px;line-height:1.45;color:#475569;text-align:right}
 .live-dot{display:inline-block;margin-top:4px;width:8px;height:8px;border-radius:50%;background:#16a34a;box-shadow:0 0 0 0 rgba(22,163,74,.5);animation:ldot 1.8s infinite;flex:none}
 @keyframes ldot{70%{box-shadow:0 0 0 7px rgba(22,163,74,0)}100%{box-shadow:0 0 0 0 rgba(22,163,74,0)}}
@@ -950,6 +958,33 @@ function shareBox(c){
   if(!c.shareToken)return '<div class="sharebox"><span>Gửi link cho khách xem các chiến dịch đang chạy, không cần đăng nhập.</span><button class="btn small" data-act="share">Tạo link chia sẻ</button></div>';
   return '<div class="sharebox on"><span>Link xem không cần đăng nhập (chỉ xem, không sửa được):</span><input id="share-url" readonly value="'+esc(shareLink(c.shareToken))+'" aria-label="Link chia sẻ"><button class="btn small" data-act="copyshare">Sao chép</button><button class="btn small danger" data-act="unshare">Tắt chia sẻ</button></div>';
 }
+/* Nút làm mới trên link chia sẻ: gửi yêu cầu, máy chủ kéo số Facebook của riêng khách này rồi trang tự cập nhật (khoảng 1-2 phút) */
+var VREF_COOL=60e3,VREF_WAIT=170e3,vrefTick=null;
+function vrefBtn(){
+  var st=(ui.vref&&ui.vref.state)||"",busy=st==="wait";
+  return '<button type="button" class="vrefresh'+(busy?" spin":"")+'" data-act="vrefresh" aria-label="Làm mới số liệu"'+(busy?' disabled':'')+'><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg><span>'+(busy?"Đang lấy số mới…":"Làm mới")+'</span></button>';
+}
+function vrefMsg(){
+  var v=ui.vref||{},t="";
+  if(v.state==="wait")t='Đang lấy số mới từ Facebook, thường mất 1 đến 2 phút. Bạn có thể để trang mở, số sẽ tự cập nhật.';
+  else if(v.state==="done")t='Đã cập nhật số mới lúc '+new Date(v.doneAt).toLocaleTimeString("vi-VN",{hour:"2-digit",minute:"2-digit",second:"2-digit"})+'.';
+  else if(v.state==="late")t='Chưa nhận được số mới. Số hiện tại vẫn là số gần nhất, bạn thử lại sau ít phút nhé.';
+  else if(v.state==="err")t='Chưa gửi được yêu cầu làm mới. Bạn thử lại sau hoặc liên hệ người gửi link.';
+  else if(v.state==="cool")t='Bạn vừa làm mới, vui lòng đợi khoảng 1 phút rồi thử lại.';
+  return t?'<p class="vr-msg'+(v.state==="done"?" ok":v.state==="err"||v.state==="late"?" bad":"")+'" role="status">'+t+'</p>':"";
+}
+function vrefDraw(){if(ui.vdata){var m=$("#main");m.innerHTML=viewerHtml(ui.vdata);tagKpis(m);labelTables(m)}}
+function vrefStart(){
+  var v=ui.vref||{};
+  if(v.state==="wait")return;
+  if(v.at&&Date.now()-v.at<VREF_COOL){ui.vref=Object.assign({},v,{state:"cool"});vrefDraw();return}
+  var base=(ui.vdata&&ui.vdata.refreshedAt)||0,at=Date.now();
+  ui.vref={at:at,base:base,state:"wait"};vrefDraw();
+  clearTimeout(vrefTick);vrefTick=setTimeout(function(){if(ui.vref&&ui.vref.at===at&&ui.vref.state==="wait"){ui.vref.state="late";vrefDraw()}},VREF_WAIT);
+  try{
+    db.collection("refresh").doc(VIEW_TOKEN).set({at:at}).catch(function(){if(ui.vref&&ui.vref.at===at){clearTimeout(vrefTick);ui.vref.state="err";vrefDraw()}});
+  }catch(e){clearTimeout(vrefTick);ui.vref.state="err";vrefDraw()}
+}
 function viewerHtml(d){
   var upd=d.updatedAt?new Date(d.updatedAt).toLocaleString("vi-VN"):"";
   var campH="";
@@ -960,7 +995,7 @@ function viewerHtml(d){
       +cur.items.slice().sort(function(a,b){return (b.s||0)-(a.s||0)}).map(function(x){return '<tr><td>'+esc(x.n)+'</td><td>'+(x.k==="live"?"Live":"Bài viết")+'</td><td class="num">'+num(x.s)+'</td></tr>'}).join("")
       +'</tbody><tfoot><tr><td>Tổng '+cur.items.length+' chiến dịch</td><td></td><td class="num">'+num(ct)+'</td></tr></tfoot></table></div><p class="hint">Chi phí quảng cáo chưa gồm phí dịch vụ.</p></section>';
   }
-  return '<div class="head"><div><h1>'+esc(d.name||"Chiến dịch đang chạy")+'</h1><p>Các chiến dịch đang chạy</p></div></div>'
+  return '<div class="head"><div><h1>'+esc(d.name||"Chiến dịch đang chạy")+'</h1><p>Các chiến dịch đang chạy</p></div>'+vrefBtn()+'</div>'+vrefMsg()
     +(campH||emptyBlock("Chưa có chiến dịch đang chạy","Các chiến dịch có chi tiêu sẽ hiện ở đây."))+'<div class="live-note"><i class="live-dot"></i><span>Cập nhật chi tiêu theo thời gian thực'+(upd?'<br>Đổi lần cuối '+esc(upd):'')+'<br>Nhận lúc '+new Date().toLocaleTimeString("vi-VN",{hour:"2-digit",minute:"2-digit",second:"2-digit"})+'</span></div>';;
 }
 async function viewerInit(){
@@ -971,7 +1006,9 @@ async function viewerInit(){
   if(!db){main.innerHTML=emptyBlock("Chưa mở được trang","Trang chưa được kết nối.");return}
   var draw=function(snap){
     if(!snap.exists){main.innerHTML=emptyBlock("Link không còn hiệu lực","Người gửi đã tắt chia sẻ hoặc link chưa đúng.");return}
-    ui.vdata=snap.data();main.innerHTML=viewerHtml(ui.vdata);tagKpis(main);labelTables(main);
+    ui.vdata=snap.data();
+    if(ui.vref&&ui.vref.state==="wait"&&(ui.vdata.refreshedAt||0)>ui.vref.base){clearTimeout(vrefTick);ui.vref.state="done";ui.vref.doneAt=Date.now()}
+    main.innerHTML=viewerHtml(ui.vdata);tagKpis(main);labelTables(main);
   };
   var fail=function(){main.innerHTML=emptyBlock("Không mở được link","Chủ trang có thể chưa bật quyền xem công khai cho link chia sẻ.")};
   try{
@@ -2326,6 +2363,7 @@ document.addEventListener("click",function(e){
   else if(a==="goc"){goHash("#khach-hang/"+encodeURIComponent(el.dataset.id));window.scrollTo(0,0)}
   else if(a==="sadd")addSpendRow();
   else if(a==="newmonth"){var nm=el.dataset.m;ui.mopen[nm]=true;ui.scrollMonth=nm;save("customers",ui.cid,{lastMonth:nm})}
+  else if(a==="vrefresh")vrefStart();
   else if(a==="share")startShare();
   else if(a==="unshare")stopShare();
   else if(a==="unshare-id")stopShare(el.getAttribute("data-id"));
