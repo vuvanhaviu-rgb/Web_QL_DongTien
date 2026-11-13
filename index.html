@@ -80,6 +80,9 @@ main{min-width:0;display:flex;flex-direction:column;gap:20px}
 .kpi span{color:var(--muted);font-size:10px;font-weight:500}
 .kpi b{font-size:17px;font-weight:700;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
 .kpi small{color:var(--muted);font-size:10px}
+.privbtn{margin-left:auto}
+.priv .kpi:not(.c-kh) b,.priv .kpi:not(.c-kh) small,.priv .ovc .ph~*,.priv .row .r,.priv .hbar .t span:last-child,.priv .hbar .track{filter:blur(9px);opacity:.75;user-select:none;pointer-events:none}
+.priv .ovc .ph,.priv .ovc .ph *{filter:none;opacity:1;pointer-events:auto}
 .kpi.bad b{color:var(--bad)}
 .grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,340px),1fr));gap:16px}
 .panel{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:16px;display:flex;flex-direction:column;gap:12px;min-width:0;box-shadow:var(--shadow)}
@@ -784,7 +787,7 @@ var DEFAULT_FEE=10;
 var BANK_FEE=1.1;
 function defaultRate(cid){var c=(S.customers.filter(function(x){return x.id===cid})[0]);return c&&c.feeRate!=null&&c.feeRate!==""?Number(c.feeRate):DEFAULT_FEE}
 var db=null,localMode=false,seq=0;
-var ui={csort:(function(){try{var v=JSON.parse(localStorage.getItem("cust-sort")||"null");if(v&&v.k&&(v.d==="asc"||v.d==="desc"))return v}catch(e){}return{k:"",d:""}})(),view:"tong-quan",q:"",pf:"all",pc:"",cid:"",ap:"month",anchor:todayStr(),delArm:"",pendingFocus:null,mopen:{},pend:{},shared:{}};
+var ui={priv:(function(){try{return localStorage.getItem("ov-priv")==="1"}catch(e){return false}})(),csort:(function(){try{var v=JSON.parse(localStorage.getItem("cust-sort")||"null");if(v&&v.k&&(v.d==="asc"||v.d==="desc"))return v}catch(e){}return{k:"",d:""}})(),view:"tong-quan",q:"",pf:"all",pc:"",cid:"",ap:"month",anchor:todayStr(),delArm:"",pendingFocus:null,mopen:{},pend:{},shared:{}};
 var num=function(n){return (Number(n)||0).toLocaleString("vi-VN")};
 var nz=function(n){return n?num(n):"—"};
 var rendering=false,restoring=false,pointerDown=false,pendingRender=false;
@@ -1262,7 +1265,7 @@ function vOverview0(){
   nd0=Math.max(0,nd0);nd1=Math.max(0,nd1);
   Object.keys(cb).forEach(function(k){cb[k]=wv(cb[k])});
   var dn=0,nOwe=0,nOver=0;Object.keys(cb).forEach(function(k){dn+=cb[k];if(cb[k]<0)nOwe++;else if(cb[k]>0)nOver++});
-  var h='<div class="tools"><div class="tabs" role="group" aria-label="Xem số liệu theo">'+OVP.map(function(t){return '<button data-act="ovp" data-v="'+t[0]+'" aria-pressed="'+(opt===t[0])+'">'+t[1]+'</button>'}).join("")+'</div><label class="dayp"><span>Chọn ngày</span>'+dateText("ov-day",opt==="day"?OR[0]:"","Chọn một ngày để xem (dd/mm/yyyy)")+'</label></div>'+'<div class="kpis top">'
+  var h='<div class="tools"><div class="tabs" role="group" aria-label="Xem số liệu theo">'+OVP.map(function(t){return '<button data-act="ovp" data-v="'+t[0]+'" aria-pressed="'+(opt===t[0])+'">'+t[1]+'</button>'}).join("")+'</div><label class="dayp"><span>Chọn ngày</span>'+dateText("ov-day",opt==="day"?OR[0]:"","Chọn một ngày để xem (dd/mm/yyyy)")+'</label><button type="button" class="btn privbtn" data-act="ovpriv" aria-pressed="'+(!!ui.priv)+'" title="'+(ui.priv?"Đang che số liệu — bấm để hiện lại":"Che các số tiền trên trang này")+'">'+(ui.priv?"👁 Hiện số liệu":"🙈 Ẩn số liệu")+'</button></div>'+'<div class="kpis top">'
    +'<div class="kpi c-thu"><span>Tổng chi tiêu quảng cáo</span><b>'+vnd(P.live+P.post)+'</b><small>'+esc(OR[2])+' · Live '+num(P.live)+' · Bài viết '+num(P.post)+'</small></div>'
    +'<div class="kpi c-no '+(balSum>0?"bad":"")+'"><span>Tổng công nợ</span><b>'+vnd(balSum)+'</b><small>'+balN+' khách còn nợ · Nợ mới hôm nay '+vnd(nd0)+' · hôm qua '+vnd(nd1)+'</small></div>'
    +'<div class="kpi c-xf"><span>Tổng tiền khách chuyển</span><b>'+vnd(P.xf)+'</b><small>'+esc(OR[2])+' · '+Object.keys(P.xs).length+' khách đã chuyển</small></div>'
@@ -1278,7 +1281,7 @@ function vOverview0(){
   if(!top.length)h+=emptyBlock("Chưa có công nợ","Số tiền mỗi khách còn phải chuyển (quảng cáo + phí dịch vụ − đã chuyển khoản) sẽ hiện ở đây để so sánh.");
   else{var mx=top[0][1];h+=top.map(function(t){return '<div class="hbar"><div class="t"><span>'+esc(custName(t[0]))+'</span><span>'+vnd(t[1])+'</span></div><div class="track"><i style="width:'+Math.max(3,t[1]/mx*100)+'%"></i></div></div>'}).join("")}
   h+='</section></div>';
-  return{title:"Tổng quan",sub:"Tình hình thu tiền tính đến hôm nay, "+fmtDate(todayStr()),html:h};
+  return{title:"Tổng quan",sub:"Tình hình thu tiền tính đến hôm nay, "+fmtDate(todayStr()),html:'<div class="ovw'+(ui.priv?' priv':'')+'">'+h+'</div>'};
 }
 
 function nz2(n){return n?vnd(n):"—"}
@@ -2386,6 +2389,7 @@ document.addEventListener("click",function(e){
   else if(a==="apnow"){ui.anchor=todayStr();render()}
   else if(a==="spt"){ui.spt=el.dataset.v;render()}
   else if(a==="ovp"){ui.ovp=el.dataset.v;render()}
+  else if(a==="ovpriv"){ui.priv=!ui.priv;try{localStorage.setItem("ov-priv",ui.priv?"1":"0")}catch(e){}render()}
   else if(a==="phg"){ui.phg=el.dataset.v;render()}
   else if(a==="spaid"){if(el.dataset.id.indexOf("new:")===0)setPaidBlank(el.dataset.id.slice(4),el.dataset.v==="1");else save("spend",el.dataset.id,{paid:el.dataset.v==="1"})}
 });
