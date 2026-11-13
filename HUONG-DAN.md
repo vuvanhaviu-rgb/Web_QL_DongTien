@@ -101,6 +101,7 @@ Mỗi thẻ hiện tên riêng trên tab, ví dụ "Tổng quan · VH Agency". K
 - Không bao giờ dán mã `FB_TOKEN`, `FIREBASE_SA` hay mã GitHub vào chat, ảnh chụp màn hình hay file trong kho. Lỡ lộ thì tạo lại mã ngay.
 - Gói miễn phí của Firebase và GitHub đủ dùng cho vài chục khách.
 
-## 14. Ẩn / hiện số liệu ở trang Tổng quan
-- Ở trang **Tổng quan**, cạnh các nút chọn thời gian có nút **🙈 Ẩn số liệu**. Bấm vào thì các số tiền (6 thẻ trên cùng trừ "Số lượng khách hàng", biểu đồ chi quảng cáo, danh sách "Cần thu sớm" và "Công nợ") bị làm mờ, người đứng cạnh không đọc được.
-- Bấm **👁 Hiện số liệu** để hiện lại. Trình duyệt sẽ nhớ lựa chọn này cho lần mở sau (không đổi dữ liệu, không ảnh hưởng khách).
+## 14. Ẩn / hiện số liệu từng ô ở trang Tổng quan
+- Mỗi ô ở trang **Tổng quan** (6 thẻ số liệu, biểu đồ "Chi quảng cáo", "Cần thu sớm", "Công nợ") có một biểu tượng **con mắt** ở góc phải.
+- Bấm con mắt của ô nào thì chỉ ô đó bị làm mờ (icon đổi thành con mắt gạch chéo). Bấm lại để hiện. Các ô khác không bị ảnh hưởng.
+- Trình duyệt nhớ ô nào đang ẩn cho lần mở sau. Dữ liệu không bị đổi.

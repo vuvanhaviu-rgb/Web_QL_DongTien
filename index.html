@@ -80,9 +80,14 @@ main{min-width:0;display:flex;flex-direction:column;gap:20px}
 .kpi span{color:var(--muted);font-size:10px;font-weight:500}
 .kpi b{font-size:17px;font-weight:700;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
 .kpi small{color:var(--muted);font-size:10px}
-.privbtn{margin-left:auto}
-.priv .kpi:not(.c-kh) b,.priv .kpi:not(.c-kh) small,.priv .ovc .ph~*,.priv .row .r,.priv .hbar .t span:last-child,.priv .hbar .track{filter:blur(9px);opacity:.75;user-select:none;pointer-events:none}
-.priv .ovc .ph,.priv .ovc .ph *{filter:none;opacity:1;pointer-events:auto}
+.eye{display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;padding:0;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--muted);cursor:pointer;flex:none}
+.eye:hover{color:var(--fg);border-color:var(--muted)}
+.eye svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.eye[aria-pressed="true"]{color:var(--fg);background:var(--bg)}
+.kpi>.eye{position:absolute;top:8px;right:8px;z-index:2}
+.kpi>span{padding-right:30px}
+.panel h2 .eye{margin-left:8px;vertical-align:middle;width:28px;height:28px}
+.hid .kpi-v,.kpi.hid b,.kpi.hid small,.panel.hid .row .r,.panel.hid .hbar .t span:last-child,.panel.hid .hbar .track,.ovc.hid .ph~*{filter:blur(9px);opacity:.75;user-select:none;pointer-events:none}
 .kpi.bad b{color:var(--bad)}
 .grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,340px),1fr));gap:16px}
 .panel{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:16px;display:flex;flex-direction:column;gap:12px;min-width:0;box-shadow:var(--shadow)}
@@ -787,7 +792,7 @@ var DEFAULT_FEE=10;
 var BANK_FEE=1.1;
 function defaultRate(cid){var c=(S.customers.filter(function(x){return x.id===cid})[0]);return c&&c.feeRate!=null&&c.feeRate!==""?Number(c.feeRate):DEFAULT_FEE}
 var db=null,localMode=false,seq=0;
-var ui={priv:(function(){try{return localStorage.getItem("ov-priv")==="1"}catch(e){return false}})(),csort:(function(){try{var v=JSON.parse(localStorage.getItem("cust-sort")||"null");if(v&&v.k&&(v.d==="asc"||v.d==="desc"))return v}catch(e){}return{k:"",d:""}})(),view:"tong-quan",q:"",pf:"all",pc:"",cid:"",ap:"month",anchor:todayStr(),delArm:"",pendingFocus:null,mopen:{},pend:{},shared:{}};
+var ui={hid:(function(){try{var v=JSON.parse(localStorage.getItem("ov-hid")||"{}");if(v&&typeof v==="object")return v}catch(e){}return{}})(),csort:(function(){try{var v=JSON.parse(localStorage.getItem("cust-sort")||"null");if(v&&v.k&&(v.d==="asc"||v.d==="desc"))return v}catch(e){}return{k:"",d:""}})(),view:"tong-quan",q:"",pf:"all",pc:"",cid:"",ap:"month",anchor:todayStr(),delArm:"",pendingFocus:null,mopen:{},pend:{},shared:{}};
 var num=function(n){return (Number(n)||0).toLocaleString("vi-VN")};
 var nz=function(n){return n?num(n):"—"};
 var rendering=false,restoring=false,pointerDown=false,pendingRender=false;
@@ -1195,7 +1200,7 @@ function ovChart(){
     tA=sum(String(y1));tB=y1>y0?sum(String(y1-1)):0;nameA="Năm "+y1;nameB="Năm "+(y1-1);
   }
   var chg=tB?Math.round((tA-tB)/tB*1000)/10:null;
-  var h='<section class="panel ovc"><div class="ph"><h2>Chi quảng cáo <small>'+esc(m==="day"?"so sánh các ngày trong tháng":m==="month"?"so sánh các tháng":m==="quarter"?"so sánh các quý":"tổng theo năm")+'</small></h2><div class="tools pick">'
+  var h='<section class="panel ovc'+hc("chart")+'"><div class="ph"><h2>Chi quảng cáo'+eyeBtn("chart")+' <small>'+esc(m==="day"?"so sánh các ngày trong tháng":m==="month"?"so sánh các tháng":m==="quarter"?"so sánh các quý":"tổng theo năm")+'</small></h2><div class="tools pick">'
     +'<div class="tabs" role="group" aria-label="Xem theo">'+OVM.map(function(t){return '<button data-act="ovm" data-v="'+t[0]+'" aria-pressed="'+(m===t[0])+'">'+t[1]+'</button>'}).join("")+'</div>'
     +(m!=="year"?'<button class="btn small" data-act="ovshift" data-v="-1" aria-label="Kỳ trước">‹</button>'+pick+'<button class="btn small" data-act="ovshift" data-v="1" aria-label="Kỳ sau">›</button><button class="btn small" data-act="ovnow">Hôm nay</button>':'')
     +'</div></div>';
@@ -1232,6 +1237,11 @@ function liveRows(cid){
   });
   return out;
 }
+function eyeBtn(k){var on=!!ui.hid[k];
+  return '<button type="button" class="eye" data-act="eye" data-k="'+k+'" aria-pressed="'+on+'" aria-label="'+(on?"Hiện số liệu ô này":"Ẩn số liệu ô này")+'" title="'+(on?"Đang ẩn — bấm để hiện":"Bấm để ẩn số liệu ô này")+'">'
+   +(on?'<svg viewBox="0 0 24 24"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><path d="M1 1l22 22"/></svg>'
+   :'<svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>')+'</button>'}
+function hc(k){return ui.hid[k]?" hid":""}
 function vOverview(){
   var _sp=S.spend;S.spend=_sp.concat(liveRows());
   try{return vOverview0()}finally{S.spend=_sp}
@@ -1265,23 +1275,23 @@ function vOverview0(){
   nd0=Math.max(0,nd0);nd1=Math.max(0,nd1);
   Object.keys(cb).forEach(function(k){cb[k]=wv(cb[k])});
   var dn=0,nOwe=0,nOver=0;Object.keys(cb).forEach(function(k){dn+=cb[k];if(cb[k]<0)nOwe++;else if(cb[k]>0)nOver++});
-  var h='<div class="tools"><div class="tabs" role="group" aria-label="Xem số liệu theo">'+OVP.map(function(t){return '<button data-act="ovp" data-v="'+t[0]+'" aria-pressed="'+(opt===t[0])+'">'+t[1]+'</button>'}).join("")+'</div><label class="dayp"><span>Chọn ngày</span>'+dateText("ov-day",opt==="day"?OR[0]:"","Chọn một ngày để xem (dd/mm/yyyy)")+'</label><button type="button" class="btn privbtn" data-act="ovpriv" aria-pressed="'+(!!ui.priv)+'" title="'+(ui.priv?"Đang che số liệu — bấm để hiện lại":"Che các số tiền trên trang này")+'">'+(ui.priv?"👁 Hiện số liệu":"🙈 Ẩn số liệu")+'</button></div>'+'<div class="kpis top">'
-   +'<div class="kpi c-thu"><span>Tổng chi tiêu quảng cáo</span><b>'+vnd(P.live+P.post)+'</b><small>'+esc(OR[2])+' · Live '+num(P.live)+' · Bài viết '+num(P.post)+'</small></div>'
-   +'<div class="kpi c-no '+(balSum>0?"bad":"")+'"><span>Tổng công nợ</span><b>'+vnd(balSum)+'</b><small>'+balN+' khách còn nợ · Nợ mới hôm nay '+vnd(nd0)+' · hôm qua '+vnd(nd1)+'</small></div>'
-   +'<div class="kpi c-xf"><span>Tổng tiền khách chuyển</span><b>'+vnd(P.xf)+'</b><small>'+esc(OR[2])+' · '+Object.keys(P.xs).length+' khách đã chuyển</small></div>'
-   +'<div class="kpi c-net"><span>Fee thực nhận</span><b>'+vnd(P.net)+'</b><small>'+esc(OR[2])+' · Phí dịch vụ − phí ngân hàng</small></div>'
-   +'<div class="kpi c-qh '+(over.length?"bad":"")+'"><span>Quá hạn</span><b>'+vnd(overAmt)+'</b><small>'+(over.length?over.length+' khách còn nợ từ '+OVERDUE_DAYS+' ngày trở lên':'Chưa có khách nào quá hạn')+'</small></div>'
-   +'<div class="kpi c-kh"><span>Số lượng khách hàng</span><b>'+S.customers.length+'</b><small>'+Object.keys(P.set).length+' khách có chi tiêu · '+esc(OR[2])+'</small></div>'
+  var h='<div class="tools"><div class="tabs" role="group" aria-label="Xem số liệu theo">'+OVP.map(function(t){return '<button data-act="ovp" data-v="'+t[0]+'" aria-pressed="'+(opt===t[0])+'">'+t[1]+'</button>'}).join("")+'</div><label class="dayp"><span>Chọn ngày</span>'+dateText("ov-day",opt==="day"?OR[0]:"","Chọn một ngày để xem (dd/mm/yyyy)")+'</label></div>'+'<div class="kpis top">'
+   +'<div class="kpi c-thu'+hc("thu")+'">'+eyeBtn("thu")+'<span>Tổng chi tiêu quảng cáo</span><b>'+vnd(P.live+P.post)+'</b><small>'+esc(OR[2])+' · Live '+num(P.live)+' · Bài viết '+num(P.post)+'</small></div>'
+   +'<div class="kpi c-no '+(balSum>0?"bad":"")+hc("no")+'">'+eyeBtn("no")+'<span>Tổng công nợ</span><b>'+vnd(balSum)+'</b><small>'+balN+' khách còn nợ · Nợ mới hôm nay '+vnd(nd0)+' · hôm qua '+vnd(nd1)+'</small></div>'
+   +'<div class="kpi c-xf'+hc("xf")+'">'+eyeBtn("xf")+'<span>Tổng tiền khách chuyển</span><b>'+vnd(P.xf)+'</b><small>'+esc(OR[2])+' · '+Object.keys(P.xs).length+' khách đã chuyển</small></div>'
+   +'<div class="kpi c-net'+hc("net")+'">'+eyeBtn("net")+'<span>Fee thực nhận</span><b>'+vnd(P.net)+'</b><small>'+esc(OR[2])+' · Phí dịch vụ − phí ngân hàng</small></div>'
+   +'<div class="kpi c-qh '+(over.length?"bad":"")+hc("qh")+'">'+eyeBtn("qh")+'<span>Quá hạn</span><b>'+vnd(overAmt)+'</b><small>'+(over.length?over.length+' khách còn nợ từ '+OVERDUE_DAYS+' ngày trở lên':'Chưa có khách nào quá hạn')+'</small></div>'
+   +'<div class="kpi c-kh'+hc("kh")+'">'+eyeBtn("kh")+'<span>Số lượng khách hàng</span><b>'+S.customers.length+'</b><small>'+Object.keys(P.set).length+' khách có chi tiêu · '+esc(OR[2])+'</small></div>'
    +'</div>'+ovChart()+'<div class="grid2">';
   var late=dueSoon();
-  h+='<section class="panel"><h2>Cần thu sớm <small>'+(late.length?late.length+" khách chưa thanh toán từ 3 ngày":"chưa thanh toán từ 3 ngày trở lên")+'</small></h2>';
+  h+='<section class="panel'+hc("late")+'"><h2>Cần thu sớm'+eyeBtn("late")+' <small>'+(late.length?late.length+" khách chưa thanh toán từ 3 ngày":"chưa thanh toán từ 3 ngày trở lên")+'</small></h2>';
   if(!late.length)h+=emptyBlock("Không có khách nào quá 3 ngày","Khách có dòng chi tiêu để ở “Chưa thanh toán” từ 3 ngày trở lên sẽ hiện ở đây.");
   else h+='<div class="list">'+late.map(function(l){return '<div class="row"><div class="l"><button class="link" data-act="goc" data-id="'+esc(l.id)+'">'+esc(custName(l.id))+'</button><span>Chưa thanh toán từ '+fmtDate(l.oldest)+'</span></div><div class="r">'+vnd(l.owe)+'<br><span class="pill '+(l.days>=7?"bad":"wait")+'">'+l.days+' ngày</span></div></div>'}).join("")+'</div>';
-  h+='</section><section class="panel"><h2>Công nợ <small>so sánh số tiền khách chưa thanh toán</small></h2>';
+  h+='</section><section class="panel'+hc("debt")+'"><h2>Công nợ'+eyeBtn("debt")+' <small>so sánh số tiền khách chưa thanh toán</small></h2>';
   if(!top.length)h+=emptyBlock("Chưa có công nợ","Số tiền mỗi khách còn phải chuyển (quảng cáo + phí dịch vụ − đã chuyển khoản) sẽ hiện ở đây để so sánh.");
   else{var mx=top[0][1];h+=top.map(function(t){return '<div class="hbar"><div class="t"><span>'+esc(custName(t[0]))+'</span><span>'+vnd(t[1])+'</span></div><div class="track"><i style="width:'+Math.max(3,t[1]/mx*100)+'%"></i></div></div>'}).join("")}
   h+='</section></div>';
-  return{title:"Tổng quan",sub:"Tình hình thu tiền tính đến hôm nay, "+fmtDate(todayStr()),html:'<div class="ovw'+(ui.priv?' priv':'')+'">'+h+'</div>'};
+  return{title:"Tổng quan",sub:"Tình hình thu tiền tính đến hôm nay, "+fmtDate(todayStr()),html:h};
 }
 
 function nz2(n){return n?vnd(n):"—"}
@@ -2389,7 +2399,7 @@ document.addEventListener("click",function(e){
   else if(a==="apnow"){ui.anchor=todayStr();render()}
   else if(a==="spt"){ui.spt=el.dataset.v;render()}
   else if(a==="ovp"){ui.ovp=el.dataset.v;render()}
-  else if(a==="ovpriv"){ui.priv=!ui.priv;try{localStorage.setItem("ov-priv",ui.priv?"1":"0")}catch(e){}render()}
+  else if(a==="eye"){var ek=el.dataset.k;if(ui.hid[ek])delete ui.hid[ek];else ui.hid[ek]=1;try{localStorage.setItem("ov-hid",JSON.stringify(ui.hid))}catch(e){}render()}
   else if(a==="phg"){ui.phg=el.dataset.v;render()}
   else if(a==="spaid"){if(el.dataset.id.indexOf("new:")===0)setPaidBlank(el.dataset.id.slice(4),el.dataset.v==="1");else save("spend",el.dataset.id,{paid:el.dataset.v==="1"})}
 });
