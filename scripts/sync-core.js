@@ -26,7 +26,7 @@ const VN = ms => new Date(ms + 7 * 3600e3);
 const ymd = d => d.getUTCFullYear() + "-" + String(d.getUTCMonth() + 1).padStart(2, "0") + "-" + String(d.getUTCDate()).padStart(2, "0");
 
 async function insights(acct, since, until) {
-  let url = `${API}/act_${acct}/insights?level=campaign&fields=campaign_name,spend,impressions,reach,inline_link_clicks,actions&time_increment=1`
+  let url = `${API}/act_${acct}/insights?level=campaign&fields=campaign_id,campaign_name,spend,impressions,reach,actions&time_increment=1`
     + `&time_range=${encodeURIComponent(JSON.stringify({ since, until }))}&limit=500&access_token=${TOKEN}`;
   const rows = [], seen = new Set();
   while (url && !seen.has(url) && seen.size < 200) {
@@ -46,21 +46,79 @@ const norm = t => String(t || "").trim(); // GIỮ NGUYÊN: không bỏ dấu, k
 const cache = {}; // mỗi tài khoản chỉ gọi Facebook một lần, dùng chung cho các khách cùng tài khoản
 function rowsOf(acct, since, until) { return cache[acct] || (cache[acct] = insights(acct, since, until)); }
 
-// chỉ số quảng cáo thô, chỉ lưu các số cộng được (CTR, CPC, CPM... do trang web tự tính từ các số này)
-// i = hiển thị, r = tiếp cận, c = click liên kết, m = tin nhắn mới, p = lượt mua
+// Thông tin từng chiến dịch (ngày tạo, ngày kết thúc, trạng thái phân phối, ngân sách), đọc một lần cho mỗi tài khoản; lỗi thì để trống, không làm hỏng đồng bộ chi phí
+async function fbList(url) {
+  const out = [], seen = new Set();
+  while (url && !seen.has(url) && seen.size < 30) {
+    seen.add(url);
+    const j = await (await fetch(url, { signal: AbortSignal.timeout(60000) })).json();
+    if (j.error) throw new Error(j.error.message);
+    out.push(...(j.data || []));
+    url = j.paging && j.paging.next ? j.paging.next : null;
+  }
+  return out;
+}
+const metaCache = {};
+function metaOf(acct) {
+  return metaCache[acct] || (metaCache[acct] = (async () => {
+    const meta = {};
+    try {
+      let cur = "";
+      try { const a = await (await fetch(`${API}/act_${acct}?fields=currency&access_token=${TOKEN}`, { signal: AbortSignal.timeout(60000) })).json(); cur = a.currency || ""; } catch (e) { /* mặc định 100 */ }
+      const st = encodeURIComponent(JSON.stringify(["ACTIVE", "PAUSED", "ARCHIVED"]));
+      const camps = await fbList(`${API}/act_${acct}/campaigns?fields=id,created_time,stop_time,effective_status,daily_budget,lifetime_budget&effective_status=${st}&limit=500&access_token=${TOKEN}`);
+      for (const c of camps) {
+        const m = { cd: String(c.created_time || "").slice(0, 10), ed: String(c.stop_time || "").slice(0, 10), dl: c.effective_status || "" };
+        if (Number(c.daily_budget) > 0) { m.bg = money(c.daily_budget, cur); m.bt = "d"; }
+        else if (Number(c.lifetime_budget) > 0) { m.bg = money(c.lifetime_budget, cur); m.bt = "l"; }
+        meta[c.id] = m;
+      }
+      // ngân sách đặt ở nhóm quảng cáo (không phải cấp chiến dịch): cộng ngân sách các nhóm của chiến dịch đó
+      if (Object.values(meta).some(m => m.bg === undefined)) {
+        const sets = await fbList(`${API}/act_${acct}/adsets?fields=campaign_id,daily_budget,lifetime_budget,effective_status&limit=500&access_token=${TOKEN}`);
+        const sum = {};
+        for (const a of sets) {
+          if (!["ACTIVE", "CAMPAIGN_PAUSED"].includes(a.effective_status)) continue; // nhóm đã tắt/lưu trữ không có ngân sách đang dùng
+          const m = meta[a.campaign_id]; if (!m || m.bg !== undefined) continue;
+          const t = Number(a.daily_budget) > 0 ? "d" : Number(a.lifetime_budget) > 0 ? "l" : "";
+          if (!t) continue;
+          const o = sum[a.campaign_id] || (sum[a.campaign_id] = { bg: 0, bt: t });
+          if (o.bt === t) o.bg += money(t === "d" ? a.daily_budget : a.lifetime_budget, cur);
+        }
+        for (const id of Object.keys(sum)) { meta[id].bg = sum[id].bg; meta[id].bt = sum[id].bt; }
+      }
+    } catch (e) { console.log(`  (${acct}: không đọc được thông tin chiến dịch: ${e.message})`); }
+    return meta;
+  })());
+}
+
+// số thô cộng được của một dòng chiến dịch trong ngày: i hiển thị, r tiếp cận, v lượt xem video (3 giây); CPV do trang web tự tính = chi phí / lượt xem
 const actionOf = (r, types) => { for (const t of types) { const a = (r.actions || []).find(x => x.action_type === t); if (a) return Math.round(Number(a.value) || 0); } return 0; };
-const rawMetrics = r => ({ i: Math.round(Number(r.impressions) || 0), r: Math.round(Number(r.reach) || 0), c: Math.round(Number(r.inline_link_clicks) || 0),
-  m: actionOf(r, ["onsite_conversion.messaging_conversation_started_7d"]), p: actionOf(r, ["omni_purchase", "purchase"]) });
-// chỉ số khách được xem trên link chia sẻ (bạn chọn ở trang khách hàng) và các số thô cần để tính ra chúng
-const MET_ORDER = ["imp", "reach", "clk", "ctr", "cpc", "cpm", "msg", "cpmsg", "pur", "cppur"];
-const MET_NEED = { imp: ["i"], reach: ["r"], clk: ["c"], ctr: ["c", "i"], cpc: ["c"], cpm: ["i"], msg: ["m"], cpmsg: ["m"], pur: ["p"], cppur: ["p"] };
-const metsOf = v => MET_ORDER.filter(k => Array.isArray(v) && v.includes(k));
-const shareItem = (x, mets) => { const o = { n: x.n, s: x.s, k: x.k }; for (const k of mets) for (const f of MET_NEED[k]) o[f] = Number(x[f]) || 0; return o; };
+const rawMetrics = r => ({ i: Math.round(Number(r.impressions) || 0), r: Math.round(Number(r.reach) || 0), v: actionOf(r, ["video_view"]) });
+// các cột của bảng chiến dịch trên link chia sẻ (bạn tick chọn ở trang khách hàng; chưa chọn gì thì hiện đủ) và các trường dữ liệu cần cho mỗi cột
+const COL_ORDER = ["created", "end", "deliv", "budget", "reach", "imp", "views", "cpv"];
+const COL_NEED = { created: ["cd"], end: ["ed"], deliv: ["dl"], budget: ["bg", "bt"], reach: ["r"], imp: ["i"], views: ["v"], cpv: ["v"] };
+const colsOf = v => Array.isArray(v) ? COL_ORDER.filter(k => v.includes(k)) : COL_ORDER.slice();
+// thông tin chiến dịch lấy theo lần đồng bộ mới nhất của chiến dịch đó (trạng thái, ngân sách là hiện tại), số liệu thì theo đúng ngày
+const META_F = ["cd", "ed", "dl", "bg", "bt"];
+function shareCamps(got, cols) {
+  const days = got.filter(r => r.camps && r.camps.length).sort((a, b) => String(b.date).localeCompare(String(a.date)));
+  const latest = {};
+  for (const r of days) for (const x of r.camps) if (!latest[x.n] && x.dl !== undefined) latest[x.n] = x;
+  return days.map(r => ({ date: r.date, items: r.camps.map(x => {
+    const o = { n: x.n, s: x.s, k: x.k };
+    for (const k of cols) for (const f of COL_NEED[k]) {
+      const v = META_F.includes(f) ? (latest[x.n] || {})[f] : x[f];
+      if (v !== undefined && v !== "") o[f] = v;
+    }
+    return o;
+  }) }));
+}
 
 // gom theo ngày: {ngày: {live, post}}
 // - Khách có điền từ khóa: chiến dịch khớp từ khóa Live => Live, khớp từ khóa Bài viết => Bài viết, không khớp => bỏ qua.
 // - Khách không điền từ khóa nào: lấy cả tài khoản, tên có chữ LIVE đứng riêng => Live, còn lại => Bài viết.
-function split(rows, liveKeys, postKeys, nameKey) {
+function split(rows, liveKeys, postKeys, nameKey, meta) {
   const by = {}, custom = liveKeys.length || postKeys.length;
   for (const r of rows) {
     const name = norm(r.campaign_name), amt = Math.round(Number(r.spend) || 0);
@@ -71,7 +129,7 @@ function split(rows, liveKeys, postKeys, nameKey) {
     if (!kind) continue;
     const b = by[r.date_start] || (by[r.date_start] = { live: 0, post: 0 });
     b[kind] += amt;
-    if (amt > 0) (b.camps || (b.camps = [])).push(Object.assign({ n: name, s: amt, k: kind }, rawMetrics(r)));
+    if (amt > 0) (b.camps || (b.camps = [])).push(Object.assign({ n: name, s: amt, k: kind }, rawMetrics(r), (meta || {})[r.campaign_id] || {}));
   }
   return by;
 }
@@ -109,7 +167,7 @@ async function main() {
         const shared = snap.docs.some(o => o.id !== c.id && String(o.data().adAccountId || "").split(/[^0-9]+/).includes(acct));
         const nk = norm(d.name), hit = nk && rows.some(r => norm(r.campaign_name) === nk);
         // có chiến dịch mang tên khách => chỉ lấy các chiến dịch đó; tài khoản riêng của khách và không chiến dịch nào mang tên khách => lấy cả tài khoản
-        const one = split(rows, liveKeys, postKeys, (hit || shared) ? nk : "");
+        const one = split(rows, liveKeys, postKeys, (hit || shared) ? nk : "", await metaOf(acct));
         for (const day of Object.keys(one)) {
           const b = by[day] || (by[day] = { live: 0, post: 0 });
           b.live += one[day].live; b.post += one[day].post;
@@ -185,11 +243,8 @@ async function main() {
       for (const day of days) { const fb = await db.collection("fbspend").where("customerId", "==", c.id).where("date", "==", day).limit(1).get(); fb.docs.forEach(x => got.push(x.data())); }
       nchk++;
       const out = { name: d.name };
-      const mets = metsOf(d.shareMets);
-      const camps = got.filter(r => r.camps && r.camps.length).sort((a, b) => String(b.date).localeCompare(String(a.date)))
-        .map(r => ({ date: r.date, items: r.camps.map(x => shareItem(x, mets)) }));
-      if (camps.length) out.camps = camps;
-      if (mets.length) out.mets = mets;
+      const cols = colsOf(d.shareCols), camps = shareCamps(got, cols);
+      if (camps.length) { out.camps = camps; out.cols = cols; }
       const ref = db.collection("shares").doc(d.shareToken), cur = await ref.get();
       if (cur.exists) { const o = cur.data(); delete o.updatedAt; delete o.refreshedAt; if (stable(o) === stable(out)) { if (ONLY) await ref.set({ refreshedAt: Date.now() }, { merge: true }); continue; } }
       await ref.set(Object.assign({}, out, { updatedAt: Date.now() }, ONLY ? { refreshedAt: Date.now() } : {})); ns++;

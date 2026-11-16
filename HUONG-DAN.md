@@ -106,10 +106,8 @@ Mỗi thẻ hiện tên riêng trên tab, ví dụ "Tổng quan · VH Agency". K
 - Bấm con mắt của ô nào thì chỉ ô đó bị làm mờ (icon đổi thành con mắt gạch chéo). Bấm lại để hiện. Các ô khác không bị ảnh hưởng.
 - Trình duyệt nhớ ô nào đang ẩn cho lần mở sau. Dữ liệu không bị đổi.
 
-## 15. Thêm chỉ số quảng cáo vào link chia sẻ
-- Vào trang **Khách hàng → chọn khách** (khách đã bật link chia sẻ). Dưới ô link có nhóm tick **"Chỉ số quảng cáo hiện cho khách"**: Hiển thị, Tiếp cận, Click link, CTR, CPC, CPM, Tin nhắn, Giá / tin nhắn, Lượt mua, Giá / lượt mua.
-- Tick chỉ số nào thì bảng "Chiến dịch đang chạy" trên link của khách đó có thêm cột ấy (mỗi khách chọn riêng, bỏ tick là bỏ cột). Khách khác không bị ảnh hưởng.
-- Số lấy từ Facebook cùng lần đồng bộ chi phí (không cần đổi token). Hiển thị/Tiếp cận/Click link tính theo từng chiến dịch từng ngày; CTR, CPC, CPM, giá/tin nhắn, giá/lượt mua do web tự tính từ các số đó. Dòng "Tổng" cộng các chiến dịch trong ngày, riêng cột Tiếp cận hiện "—" vì tiếp cận của các chiến dịch bị trùng người nên không cộng được.
-- Ngày cũ hiện "—" cho đến khi máy chủ quét lại: ngày hôm nay/hôm qua có số sau ~15 phút, 7 ngày gần nhất có đủ sau lần quét đủ lúc 10h sáng (hoặc chạy tay "Kéo chi phí Facebook" có tick full).
-- "Tin nhắn" là lượt bắt đầu cuộc trò chuyện (Messenger) và "Lượt mua" là lượt mua đã ghi nhận trên Facebook; chiến dịch không có mục tiêu đó sẽ hiện 0.
-
+## 15. Bảng chiến dịch trên link chia sẻ (có chỉ số quảng cáo)
+- Bảng "Chiến dịch đang chạy" trên link khách có các cột: **Chiến dịch · Ngày tạo · Ngày kết thúc · Phân phối · Ngân sách · Người tiếp cận · Lượt hiển thị · Lượt xem · Chi phí trên lượt xem · Số tiền đã chi tiêu**. Dòng cuối là tổng của ngày đang chọn.
+- Muốn bớt cột cho khách nào: vào **Khách hàng → chọn khách** (đã bật link chia sẻ), dưới ô link có nhóm tick **"Cột hiện trên bảng chiến dịch của khách"**; bỏ tick cột nào thì cột đó biến mất khỏi link của khách đó. Cột Chiến dịch và Số tiền đã chi tiêu luôn có.
+- Số lấy từ Facebook cùng lần đồng bộ chi phí (đã có quyền ads_read, không cần đổi token). Có số sau khoảng 15 phút; các ngày cũ trong 7 ngày hiện "—" đến lần quét đủ lúc 10h sáng (hoặc chạy tay "Kéo chi phí Facebook" có tick full).
+- Ý nghĩa: **Ngày kết thúc** để trống ở Facebook thì hiện "Đang diễn ra"; **Phân phối** là trạng thái hiện tại của chiến dịch (Đang chạy, Đã tắt…); **Ngân sách** là ngân sách ngày hoặc trọn đời của chiến dịch (nếu đặt ở nhóm quảng cáo thì cộng các nhóm đang bật); **Lượt xem** là lượt xem video 3 giây; **Chi phí trên lượt xem** = số tiền chi tiêu ÷ lượt xem; **Người tiếp cận** là của từng chiến dịch nên dòng tổng hiện "—" (người tiếp cận giữa các chiến dịch bị trùng nên không cộng được).
