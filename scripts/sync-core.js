@@ -44,8 +44,6 @@ async function insights(acct, since, until) {
   return rows;
 }
 
-// bỏ dấu tiếng Việt, chữ thường: "Ngân" khớp "ngan", "NGAN"
-const fold = t => String(t || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/đ/gi, "d").toLowerCase();
 const norm = t => String(t || "").trim(); // GIỮ NGUYÊN: không bỏ dấu, không đổi hoa/thường, không bỏ ký tự
 const cache = {}; // mỗi tài khoản chỉ gọi Facebook một lần, dùng chung cho các khách cùng tài khoản
 function rowsOf(acct, since, until) { return cache[acct] || (cache[acct] = insights(acct, since, until)); }

@@ -12,9 +12,9 @@ const f = n => Number(n || 0).toLocaleString("vi-VN");
   const names = {}; (await db.collection("customers").get()).forEach(d => names[d.id] = "mã " + d.id);
   if (ok(CHECK)) {
     const s = await db.collection("spend").where("date", "==", CHECK).get();
-    let L = 0, P = 0, n = 0;
+    let L = 0, P = 0;
     console.log(`== ĐỐI CHIẾU ngày ${CHECK}: ${s.size} dòng trong bảng chi tiêu ==`);
-    s.forEach(d => { const x = d.data(); L += +x.adLive || 0; P += +x.adPost || 0; n++;
+    s.forEach(d => { const x = d.data(); L += +x.adLive || 0; P += +x.adPost || 0;
       console.log(`  ${names[x.customerId] || x.customerId}: Live ${f(x.adLive)} · Bài viết ${f(x.adPost)}${x.finalized ? " · đã chốt" : ""}`); });
     console.log(`  TỔNG: Live ${f(L)} · Bài viết ${f(P)} · Cộng ${f(L + P)}`);
   }
