@@ -92,6 +92,16 @@ function metaOf(acct) {
   })());
 }
 
+// Người tiếp cận KHÔNG cộng được giữa các chiến dịch (một người xem nhiều chiến dịch bị đếm nhiều lần), nên với ngày có từ 2 chiến dịch trở lên
+// hỏi Facebook số đã loại trùng của đúng tập chiến dịch đó (một lần gọi cho cả khoảng ngày). Ngày chỉ 1 chiến dịch thì lấy thẳng số của chiến dịch.
+async function reachByDay(acct, ids, since, until) {
+  const filt = encodeURIComponent(JSON.stringify([{ field: "campaign.id", operator: "IN", value: ids }]));
+  const rows = await fbList(`${API}/act_${acct}/insights?level=account&fields=reach&time_increment=1&time_range=${encodeURIComponent(JSON.stringify({ since, until }))}&filtering=${filt}&limit=500&access_token=${TOKEN}`);
+  const o = {};
+  for (const r of rows) o[r.date_start] = (o[r.date_start] || 0) + (Math.round(Number(r.reach)) || 0);
+  return o;
+}
+
 // số thô cộng được của một dòng chiến dịch trong ngày: i hiển thị, r tiếp cận, v lượt xem video (3 giây); CPV do trang web tự tính = chi phí / lượt xem
 const actionOf = (r, types) => { for (const t of types) { const a = (r.actions || []).find(x => x.action_type === t); if (a) return Math.round(Number(a.value) || 0); } return 0; };
 const rawMetrics = r => ({ i: Math.round(Number(r.impressions) || 0), r: Math.round(Number(r.reach) || 0), v: actionOf(r, ["video_view"]) });
@@ -105,20 +115,24 @@ function shareCamps(got, cols) {
   const days = got.filter(r => r.camps && r.camps.length).sort((a, b) => String(b.date).localeCompare(String(a.date)));
   const latest = {};
   for (const r of days) for (const x of r.camps) if (!latest[x.n] && x.dl !== undefined) latest[x.n] = x;
-  return days.map(r => ({ date: r.date, items: r.camps.map(x => {
-    const o = { n: x.n, s: x.s, k: x.k };
-    for (const k of cols) for (const f of COL_NEED[k]) {
-      const v = META_F.includes(f) ? (latest[x.n] || {})[f] : x[f];
-      if (v !== undefined && v !== "") o[f] = v;
-    }
-    return o;
-  }) }));
+  return days.map(r => {
+    const day = { date: r.date, items: r.camps.map(x => {
+      const o = { n: x.n, s: x.s, k: x.k };
+      for (const k of cols) for (const f of COL_NEED[k]) {
+        const v = META_F.includes(f) ? (latest[x.n] || {})[f] : x[f];
+        if (v !== undefined && v !== "") o[f] = v;
+      }
+      return o;
+    }) };
+    if (cols.includes("reach") && r.tr !== undefined && r.tr !== null) day.tr = r.tr; // người tiếp cận cả ngày, đã loại trùng
+    return day;
+  });
 }
 
 // gom theo ngày: {ngày: {live, post}}
 // - Khách có điền từ khóa: chiến dịch khớp từ khóa Live => Live, khớp từ khóa Bài viết => Bài viết, không khớp => bỏ qua.
 // - Khách không điền từ khóa nào: lấy cả tài khoản, tên có chữ LIVE đứng riêng => Live, còn lại => Bài viết.
-function split(rows, liveKeys, postKeys, nameKey, meta) {
+function split(rows, liveKeys, postKeys, nameKey, meta, ids) {
   const by = {}, custom = liveKeys.length || postKeys.length;
   for (const r of rows) {
     const name = norm(r.campaign_name), amt = Math.round(Number(r.spend) || 0);
@@ -129,7 +143,7 @@ function split(rows, liveKeys, postKeys, nameKey, meta) {
     if (!kind) continue;
     const b = by[r.date_start] || (by[r.date_start] = { live: 0, post: 0 });
     b[kind] += amt;
-    if (amt > 0) (b.camps || (b.camps = [])).push(Object.assign({ n: name, s: amt, k: kind }, rawMetrics(r), (meta || {})[r.campaign_id] || {}));
+    if (amt > 0) { (b.camps || (b.camps = [])).push(Object.assign({ n: name, s: amt, k: kind }, rawMetrics(r), (meta || {})[r.campaign_id] || {})); if (ids && r.campaign_id) ids.add(r.campaign_id); }
   }
   return by;
 }
@@ -161,16 +175,25 @@ async function main() {
     const liveKeys = list(d.liveKey), postKeys = list(d.postKey);
     try {
       const by = {};
+      let trFail = false;                               // true: không tính được người tiếp cận cả ngày (để trống, không đoán)
       for (const acct of accts) {                       // cộng chi phí của tất cả tài khoản của khách
         let rows = await rowsOf(acct, since, until);
         // tài khoản này có khách khác dùng chung không?
         const shared = snap.docs.some(o => o.id !== c.id && String(o.data().adAccountId || "").split(/[^0-9]+/).includes(acct));
         const nk = norm(d.name), hit = nk && rows.some(r => norm(r.campaign_name) === nk);
         // có chiến dịch mang tên khách => chỉ lấy các chiến dịch đó; tài khoản riêng của khách và không chiến dịch nào mang tên khách => lấy cả tài khoản
-        const one = split(rows, liveKeys, postKeys, (hit || shared) ? nk : "", await metaOf(acct));
+        const ids = new Set();
+        const one = split(rows, liveKeys, postKeys, (hit || shared) ? nk : "", await metaOf(acct), ids);
+        const multi = Object.keys(one).filter(day => day >= since7 && (one[day].camps || []).length >= 2).sort();
+        let rr = null;
+        if (multi.length) {
+          if (ids.size <= 200) { try { rr = await reachByDay(acct, Array.from(ids), multi[0], multi[multi.length - 1]); } catch (e) { trFail = true; console.log(`  (${acct}: không lấy được người tiếp cận đã loại trùng: ${e.message})`); } }
+          else trFail = true; // quá nhiều chiến dịch cho một lần hỏi
+        }
         for (const day of Object.keys(one)) {
           const b = by[day] || (by[day] = { live: 0, post: 0 });
           b.live += one[day].live; b.post += one[day].post;
+          if (day >= since7) { const cs = one[day].camps || []; b.tr = (b.tr || 0) + (cs.length <= 1 ? cs.reduce((t, x) => t + (x.r || 0), 0) : rr && rr[day] !== undefined ? rr[day] : (trFail = true, 0)); }
           if (one[day].camps) b.camps = (b.camps || []).concat(one[day].camps);
         }
       }
@@ -183,12 +206,12 @@ async function main() {
       for (const day of Object.keys(by)) {
         const ref = db.collection("fbspend").doc(`${c.id}_${day}`);
         const next = Object.assign({ customerId: c.id, date: day, live: by[day].live, post: by[day].post },
-          day >= since7 ? { camps: (by[day].camps || []).slice(0, 40) } : {});
+          day >= since7 ? { camps: (by[day].camps || []).slice(0, 40), tr: trFail ? null : (by[day].tr || 0) } : {});
         const cur = await ref.get();
         if (cur.exists) {
           const o = cur.data();
-          if (stable(Object.assign({ live: o.live, post: o.post }, day >= since7 ? { camps: o.camps || [] } : {})) ===
-              stable(Object.assign({ live: next.live, post: next.post }, day >= since7 ? { camps: next.camps } : {}))) continue;
+          if (stable(Object.assign({ live: o.live, post: o.post }, day >= since7 ? { camps: o.camps || [], tr: o.tr === undefined ? null : o.tr } : {})) ===
+              stable(Object.assign({ live: next.live, post: next.post }, day >= since7 ? { camps: next.camps, tr: next.tr } : {}))) continue;
         }
         await ref.set(Object.assign(next, { updatedAt: Date.now() }), { merge: true });
       }

@@ -938,8 +938,10 @@ function colsOf(v){var all=SHCOLS.map(function(c){return c[0]});return Array.isA
 function shareCamps(rows,cols){
   var days=rows.filter(function(r){return r.camps&&r.camps.length}).sort(function(a,b){return String(b.date).localeCompare(String(a.date))}),latest={};
   days.forEach(function(r){r.camps.forEach(function(x){if(!latest[x.n]&&x.dl!==undefined)latest[x.n]=x})});
-  return days.map(function(r){return{date:r.date,items:r.camps.map(function(x){var o={n:x.n,s:x.s,k:x.k};
-    cols.forEach(function(k){COL_NEED[k].forEach(function(f){var v=META_F.indexOf(f)>=0?(latest[x.n]||{})[f]:x[f];if(v!==undefined&&v!==null&&v!=="")o[f]=v})});return o})}})}
+  return days.map(function(r){var day={date:r.date,items:r.camps.map(function(x){var o={n:x.n,s:x.s,k:x.k};
+    cols.forEach(function(k){COL_NEED[k].forEach(function(f){var v=META_F.indexOf(f)>=0?(latest[x.n]||{})[f]:x[f];if(v!==undefined&&v!==null&&v!=="")o[f]=v})});return o})};
+    if(cols.indexOf("reach")>=0&&r.tr!==undefined&&r.tr!==null)day.tr=r.tr; /* người tiếp cận cả ngày, đã loại trùng giữa các chiến dịch */
+    return day})}
 var DL_VN={ACTIVE:"Đang chạy",PAUSED:"Đã tắt",ARCHIVED:"Đã lưu trữ",DELETED:"Đã xóa",IN_PROCESS:"Đang xử lý",WITH_ISSUES:"Có vấn đề",PENDING_REVIEW:"Chờ xét duyệt",DISAPPROVED:"Bị từ chối",CAMPAIGN_PAUSED:"Chiến dịch tắt",ADSET_PAUSED:"Nhóm QC tắt",PENDING_BILLING_INFO:"Chờ thanh toán",PREAPPROVED:"Đã duyệt trước"};
 /* giá trị hiển thị của một cột cho một dòng chiến dịch (hoặc dòng tổng); "—" khi chưa có số */
 function colTxt(k,x,isTot){var D="—";
@@ -1031,12 +1033,14 @@ function viewerHtml(d){
   var campH="";
   if(d.camps&&d.camps.length){
     var cur=d.camps.filter(function(x){return x.date===ui.vday})[0]||d.camps[0],ct=cur.items.reduce(function(t,x){return t+(Number(x.s)||0)},0);
+    /* tổng người tiếp cận của ngày: số đã loại trùng do máy chủ lấy từ Facebook; ngày chỉ có 1 chiến dịch thì lấy thẳng số của chiến dịch đó */
+    var totReach=cur.tr!==undefined&&cur.tr!==null?num(cur.tr):(cur.items.length===1&&cur.items[0].r!==undefined?num(cur.items[0].r):"—");
     var vm=SHCOLS.filter(function(m){return Array.isArray(d.cols)?d.cols.indexOf(m[0])>=0:false}),tot={s:ct,dl:undefined};
     ["i","v"].forEach(function(f){tot[f]=cur.items.some(function(x){return x[f]===undefined})?undefined:cur.items.reduce(function(t,x){return t+(Number(x[f])||0)},0)});
     campH='<section class="panel"><div class="ph"><h2>Chiến dịch đang chạy <small>có chi tiêu trong ngày</small></h2><select id="vw-day" aria-label="Chọn ngày">'+d.camps.map(function(x){return '<option value="'+esc(x.date)+'"'+(x.date===cur.date?" selected":"")+'>'+fmtDate(x.date)+'</option>'}).join("")+'</select></div>'
       +'<div class="tablewrap"><table><thead><tr><th>Chiến dịch</th>'+vm.map(function(m){return '<th class="num">'+m[1]+'</th>'}).join("")+'<th class="num">Số tiền đã chi tiêu</th></tr></thead><tbody>'
       +cur.items.slice().sort(function(a,b){return (b.s||0)-(a.s||0)}).map(function(x){return '<tr><td>'+esc(x.n)+'</td>'+vm.map(function(m){return '<td class="num">'+esc(colTxt(m[0],x,false))+'</td>'}).join("")+'<td class="num">'+num(x.s)+'</td></tr>'}).join("")
-      +'</tbody><tfoot><tr><td>Tổng '+cur.items.length+' chiến dịch</td>'+vm.map(function(m){return '<td class="num">'+(m[0]==="imp"||m[0]==="views"||m[0]==="cpv"?esc(colTxt(m[0],tot,true)):"—")+'</td>'}).join("")+'<td class="num">'+num(ct)+'</td></tr></tfoot></table></div><p class="hint">Chi phí quảng cáo chưa gồm phí dịch vụ.</p></section>';
+      +'</tbody><tfoot><tr><td>Tổng '+cur.items.length+' chiến dịch</td>'+vm.map(function(m){return '<td class="num">'+(m[0]==="reach"?esc(totReach):m[0]==="imp"||m[0]==="views"||m[0]==="cpv"?esc(colTxt(m[0],tot,true)):"—")+'</td>'}).join("")+'<td class="num">'+num(ct)+'</td></tr></tfoot></table></div><p class="hint">Chi phí quảng cáo chưa gồm phí dịch vụ.'+(cur.items.length>1&&totReach!=="—"&&vm.some(function(m){return m[0]==="reach"})?' Người tiếp cận ở dòng tổng đã loại trùng người giữa các chiến dịch (số của Facebook), nên nhỏ hơn tổng các dòng phía trên.':'')+'</p></section>';
   }
   return '<div class="head"><div><h1>'+esc(d.name||"Chiến dịch đang chạy")+'</h1><p>Các chiến dịch đang chạy</p></div>'+vrefBtn()+'</div>'+vrefMsg()
     +(campH||emptyBlock("Chưa có chiến dịch đang chạy","Các chiến dịch có chi tiêu sẽ hiện ở đây."))+'<div class="live-note"><i class="live-dot"></i><span>Cập nhật chi tiêu theo thời gian thực'+(upd?'<br>Đổi lần cuối '+esc(upd):'')+'<br>Nhận lúc '+new Date().toLocaleTimeString("vi-VN",{hour:"2-digit",minute:"2-digit",second:"2-digit"})+'</span></div>';;
