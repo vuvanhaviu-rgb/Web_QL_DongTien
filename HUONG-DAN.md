@@ -105,3 +105,11 @@ Mỗi thẻ hiện tên riêng trên tab, ví dụ "Tổng quan · VH Agency". K
 - Mỗi ô ở trang **Tổng quan** (6 thẻ số liệu, biểu đồ "Chi quảng cáo", "Cần thu sớm", "Công nợ") có một biểu tượng **con mắt** ở góc phải.
 - Bấm con mắt của ô nào thì chỉ ô đó bị làm mờ (icon đổi thành con mắt gạch chéo). Bấm lại để hiện. Các ô khác không bị ảnh hưởng.
 - Trình duyệt nhớ ô nào đang ẩn cho lần mở sau. Dữ liệu không bị đổi.
+
+## 15. Thêm chỉ số quảng cáo vào link chia sẻ
+- Vào trang **Khách hàng → chọn khách** (khách đã bật link chia sẻ). Dưới ô link có nhóm tick **"Chỉ số quảng cáo hiện cho khách"**: Hiển thị, Tiếp cận, Click link, CTR, CPC, CPM, Tin nhắn, Giá / tin nhắn, Lượt mua, Giá / lượt mua.
+- Tick chỉ số nào thì bảng "Chiến dịch đang chạy" trên link của khách đó có thêm cột ấy (mỗi khách chọn riêng, bỏ tick là bỏ cột). Khách khác không bị ảnh hưởng.
+- Số lấy từ Facebook cùng lần đồng bộ chi phí (không cần đổi token). Hiển thị/Tiếp cận/Click link tính theo từng chiến dịch từng ngày; CTR, CPC, CPM, giá/tin nhắn, giá/lượt mua do web tự tính từ các số đó. Dòng "Tổng" cộng các chiến dịch trong ngày, riêng cột Tiếp cận hiện "—" vì tiếp cận của các chiến dịch bị trùng người nên không cộng được.
+- Ngày cũ hiện "—" cho đến khi máy chủ quét lại: ngày hôm nay/hôm qua có số sau ~15 phút, 7 ngày gần nhất có đủ sau lần quét đủ lúc 10h sáng (hoặc chạy tay "Kéo chi phí Facebook" có tick full).
+- "Tin nhắn" là lượt bắt đầu cuộc trò chuyện (Messenger) và "Lượt mua" là lượt mua đã ghi nhận trên Facebook; chiến dịch không có mục tiêu đó sẽ hiện 0.
+

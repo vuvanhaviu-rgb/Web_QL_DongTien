@@ -412,6 +412,13 @@ td.net,th.net{color:var(--accent);font-weight:700}
 .bk small{opacity:.75;line-height:1.4}.bk small.warn{color:#c0392b;opacity:1;font-weight:600}
 .sharebox{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:0 0 12px;padding:10px 12px;border:1px dashed var(--line);border-radius:10px;color:var(--muted)}
 .sharebox.on{border-style:solid;background:var(--surface)}
+.sh-mets{flex:1 1 100%;display:flex;flex-direction:column;gap:6px;padding-top:8px;border-top:1px dashed var(--line)}
+.sh-mets b{color:var(--fg);font-weight:600}
+.sh-mrow{display:flex;flex-wrap:wrap;gap:6px 14px}
+.sh-mrow .chk{display:inline-flex;align-items:center;gap:6px;cursor:pointer;color:var(--fg)}
+.sharebox .sh-mrow input{flex:none;width:16px;height:16px;min-width:0;margin:0;padding:0;border:0;background:none}
+.sh-mrow .chk span{white-space:nowrap}
+.sh-mets small{font-size:10px}
 .sharebox input{flex:1 1 260px;min-width:0;width:auto;padding:6px 8px;border:1px solid var(--line);border-radius:8px;background:var(--surface-2);font-size:10px}
 .viewer .side{display:none}.viewer .app{grid-template-columns:minmax(0,1fr);max-width:1100px}
 table.ledger.vw th,table.ledger.vw td{text-align:center}table.ledger.vw td.num{text-align:center}
@@ -923,11 +930,26 @@ document.addEventListener("change",function(e){
 var VIEW_TOKEN=(function(){try{return new URLSearchParams(location.search).get("v")||""}catch(e){return ""}})();
 function newToken(){var a=new Uint8Array(18);crypto.getRandomValues(a);return Array.prototype.map.call(a,function(b){return ("0"+b.toString(36)).slice(-2)}).join("").slice(0,28)}
 function shareLink(t){return location.origin+location.pathname+"?v="+t}
+/* chỉ số quảng cáo hiện trên link khách: bạn tick chọn ở trang khách hàng (khách.shareMets). Số thô: i hiển thị, r tiếp cận, c click link, m tin nhắn, p lượt mua */
+var MET=[["imp","Hiển thị"],["reach","Tiếp cận"],["clk","Click link"],["ctr","CTR"],["cpc","CPC"],["cpm","CPM"],["msg","Tin nhắn"],["cpmsg","Giá / tin nhắn"],["pur","Lượt mua"],["cppur","Giá / lượt mua"]],
+  MET_NEED={imp:["i"],reach:["r"],clk:["c"],ctr:["c","i"],cpc:["c"],cpm:["i"],msg:["m"],cpmsg:["m"],pur:["p"],cppur:["p"]};
+function metsOf(v){return MET.map(function(m){return m[0]}).filter(function(k){return Array.isArray(v)&&v.indexOf(k)>=0})}
+function shareItem(x,mets){var o={n:x.n,s:x.s,k:x.k};mets.forEach(function(k){MET_NEED[k].forEach(function(f){o[f]=Number(x[f])||0})});return o}
+/* giá trị một chỉ số của một dòng chiến dịch (hoặc dòng tổng); null = chưa có số (dữ liệu cũ) hoặc chia cho 0 */
+function metVal(k,x){var s=Number(x.s)||0;
+  if(MET_NEED[k].some(function(f){return x[f]===undefined||x[f]===null}))return null;
+  var i=x.i,c=x.c,m=x.m,p=x.p;
+  switch(k){case"imp":return i;case"reach":return x.r;case"clk":return c;case"msg":return m;case"pur":return p;
+    case"ctr":return i>0?c/i*100:null;case"cpc":return c>0?s/c:null;case"cpm":return i>0?s/i*1000:null;
+    case"cpmsg":return m>0?s/m:null;case"cppur":return p>0?s/p:null}
+  return null}
+function metFmt(k,v){if(v===null||v===undefined||isNaN(v))return "—";if(k==="ctr")return v.toFixed(2).replace(".",",")+"%";return num(Math.round(v))}
 function sharePayload(c){
   /* link chia sẻ chỉ gồm các chiến dịch đang chạy (theo từ khóa của khách) trong 7 ngày gần nhất */
-  var out={name:c.name},cut=ymd(new Date(Date.now()-6*864e5)),cd=S.fbspend.filter(function(r){return r.customerId===c.id&&r.date>=cut&&r.camps&&r.camps.length})
-    .sort(function(a,b){return String(b.date).localeCompare(String(a.date))}).map(function(r){return{date:r.date,items:r.camps.map(function(x){return{n:x.n,s:x.s,k:x.k}})}});
+  var mets=metsOf(c.shareMets),out={name:c.name},cut=ymd(new Date(Date.now()-6*864e5)),cd=S.fbspend.filter(function(r){return r.customerId===c.id&&r.date>=cut&&r.camps&&r.camps.length})
+    .sort(function(a,b){return String(b.date).localeCompare(String(a.date))}).map(function(r){return{date:r.date,items:r.camps.map(function(x){return shareItem(x,mets)})}});
   if(cd.length)out.camps=cd;
+  if(mets.length)out.mets=mets;
   return out;
 }
 function syncShares(force){
@@ -964,7 +986,10 @@ function copyShare(){
 }
 function shareBox(c){
   if(!c.shareToken)return '<div class="sharebox"><span>Gửi link cho khách xem các chiến dịch đang chạy, không cần đăng nhập.</span><button class="btn small" data-act="share">Tạo link chia sẻ</button></div>';
-  return '<div class="sharebox on"><span>Link xem không cần đăng nhập (chỉ xem, không sửa được):</span><input id="share-url" readonly value="'+esc(shareLink(c.shareToken))+'" aria-label="Link chia sẻ"><button class="btn small" data-act="copyshare">Sao chép</button><button class="btn small danger" data-act="unshare">Tắt chia sẻ</button></div>';
+  return '<div class="sharebox on"><span>Link xem không cần đăng nhập (chỉ xem, không sửa được):</span><input id="share-url" readonly value="'+esc(shareLink(c.shareToken))+'" aria-label="Link chia sẻ"><button class="btn small" data-act="copyshare">Sao chép</button><button class="btn small danger" data-act="unshare">Tắt chia sẻ</button>'
+    +'<div class="sh-mets"><b>Chỉ số quảng cáo hiện cho khách (tick để thêm cột vào bảng chiến dịch):</b><div class="sh-mrow">'
+    +MET.map(function(m){var on=metsOf(c.shareMets).indexOf(m[0])>=0;return '<label class="chk"><input type="checkbox" data-act="sharemet" data-k="'+m[0]+'"'+(on?" checked":"")+'><span>'+m[1]+'</span></label>'}).join("")
+    +'</div><small>Tiếp cận là số của từng chiến dịch, dòng tổng không cộng cột này. Số mới có sau lần đồng bộ kế tiếp của máy chủ.</small></div></div>';
 }
 /* Nút làm mới trên link chia sẻ: gửi yêu cầu, máy chủ kéo số Facebook của riêng khách này rồi trang tự cập nhật (khoảng 1-2 phút) */
 var VREF_COOL=60e3,VREF_WAIT=170e3,vrefTick=null;
@@ -998,10 +1023,12 @@ function viewerHtml(d){
   var campH="";
   if(d.camps&&d.camps.length){
     var cur=d.camps.filter(function(x){return x.date===ui.vday})[0]||d.camps[0],ct=cur.items.reduce(function(t,x){return t+(Number(x.s)||0)},0);
+    var vm=MET.filter(function(m){return Array.isArray(d.mets)&&d.mets.indexOf(m[0])>=0}),tot={s:ct};
+    ["i","c","m","p"].forEach(function(f){tot[f]=cur.items.some(function(x){return x[f]===undefined})?undefined:cur.items.reduce(function(t,x){return t+(Number(x[f])||0)},0)});
     campH='<section class="panel"><div class="ph"><h2>Chiến dịch đang chạy <small>có chi tiêu trong ngày</small></h2><select id="vw-day" aria-label="Chọn ngày">'+d.camps.map(function(x){return '<option value="'+esc(x.date)+'"'+(x.date===cur.date?" selected":"")+'>'+fmtDate(x.date)+'</option>'}).join("")+'</select></div>'
-      +'<div class="tablewrap"><table><thead><tr><th>Chiến dịch</th><th>Loại</th><th class="num">Chi phí quảng cáo</th></tr></thead><tbody>'
-      +cur.items.slice().sort(function(a,b){return (b.s||0)-(a.s||0)}).map(function(x){return '<tr><td>'+esc(x.n)+'</td><td>'+(x.k==="live"?"Live":"Bài viết")+'</td><td class="num">'+num(x.s)+'</td></tr>'}).join("")
-      +'</tbody><tfoot><tr><td>Tổng '+cur.items.length+' chiến dịch</td><td></td><td class="num">'+num(ct)+'</td></tr></tfoot></table></div><p class="hint">Chi phí quảng cáo chưa gồm phí dịch vụ.</p></section>';
+      +'<div class="tablewrap"><table><thead><tr><th>Chiến dịch</th><th>Loại</th><th class="num">Chi phí quảng cáo</th>'+vm.map(function(m){return '<th class="num">'+m[1]+'</th>'}).join("")+'</tr></thead><tbody>'
+      +cur.items.slice().sort(function(a,b){return (b.s||0)-(a.s||0)}).map(function(x){return '<tr><td>'+esc(x.n)+'</td><td>'+(x.k==="live"?"Live":"Bài viết")+'</td><td class="num">'+num(x.s)+'</td>'+vm.map(function(m){return '<td class="num">'+metFmt(m[0],metVal(m[0],x))+'</td>'}).join("")+'</tr>'}).join("")
+      +'</tbody><tfoot><tr><td>Tổng '+cur.items.length+' chiến dịch</td><td></td><td class="num">'+num(ct)+'</td>'+vm.map(function(m){return '<td class="num">'+(m[0]==="reach"?"—":metFmt(m[0],metVal(m[0],tot)))+'</td>'}).join("")+'</tr></tfoot></table></div><p class="hint">Chi phí quảng cáo chưa gồm phí dịch vụ.</p></section>';
   }
   return '<div class="head"><div><h1>'+esc(d.name||"Chiến dịch đang chạy")+'</h1><p>Các chiến dịch đang chạy</p></div>'+vrefBtn()+'</div>'+vrefMsg()
     +(campH||emptyBlock("Chưa có chiến dịch đang chạy","Các chiến dịch có chi tiêu sẽ hiện ở đây."))+'<div class="live-note"><i class="live-dot"></i><span>Cập nhật chi tiêu theo thời gian thực'+(upd?'<br>Đổi lần cuối '+esc(upd):'')+'<br>Nhận lúc '+new Date().toLocaleTimeString("vi-VN",{hour:"2-digit",minute:"2-digit",second:"2-digit"})+'</span></div>';;
@@ -2381,6 +2408,7 @@ document.addEventListener("click",function(e){
   else if(a==="unshare")stopShare();
   else if(a==="unshare-id")stopShare(el.getAttribute("data-id"));
   else if(a==="copyshare")copyShare();
+  else if(a==="sharemet"){var cm=cust(ui.cid);if(cm){var cur=metsOf(cm.shareMets),mk2=el.dataset.k,ix=cur.indexOf(mk2);if(el.checked&&ix<0)cur.push(mk2);else if(!el.checked&&ix>=0)cur.splice(ix,1);save("customers",cm.id,{shareMets:metsOf(cur)})}}
   else if(a==="sharecamps"){var cc2=cust(ui.cid);if(cc2){save("customers",cc2.id,{shareCamps:!!el.checked})}}
   else if(a==="mtog"){var mk=el.dataset.m;ui.mopen[mk]=!monthOpen(mk);render()}
   else if(a==="rs-go"){rsRun()}

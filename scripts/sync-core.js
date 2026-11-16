@@ -26,7 +26,7 @@ const VN = ms => new Date(ms + 7 * 3600e3);
 const ymd = d => d.getUTCFullYear() + "-" + String(d.getUTCMonth() + 1).padStart(2, "0") + "-" + String(d.getUTCDate()).padStart(2, "0");
 
 async function insights(acct, since, until) {
-  let url = `${API}/act_${acct}/insights?level=campaign&fields=campaign_name,spend&time_increment=1`
+  let url = `${API}/act_${acct}/insights?level=campaign&fields=campaign_name,spend,impressions,reach,inline_link_clicks,actions&time_increment=1`
     + `&time_range=${encodeURIComponent(JSON.stringify({ since, until }))}&limit=500&access_token=${TOKEN}`;
   const rows = [], seen = new Set();
   while (url && !seen.has(url) && seen.size < 200) {
@@ -46,6 +46,17 @@ const norm = t => String(t || "").trim(); // GIỮ NGUYÊN: không bỏ dấu, k
 const cache = {}; // mỗi tài khoản chỉ gọi Facebook một lần, dùng chung cho các khách cùng tài khoản
 function rowsOf(acct, since, until) { return cache[acct] || (cache[acct] = insights(acct, since, until)); }
 
+// chỉ số quảng cáo thô, chỉ lưu các số cộng được (CTR, CPC, CPM... do trang web tự tính từ các số này)
+// i = hiển thị, r = tiếp cận, c = click liên kết, m = tin nhắn mới, p = lượt mua
+const actionOf = (r, types) => { for (const t of types) { const a = (r.actions || []).find(x => x.action_type === t); if (a) return Math.round(Number(a.value) || 0); } return 0; };
+const rawMetrics = r => ({ i: Math.round(Number(r.impressions) || 0), r: Math.round(Number(r.reach) || 0), c: Math.round(Number(r.inline_link_clicks) || 0),
+  m: actionOf(r, ["onsite_conversion.messaging_conversation_started_7d"]), p: actionOf(r, ["omni_purchase", "purchase"]) });
+// chỉ số khách được xem trên link chia sẻ (bạn chọn ở trang khách hàng) và các số thô cần để tính ra chúng
+const MET_ORDER = ["imp", "reach", "clk", "ctr", "cpc", "cpm", "msg", "cpmsg", "pur", "cppur"];
+const MET_NEED = { imp: ["i"], reach: ["r"], clk: ["c"], ctr: ["c", "i"], cpc: ["c"], cpm: ["i"], msg: ["m"], cpmsg: ["m"], pur: ["p"], cppur: ["p"] };
+const metsOf = v => MET_ORDER.filter(k => Array.isArray(v) && v.includes(k));
+const shareItem = (x, mets) => { const o = { n: x.n, s: x.s, k: x.k }; for (const k of mets) for (const f of MET_NEED[k]) o[f] = Number(x[f]) || 0; return o; };
+
 // gom theo ngày: {ngày: {live, post}}
 // - Khách có điền từ khóa: chiến dịch khớp từ khóa Live => Live, khớp từ khóa Bài viết => Bài viết, không khớp => bỏ qua.
 // - Khách không điền từ khóa nào: lấy cả tài khoản, tên có chữ LIVE đứng riêng => Live, còn lại => Bài viết.
@@ -60,7 +71,7 @@ function split(rows, liveKeys, postKeys, nameKey) {
     if (!kind) continue;
     const b = by[r.date_start] || (by[r.date_start] = { live: 0, post: 0 });
     b[kind] += amt;
-    if (amt > 0) (b.camps || (b.camps = [])).push({ n: name, s: amt, k: kind });
+    if (amt > 0) (b.camps || (b.camps = [])).push(Object.assign({ n: name, s: amt, k: kind }, rawMetrics(r)));
   }
   return by;
 }
@@ -174,9 +185,11 @@ async function main() {
       for (const day of days) { const fb = await db.collection("fbspend").where("customerId", "==", c.id).where("date", "==", day).limit(1).get(); fb.docs.forEach(x => got.push(x.data())); }
       nchk++;
       const out = { name: d.name };
+      const mets = metsOf(d.shareMets);
       const camps = got.filter(r => r.camps && r.camps.length).sort((a, b) => String(b.date).localeCompare(String(a.date)))
-        .map(r => ({ date: r.date, items: r.camps.map(x => ({ n: x.n, s: x.s, k: x.k })) }));
+        .map(r => ({ date: r.date, items: r.camps.map(x => shareItem(x, mets)) }));
       if (camps.length) out.camps = camps;
+      if (mets.length) out.mets = mets;
       const ref = db.collection("shares").doc(d.shareToken), cur = await ref.get();
       if (cur.exists) { const o = cur.data(); delete o.updatedAt; delete o.refreshedAt; if (stable(o) === stable(out)) { if (ONLY) await ref.set({ refreshedAt: Date.now() }, { merge: true }); continue; } }
       await ref.set(Object.assign({}, out, { updatedAt: Date.now() }, ONLY ? { refreshedAt: Date.now() } : {})); ns++;
