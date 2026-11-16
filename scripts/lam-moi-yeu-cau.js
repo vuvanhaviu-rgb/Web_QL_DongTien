@@ -24,7 +24,7 @@ async function processRequests(db, run, opt) {
   let err = null;
   try {
     if (ids.size) { console.log(`Làm mới ${ids.size} khách theo yêu cầu.`); await run(db, Object.assign({}, opt.sync, { only: Array.from(ids) })); }
-  } catch (e) { err = e; console.error("LỖI làm mới: " + e.message); }
+  } catch (e) { err = e; console.error("LỖI làm mới: " + String(e.message).replace(/\d{6,}/g, "…")); }
   for (const ref of drop) { try { await ref.delete(); } catch (e) { /* bỏ qua */ } }
   if (err) throw err;
   return { done: ids.size };
@@ -38,5 +38,5 @@ if (require.main === module) {
   admin.initializeApp({ credential: admin.credential.cert(JSON.parse(SA)) });
   setTimeout(() => { console.error("QUÁ 5 PHÚT: tự dừng"); process.exit(2); }, 5 * 60e3).unref();
   processRequests(admin.firestore(), runSync, { sync: { token: process.env.FB_TOKEN, liveWord: process.env.LIVE_WORD, days: 2 } })
-    .then(() => process.exit(0)).catch(e => { console.error("LỖI: " + e.message); process.exit(1); });
+    .then(() => process.exit(0)).catch(e => { console.error("LỖI: " + String(e.message).replace(/\d{6,}/g, "…")); process.exit(1); });
 }

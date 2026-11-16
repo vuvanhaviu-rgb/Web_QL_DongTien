@@ -1,6 +1,10 @@
 // Lõi đồng bộ chi phí Facebook: dùng cho GitHub Actions (scripts/fb-sync.js).
 const API = "https://graph.facebook.com/v21.0";
 
+// Nhật ký chạy trên GitHub Actions nằm ở kho CÔNG KHAI (ai cũng xem được): không in tên khách, mã tài khoản quảng cáo, dư nợ, số thẻ.
+// Khách chỉ ghi bằng mã ngẫu nhiên (mở web ở địa chỉ #khach-hang/<mã> để biết khách nào); số dài trong thông báo lỗi bị che.
+const hideNum = m => String(m || "").replace(/\d{6,}/g, "…");
+
 module.exports = async function runSync(db, OPT) {
 const TOKEN = OPT.token;
 const DAYS = Math.min(1100, Math.max(2, Number(OPT.days) || 40));       // quét lại N ngày gần nhất khi chạy chế độ đủ
@@ -15,8 +19,8 @@ async function accountInfo(acct) {
   const a = await g(`act_${acct}?fields=name,currency,balance,account_status,is_prepay_account`);
   const info = { accountId: acct, name: a.name || "", currency: a.currency || "", balance: money(a.balance, a.currency), status: a.account_status, prepay: !!a.is_prepay_account,
     threshold: null, cardLast4: "", cardText: "", nextBill: "", updatedAt: Date.now() };
-  try { const p = await g(`act_${acct}/adspaymentcycle?fields=threshold_amount`); const t = p.data && p.data[0] && p.data[0].threshold_amount; info.threshold = money(t, a.currency); } catch (e) { console.log(`  (${acct}: không đọc được ngưỡng: ${e.message})`); }
-  try { const f = await g(`act_${acct}?fields=funding_source_details`); const d = f.funding_source_details; if (d && d.display_string) { info.cardText = d.display_string; const m = d.display_string.match(/(\d{4})\s*$/); if (m) info.cardLast4 = m[1]; } } catch (e) { console.log(`  (${acct}: không đọc được thẻ: ${e.message})`); }
+  try { const p = await g(`act_${acct}/adspaymentcycle?fields=threshold_amount`); const t = p.data && p.data[0] && p.data[0].threshold_amount; info.threshold = money(t, a.currency); } catch (e) { console.log(`  (không đọc được ngưỡng của một tài khoản: ${hideNum(e.message)})`); }
+  try { const f = await g(`act_${acct}?fields=funding_source_details`); const d = f.funding_source_details; if (d && d.display_string) { info.cardText = d.display_string; const m = d.display_string.match(/(\d{4})\s*$/); if (m) info.cardLast4 = m[1]; } } catch (e) { console.log(`  (không đọc được thẻ của một tài khoản: ${hideNum(e.message)})`); }
   try { const n = await g(`act_${acct}?fields=next_bill_date`); if (n.next_bill_date) info.nextBill = String(n.next_bill_date).slice(0, 10); } catch (e) { /* chưa có dữ liệu: để trống */ }
   return info;
 }
@@ -87,7 +91,7 @@ function metaOf(acct) {
         }
         for (const id of Object.keys(sum)) { meta[id].bg = sum[id].bg; meta[id].bt = sum[id].bt; }
       }
-    } catch (e) { console.log(`  (${acct}: không đọc được thông tin chiến dịch: ${e.message})`); }
+    } catch (e) { console.log(`  (không đọc được thông tin chiến dịch của một tài khoản: ${hideNum(e.message)})`); }
     return meta;
   })());
 }
@@ -187,7 +191,7 @@ async function main() {
         const multi = Object.keys(one).filter(day => day >= since7 && (one[day].camps || []).length >= 2).sort();
         let rr = null;
         if (multi.length) {
-          if (ids.size <= 200) { try { rr = await reachByDay(acct, Array.from(ids), multi[0], multi[multi.length - 1]); } catch (e) { trFail = true; console.log(`  (${acct}: không lấy được người tiếp cận đã loại trùng: ${e.message})`); } }
+          if (ids.size <= 200) { try { rr = await reachByDay(acct, Array.from(ids), multi[0], multi[multi.length - 1]); } catch (e) { trFail = true; console.log(`  (không lấy được người tiếp cận đã loại trùng: ${hideNum(e.message)})`); } }
           else trFail = true; // quá nhiều chiến dịch cho một lần hỏi
         }
         for (const day of Object.keys(one)) {
@@ -229,7 +233,7 @@ async function main() {
             feeRate: d.feeRate != null && d.feeRate !== "" ? Number(d.feeRate) : 10, transfer: 0, paid: false,
             fromFb: true, finalized: true, createdAt: Date.now()
           });
-          console.log(`    -> ghi ${day} vào bảng chi tiêu của ${d.name}`);
+          console.log(`    -> ghi ${day} vào bảng chi tiêu của mã ${c.id}`);
         } else {
           const row = ex.docs[0], x = row.data();
           // dòng trống do bạn tạo sẵn (chưa nhập tiền) thì nhận làm dòng của Facebook luôn
@@ -237,22 +241,23 @@ async function main() {
           if ((!x.fromFb && !blank) || x.finalized) continue;
           if (blank && v.live + v.post <= 0) continue;
           await row.ref.update({ adLive: v.live, adPost: v.post, fromFb: true, finalized: true });
-          console.log(`    -> chốt ${day} cho ${d.name}`);
+          console.log(`    -> chốt ${day} cho mã ${c.id}`);
         }
       }
-      console.log(`OK  ${d.name}: ${Object.keys(by).length} ngày`);
+      console.log(`OK  mã ${c.id}: ${Object.keys(by).length} ngày`);
       ok++;
-    } catch (e) { console.error(`LỖI ${d.name}: ${e.message}`); errs.push(String(e.message).slice(0, 200)); fail++; }
+    } catch (e) { console.error(`LỖI mã ${c.id}: ${hideNum(e.message)}`); errs.push(String(e.message).slice(0, 200)); fail++; }
   };
   const queue = snap.docs.filter(c => !ONLY || ONLY.has(c.id));
   await Promise.all(Array.from({ length: 5 }, async () => { while (queue.length) await one(queue.shift()); }));
   const accs = {};
   for (const c of snap.docs) for (const a of String(c.data().adAccountId || "").split(/[^0-9]+/).filter(x => x.length >= 5)) (accs[a] = accs[a] || []).push(c.data().name || "");
+  let nTk = 0;
   for (const a of ONLY ? [] : Object.keys(accs)) {
-    try { const info = await accountInfo(a); info.customers = accs[a]; await db.collection("fbaccounts").doc(a).set(info, { merge: true });
-      console.log(`TK ${a}: dư nợ ${info.balance}, ngưỡng ${info.threshold === null ? "không đọc được" : info.threshold}, thẻ ${info.cardLast4 || "?"}, hạn ${info.nextBill || "chưa xác định"}`);
-    } catch (e) { console.error(`LỖI tài khoản ${a}: ${e.message}`); errs.push(String(e.message).slice(0, 200)); }
+    try { const info = await accountInfo(a); info.customers = accs[a]; await db.collection("fbaccounts").doc(a).set(info, { merge: true }); nTk++; }
+    catch (e) { console.error(`LỖI một tài khoản quảng cáo: ${hideNum(e.message)}`); errs.push(String(e.message).slice(0, 200)); }
   }
+  if (!ONLY) console.log(`Đã cập nhật thông tin ${nTk} tài khoản quảng cáo.`);
   // Cập nhật luôn link chia sẻ của khách (trang khách xem), để link luôn mới dù bạn không mở web
   let ns = 0, nchk = 0, nerr = "";
   try {
@@ -273,7 +278,7 @@ async function main() {
       await ref.set(Object.assign({}, out, { updatedAt: Date.now() }, ONLY ? { refreshedAt: Date.now() } : {})); ns++;
     }
     console.log(`Link chia sẻ: cập nhật ${ns} link.`);
-  } catch (e) { if (e.message !== "__skip") { nerr = e.message; console.error("LỖI cập nhật link chia sẻ: " + e.message); } }
+  } catch (e) { if (e.message !== "__skip") { nerr = e.message; console.error("LỖI cập nhật link chia sẻ: " + hideNum(e.message)); } }
   // ghi dấu mốc để web hiện "máy chủ đã kiểm tra lúc nào" (1 lần ghi mỗi lượt chạy)
   if (!ONLY) try { await db.collection("fbaccounts").doc("__sync").set({ at: Date.now(), ok, fail, linksChecked: nchk, linksUpdated: ns, linkError: nerr, errors: Array.from(new Set(errs)).slice(0, 3), tokenBad: errs.some(m => /token|oauth|session|expired|permission|authoriz/i.test(m)), ledgerDay: ledgerDone || (pastTen && fail === 0) ? yesterday : (prevMark.ledgerDay || "") }); } catch (e) { console.error("Không ghi được mốc đồng bộ: " + e.message); }
   console.log(`Xong. Thành công ${ok}, lỗi ${fail}.`);

@@ -12,4 +12,4 @@ setTimeout(() => { console.error(`QUÁ ${LIMIT_MIN} PHÚT: tự dừng`); proces
 
 runSync(admin.firestore(), { token: process.env.FB_TOKEN, full: process.env.FULL === "true", days: DAYS, liveWord: process.env.LIVE_WORD })
   .then(() => process.exit(0))
-  .catch(e => { console.error("LỖI: " + e.message); process.exit(1); });
+  .catch(e => { console.error("LỖI: " + String(e.message).replace(/\d{6,}/g, "…")); process.exit(1); });

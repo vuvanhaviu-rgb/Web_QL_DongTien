@@ -4,7 +4,7 @@ on:
     inputs:
       acct:
         description: "ID tài khoản quảng cáo cần tìm"
-        default: "1445790276113219"
+        default: ""
 permissions:
   contents: read
 jobs:

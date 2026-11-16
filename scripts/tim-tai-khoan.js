@@ -6,7 +6,6 @@ admin.initializeApp({ credential: admin.credential.cert(JSON.parse(SA)) });
 (async () => {
   const s = await admin.firestore().collection("customers").get();
   let n = 0;
-  s.forEach(d => { const x = d.data(); if (String(x.adAccountId || "").replace(/\D+/g, " ").split(" ").includes(ID)) { n++; console.log(`KHÁCH: "${x.name}" (mã ${d.id}) · ô ID đang ghi: "${x.adAccountId}"`); } });
-  console.log(`Tổng ${n} khách đang gắn ID ${ID}; tổng số khách: ${s.size}`);
-  s.forEach(d => { const x = d.data(); if (/dung/i.test(String(x.name || ""))) console.log(`  tên có "Dung": "${x.name}" · ID: "${x.adAccountId || ""}"`); });
-})().catch(e => { console.error("LỖI: " + e.message); process.exit(1); });
+  s.forEach(d => { const x = d.data(); if (String(x.adAccountId || "").replace(/\D+/g, " ").split(" ").includes(ID)) { n++; console.log(`KHÁCH mã ${d.id} đang gắn ID này (mở web ở địa chỉ #khach-hang/${d.id} để xem khách nào)`); } });
+  console.log(`Tổng ${n} khách đang gắn ID đã nhập; tổng số khách: ${s.size}`);
+})().catch(e => { console.error("LỖI: " + String(e.message).replace(/\d{6,}/g, "…")); process.exit(1); });

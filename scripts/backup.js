@@ -49,4 +49,4 @@ async function deleteQuery(q) {
   const old = await deleteQuery(db.collection("backups").where("date", "<", cutoff));
   console.log(`Xong: ${total} bản ghi ngày ${date}. Đã xóa ${old} phần của bản sao lưu cũ hơn ${KEEP_DAYS} ngày.`);
   process.exit(0);
-})().catch(e => { console.error("LỖI: " + e.message); process.exit(1); });
+})().catch(e => { console.error("LỖI: " + String(e.message).replace(/\d{6,}/g, "…")); process.exit(1); });

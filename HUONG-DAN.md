@@ -111,3 +111,9 @@ Mỗi thẻ hiện tên riêng trên tab, ví dụ "Tổng quan · VH Agency". K
 - Muốn bớt cột cho khách nào: vào **Khách hàng → chọn khách** (đã bật link chia sẻ), dưới ô link có nhóm tick **"Cột hiện trên bảng chiến dịch của khách"**; bỏ tick cột nào thì cột đó biến mất khỏi link của khách đó. Cột Chiến dịch và Số tiền đã chi tiêu luôn có.
 - Số lấy từ Facebook cùng lần đồng bộ chi phí (đã có quyền ads_read, không cần đổi token). Có số sau khoảng 15 phút; các ngày cũ trong 7 ngày hiện "—" đến lần quét đủ lúc 10h sáng (hoặc chạy tay "Kéo chi phí Facebook" có tick full).
 - Ý nghĩa: **Ngày kết thúc** để trống ở Facebook thì hiện "Đang diễn ra"; **Phân phối** là trạng thái hiện tại của chiến dịch (Đang chạy, Đã tắt…); **Ngân sách** là ngân sách ngày hoặc trọn đời của chiến dịch (nếu đặt ở nhóm quảng cáo thì cộng các nhóm đang bật); **Lượt xem** là lượt xem video 3 giây; **Chi phí trên lượt xem** = số tiền chi tiêu ÷ lượt xem; **Người tiếp cận** ở dòng tổng không phải tổng cộng các dòng: một người xem nhiều chiến dịch trong ngày chỉ được tính một lần, nên số tổng nhỏ hơn hoặc bằng tổng các dòng (đúng như Facebook hiển thị). Máy chủ hỏi Facebook số đã loại trùng này cho ngày nào có từ 2 chiến dịch trở lên (ngày chỉ 1 chiến dịch thì lấy thẳng số của chiến dịch đó); nếu Facebook chưa trả lời được thì ô tổng hiện "—" thay vì đoán.
+
+## 16. Nhật ký chạy trên GitHub (kho công khai)
+- Kho Web_QL_DongTien để công khai nên **nhật ký các lần chạy trên GitHub Actions ai cũng xem được**. Vì vậy nhật ký không in tên khách, mã tài khoản quảng cáo, dư nợ hay số thẻ; chỉ in **mã khách** (chuỗi ngẫu nhiên) và các con số tổng.
+- Muốn biết mã đó là khách nào: mở `https://vhagency.io.vn/#khach-hang/<mã>`. Các công cụ chạy tay (Điền tháng, Xóa ngày, Tìm khách theo ID tài khoản) cũng ghi khách bằng mã như vậy.
+- Thông báo lỗi của Facebook có dãy số dài (mã tài khoản...) sẽ bị che thành "…". Banner lỗi trong web vẫn hiện đầy đủ vì nằm trong dữ liệu riêng của bạn.
+

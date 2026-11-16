@@ -20,9 +20,10 @@ const f = n => Number(n || 0).toLocaleString("vi-VN");
   const hidKey = {}; hid.forEach(d => hidKey[d.data().customerId + "|" + d.data().date] = d.ref);
   const add = fb.filter(x => cs[x.customerId] && !have.has(x.customerId + "|" + x.date));
   let L = 0, P = 0, blocked = 0;
+  console.log("(Nhật ký công khai nên khách ghi bằng mã; mở web ở địa chỉ #khach-hang/<mã> để biết khách nào.)");
   console.log(`== THÁNG ${MONTH}: số Facebook ${fb.length} ngày-khách, đã có trong bảng ${fb.length - add.length}, cần điền ${add.length}; dấu ẩn trong tháng: ${hid.length} ==`);
   add.sort((a, b) => a.date.localeCompare(b.date)).forEach(x => { L += +x.live || 0; P += +x.post || 0; const h = !!hidKey[x.customerId + "|" + x.date]; if (h) blocked++;
-    console.log(`  ${x.date} ${cs[x.customerId].name}: Live ${f(x.live)} · Bài viết ${f(x.post)}${h ? " · đang bị ẩn" : ""}`); });
+    console.log(`  ${x.date} mã ${x.customerId}: Live ${f(x.live)} · Bài viết ${f(x.post)}${h ? " · đang bị ẩn" : ""}`); });
   console.log(`  TỔNG cần điền: Live ${f(L)} · Bài viết ${f(P)} · Cộng ${f(L + P)} · trong đó bị ẩn ${blocked}`);
   if (!APPLY) { console.log("CHƯA GHI GÌ (xem trước)."); return; }
   if (blocked && !UNHIDE) { console.log(`Có ${blocked} dòng bị ẩn, chưa điền (cần tick UNHIDE).`); }
@@ -39,4 +40,4 @@ const f = n => Number(n || 0).toLocaleString("vi-VN");
     }); n++;
   }
   console.log(`ĐÃ ĐIỀN ${n} dòng.`);
-})().catch(e => { console.error("LỖI: " + e.message); process.exit(1); });
+})().catch(e => { console.error("LỖI: " + String(e.message).replace(/\d{6,}/g, "…")); process.exit(1); });

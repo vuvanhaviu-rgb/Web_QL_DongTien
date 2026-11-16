@@ -9,7 +9,7 @@ const DEL = (process.env.DEL_DATE || "").trim(), CHECK = (process.env.CHECK_DATE
 const ok = d => /^\d{4}-\d{2}-\d{2}$/.test(d);
 const f = n => Number(n || 0).toLocaleString("vi-VN");
 (async () => {
-  const names = {}; (await db.collection("customers").get()).forEach(d => names[d.id] = d.data().name || d.id);
+  const names = {}; (await db.collection("customers").get()).forEach(d => names[d.id] = "mã " + d.id);
   if (ok(CHECK)) {
     const s = await db.collection("spend").where("date", "==", CHECK).get();
     let L = 0, P = 0, n = 0;
@@ -30,4 +30,4 @@ const f = n => Number(n || 0).toLocaleString("vi-VN");
   const refs = [...s.docs, ...b.docs].map(d => d.ref);
   for (let i = 0; i < refs.length; i += 400) { const w = db.batch(); refs.slice(i, i + 400).forEach(r => w.delete(r)); await w.commit(); }
   console.log(`ĐÃ XÓA ${refs.length} dòng của ngày ${DEL}.`);
-})().catch(e => { console.error("LỖI: " + e.message); process.exit(1); });
+})().catch(e => { console.error("LỖI: " + String(e.message).replace(/\d{6,}/g, "…")); process.exit(1); });
